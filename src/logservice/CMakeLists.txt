@@ -1,0 +1,2 @@
+seekdb_apply_unity_inventory(ob_logservice SEEKDB_LOGSERVICE_UNITY)
+ob_server_add_target(ob_logservice)
