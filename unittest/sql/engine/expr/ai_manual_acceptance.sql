@@ -1,6 +1,7 @@
 -- Run once against a disposable instance built from ai_func.
 -- Start ai_mock_service.py --host 127.0.0.1 --port 18080 --dimension 768
 -- in the same WSL environment as the database. No real model/key is required.
+-- Use a UTF-8 terminal and mysql --default-character-set=utf8mb4 for Chinese SQL.
 CREATE DATABASE IF NOT EXISTS ai_manual;
 USE ai_manual;
 

@@ -100,6 +100,13 @@ these are retained for manual inspection. The standalone Mock must keep running.
 The SQL comments describe expected outputs. It covers all six enhancement
 requirements at a smoke-test level; the automated suite covers errors and larger batches.
 
+Use a UTF-8 terminal and connect with `mysql --default-character-set=utf8mb4
+-h127.0.0.1 -P2883 -uroot -Dai_manual`. On Windows, leave the existing mysql
+session and run `chcp 65001` in the terminal before reconnecting. A GBK terminal
+can otherwise send invalid UTF-8 bytes even when the server session is utf8mb4;
+the Mock then fails to decode the JSON request and curl reports error 52.
+The current server does not support `SET NAMES gbk`; use UTF-8 consistently.
+
 With the server on port 2883 and database `ai_native_regression` already created,
 run the native enhancement comparison from the repository root:
 
