@@ -286,6 +286,29 @@ class AIFunctionTests(unittest.TestCase):
             self.cursor.execute("call DBMS_AI_SERVICE.DROP_AI_MODEL_ENDPOINT('reg_keyless_ep')")
             self.cursor.execute("call DBMS_AI_SERVICE.DROP_AI_MODEL('reg_keyless_model')")
 
+    def test_ollama_keyless_embedding_reload(self):
+        config = {'ai_model_name': 'reg_keyless_embed', 'scope': 'all',
+                  'url': 'http://127.0.0.1:' + str(self.mock.server_port) + '/ok/api/embed',
+                  'provider': 'OLLAMA'}
+        self.cursor.execute("call DBMS_AI_SERVICE.CREATE_AI_MODEL('reg_keyless_embed',"
+                            "'{\"type\":\"dense_embedding\",\"model_name\":\"fixture-keyless\"}')")
+        self.cursor.execute('call DBMS_AI_SERVICE.CREATE_AI_MODEL_ENDPOINT(%s,%s)',
+                            ('reg_keyless_embed_ep', json.dumps(config)))
+        try:
+            for delta in [None, {'provider': 'Ollama'}, {'access_key': ''}, {'provider': 'ollama'}]:
+                if delta is not None:
+                    self.cursor.execute('call DBMS_AI_SERVICE.ALTER_AI_MODEL_ENDPOINT(%s,%s)',
+                                        ('reg_keyless_embed_ep', json.dumps(delta)))
+                result = self.scalar("select ai_embed('reg_keyless_embed','hello')")
+                self.assertEqual(embedding('hello', 8), json.loads(result))
+                self.assertIsNone(self.mock.events[-1]['authorization'])
+            with self.assertRaises(pymysql.Error):
+                self.cursor.execute("call DBMS_AI_SERVICE.ALTER_AI_MODEL_ENDPOINT("
+                                    "'reg_keyless_embed_ep','{\"provider\":\"openai\"}')")
+        finally:
+            self.cursor.execute("call DBMS_AI_SERVICE.DROP_AI_MODEL_ENDPOINT('reg_keyless_embed_ep')")
+            self.cursor.execute("call DBMS_AI_SERVICE.DROP_AI_MODEL('reg_keyless_embed')")
+
     def test_existing_mysqltest_statements(self):
         """Execute the two supplied SQL suites, honoring their expected errors.
 
@@ -318,6 +341,7 @@ class AIFunctionTests(unittest.TestCase):
                     statement = '\n'.join(pending)
                     pending.clear()
                     statement = statement.replace('http://0.0.0.0:8000', 'http://127.0.0.1:' + str(self.mock.server_port))
+                    statement = statement.replace('http://127.0.0.1:18080', 'http://127.0.0.1:' + str(self.mock.server_port))
                     with self.subTest(suite=name, sql=statement):
                         try:
                             self.cursor.execute(statement)

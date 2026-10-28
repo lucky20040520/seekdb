@@ -10,3 +10,6 @@
 *.i filter=codeformat
 *.ic filter=codeformat
 *.js filter=codeformat
+
+# Native mysqltest compares these fixtures byte for byte on Linux.
+unittest/sql/engine/expr/mysqltest/** text eol=lf

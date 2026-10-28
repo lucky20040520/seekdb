@@ -21,9 +21,16 @@ All modified C++ implementations and the new C++ test sources also passed
 standalone syntax compilation against the actual generated headers.
 The original 106 SQL source lines in `ai_prompt.test` were retained.
 
-The 15 Python SQL integration cases and native mysqltest result comparison
-are provided but have not yet been executed at this checkpoint. The contest
-organizer's original Mock AI Service and official test files are unavailable.
+The 16 Python SQL integration cases passed against the actual server. Native
+mysqltest result comparison passed for the new enhancement fixture and six
+existing cases: `ai_function.ai_prompt`, `ai_function.ai_endpoint_sql_name`,
+`ai_function.ai_model_ddl`, `ai_function.ai_model_endpoint_ddl`, `expr.expr_ceil`
+and `expr.expr_floor`. The 1,153-row embedding case used 40 requests for 1,048
+non-NULL inputs (at most 40 inputs per request in that case). Rerank preserved
+global ordering and object fields across 47 documents and three HTTP batches.
+Runtime testing exposed and fixed SQL NULL access-key loading for keyless
+Ollama endpoints, including creation without a key and subsequent ALTERs.
+The contest organizer's original Mock AI Service and official test files are unavailable.
 Linux runtime testing requires the system `libaio.so.1` library.
 
 ## C++ tests
@@ -78,12 +85,34 @@ New test-only files are kept under `unittest/`. The mysqltest pair in
 For the SQL suite's fixed URL, start the fixture separately:
 
 ```sh
-python3 unittest/sql/engine/expr/ai_mock_service.py --dimension 768
+python3 unittest/sql/engine/expr/ai_mock_service.py --host 127.0.0.1 --port 18080 --dimension 768
 ```
 
-It listens on `0.0.0.0:8000`. The integrated Python suite sets dimension 768
+The SQL fixture connects to `127.0.0.1:18080` on the server's host.
+The integrated Python suite sets dimension 768
 automatically for those statements. The default dimension used by the other
 local regressions is 8.
+
+For interactive acceptance, execute `ai_manual_acceptance.sql` once through
+the MySQL client against the isolated test instance. It creates database
+`ai_manual`, five `local_mock_*` models and endpoints, and a three-row table;
+these are retained for manual inspection. The standalone Mock must keep running.
+The SQL comments describe expected outputs. It covers all six enhancement
+requirements at a smoke-test level; the automated suite covers errors and larger batches.
+
+With the server on port 2883 and database `ai_native_regression` already created,
+run the native enhancement comparison from the repository root:
+
+```sh
+mkdir -p /tmp/ai-function-mysqltest
+deps/3rd/u01/obclient/bin/mysqltest --host=127.0.0.1 --port=2883 --user=root \
+  --database=ai_native_regression --tmpdir=/tmp/ai-function-mysqltest \
+  --logdir=/tmp/ai-function-mysqltest --silent \
+  --test-file=unittest/sql/engine/expr/mysqltest/t/ai_function_enhancement.test \
+  --result-file=unittest/sql/engine/expr/mysqltest/r/mysql/ai_function_enhancement.result
+```
+
+The fixed Mock must be running on port 18080 with dimension 768 for this command.
 
 This deterministic fixture is local test support. The contest organizer's
 original Mock AI Service and official test files were not provided.
