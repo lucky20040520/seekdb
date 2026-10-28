@@ -1,0 +1,25 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+
+package(default_testonly = True)
+
+filegroup(
+    name = "ai_function_test_sources",
+    srcs = [
+        "ai_test_support.h",
+        "ob_expr_ai_prompt_test.cpp",
+        "test_ob_openai_utils.cpp",
+    ],
+    visibility = ["//src/sql:__pkg__"],
+)
+
+cc_test(
+    name = "test_ai_function_utils",
+    size = "small",
+    linkstatic = True,
+    features = ["-static_cpp_runtime", "-static_link_cpp_runtimes"],
+    deps = [
+        "//src/sql:ai_function_unit_test_cases",
+        "//src/observer:liboceanbase",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+)

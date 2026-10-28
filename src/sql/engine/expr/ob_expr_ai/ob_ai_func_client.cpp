@@ -144,10 +144,14 @@ int ObAIFuncClient::init(common::ObIAllocator &allocator, const common::ObString
       for (uint32_t i = 0; OB_SUCC(ret) && i < num_headers; ++i) {
         ObString header_c_str;
         if (OB_FAIL(ob_write_string(*allocator_, headers.at(i), header_c_str, true))) {
-        } else if (OB_ISNULL(header_list_ = curl_slist_append(header_list_, header_c_str.ptr()))) {
-          ret = OB_ERR_UNEXPECTED;
         } else {
-          LOG_DEBUG("ai_function request header appended", K(i));
+          curl_slist *next = curl_slist_append(header_list_, header_c_str.ptr());
+          if (OB_ISNULL(next)) {
+            ret = OB_ALLOCATE_MEMORY_FAILED;
+          } else {
+            header_list_ = next;
+            LOG_DEBUG("ai_function request header appended", K(i));
+          }
         }
       }
     }
@@ -198,6 +202,7 @@ int ObAIFuncClient::send_post(ObJsonObject *data, ObJsonObject *&response)
     // retry if need
     for (int64_t i = 0; OB_SUCC(ret) && i <= max_retry_times_; ++i) {
       http_code = 0;
+      response_buf.reset();
       if (CURLE_OK != (res = curl_easy_perform(curl_))) {
         LOG_WARN("perform curl failed", K(res));
       } else if (CURLE_OK != (res = curl_easy_getinfo(curl_, CURLINFO_RESPONSE_CODE, &http_code))) {
@@ -232,6 +237,8 @@ int ObAIFuncClient::send_post(ObJsonObject *data, ObJsonObject *&response)
               allocator_, response_buf.string(), ObJsonInType::JSON_TREE,
               ObJsonInType::JSON_TREE, j_tree))) {
           ret = OB_ERR_INVALID_JSON_TEXT;
+        } else if (OB_ISNULL(j_tree) || j_tree->json_type() != ObJsonNodeType::J_OBJECT) {
+          ret = OB_INVALID_DATA;
         } else {
           response = static_cast<ObJsonObject *>(j_tree);
         }

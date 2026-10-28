@@ -36,6 +36,19 @@ load(
 
 package(default_visibility = ["//visibility:private"])
 
+# Compile SQL utility tests inside the module so private headers stay private.
+cc_library(
+    name = "ai_function_unit_test_cases",
+    testonly = True,
+    srcs = ["//unittest/sql/engine/expr:ai_function_test_sources"],
+    alwayslink = True,
+    deps = [
+        ":sql_runtime_internal_headers",
+        "//bazel/third_party:gtest",
+    ] + SQL_RUNTIME_NATIVE_DEPS,
+    visibility = ["//unittest/sql/engine/expr:__pkg__"],
+)
+
 _SQL_RUNTIME_ONLY_SHARE_DEPS = [
     "//src/share:checksum_persistence",
     "//src/share:cluster_metadata_persistence",
