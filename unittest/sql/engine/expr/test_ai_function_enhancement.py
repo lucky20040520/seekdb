@@ -7,6 +7,7 @@ import json
 import os
 import threading
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import pymysql
 from ai_mock_service import MockAIService, embedding
@@ -308,6 +309,260 @@ class AIFunctionTests(unittest.TestCase):
         finally:
             self.cursor.execute("call DBMS_AI_SERVICE.DROP_AI_MODEL_ENDPOINT('reg_keyless_embed_ep')")
             self.cursor.execute("call DBMS_AI_SERVICE.DROP_AI_MODEL('reg_keyless_embed')")
+
+    def test_prompt_deep_json_and_literal_placeholders(self):
+        leaf = '中文😀"\\\n\x00 literal {0}/{999} '
+        prompt = leaf
+        for _ in range(32):
+            prompt = {'template': '<{0}>', 'args': [prompt]}
+        encoded = json.dumps(prompt, ensure_ascii=False)
+        result = self.completion('cast(%s as json)', (encoded,))
+        self.assertEqual('<' * 32 + leaf + '>' * 32, result)
+        # SQL/JSON-looking argument data must stay literal during expansion.
+        payload = "'); DROP TABLE ordinary_sql; -- {0} \"args\":[]"
+        self.assertEqual(payload + '|' + payload,
+                         self.completion("ai_prompt('{0}|{0}',%s)", (payload,)))
+        for _ in range(40):
+            prompt = {'template': '<{0}>', 'args': [prompt]}
+        with self.assertRaises(pymysql.Error):
+            self.completion('cast(%s as json)', (json.dumps(prompt),))
+        self.assertEqual('recovered', self.completion(args=('recovered',)))
+
+    def test_embedding_request_and_execution_boundaries(self):
+        self.cursor.execute('create table hard_boundary(id int primary key, content text)')
+        try:
+            for size in [1, 63, 64, 65, 127, 128, 129, 1023, 1024, 1025]:
+                with self.subTest(rows=size):
+                    self.cursor.execute('delete from hard_boundary')
+                    rows = [(i, 'boundary-%d-中文😀' % i) for i in range(size)]
+                    self.cursor.executemany('insert into hard_boundary values(%s,%s)', rows)
+                    self.mock.clear()
+                    self.cursor.execute("select id,ai_embed('reg_embed',content,3) from hard_boundary order by id")
+                    output = self.cursor.fetchall()
+                    self.assertEqual(list(range(size)), [row[0] for row in output])
+                    for (i, vector), (_, content) in zip(output, rows):
+                        self.assertEqual(embedding(content, 3), json.loads(vector), i)
+                    inputs = [text for event in self.mock.events for text in event['body']['input']]
+                    self.assertCountEqual([content for _, content in rows], inputs)
+                    self.assertTrue(all(1 <= len(e['body']['input']) <= 64 for e in self.mock.events))
+                    if size > 64:
+                        self.assertGreater(len(self.mock.events), 1)
+                        self.assertTrue(any(len(e['body']['input']) > 1 for e in self.mock.events))
+        finally:
+            self.cursor.execute('drop table hard_boundary')
+
+    def test_embedding_two_expressions_per_row(self):
+        self.cursor.execute('create table hard_two_expr(id int primary key, content text)')
+        rows = [(i, None if i % 13 == 0 else '重复😀-' + str(i % 17)) for i in range(129)]
+        try:
+            self.cursor.executemany('insert into hard_two_expr values(%s,%s)', rows)
+            self.cursor.execute("select id,ai_embed('reg_embed',content,3),"
+                                "ai_embed('reg_embed',concat('second:',content),5) "
+                                'from hard_two_expr order by id')
+            output = self.cursor.fetchall()
+            self.assertEqual(list(range(129)), [row[0] for row in output])
+            for (i, first, second), (_, content) in zip(output, rows):
+                if content is None:
+                    self.assertIsNone(first)
+                    self.assertIsNone(second)
+                else:
+                    self.assertEqual(embedding(content, 3), json.loads(first), i)
+                    self.assertEqual(embedding('second:' + content, 5), json.loads(second), i)
+            by_dimension = {dimension: [] for dimension in [3, 5]}
+            for event in self.mock.events:
+                by_dimension[event['body']['dimensions']].extend(event['body']['input'])
+            self.assertCountEqual([text for _, text in rows if text is not None], by_dimension[3])
+            self.assertCountEqual(['second:' + text for _, text in rows if text is not None], by_dimension[5])
+        finally:
+            self.cursor.execute('drop table hard_two_expr')
+
+    def test_embedding_case_join_and_window(self):
+        self.cursor.execute('create table hard_case(id int primary key, content text, dim int, active int)')
+        self.cursor.execute('create table hard_mask(bucket int primary key)')
+        rows = [(i, 'chosen-' + str(i) if i % 4 == 0 else '',
+                 3 if i % 4 == 0 else 0, int(i % 4 == 0)) for i in range(137)]
+        try:
+            self.cursor.executemany('insert into hard_case values(%s,%s,%s,%s)', rows)
+            self.cursor.executemany('insert into hard_mask values(%s)', [(0,), (2,), (4,)])
+            self.cursor.execute("select b.id,row_number() over(order by b.id desc),"
+                                "case when b.active=1 then ai_embed('reg_embed',b.content,b.dim) else null end "
+                                'from hard_case b join hard_mask m on b.id % 5=m.bucket '
+                                'where b.id>=11 and b.id<130 order by b.id desc')
+            output = self.cursor.fetchall()
+            expected = [row for row in reversed(rows) if 11 <= row[0] < 130 and row[0] % 5 in [0, 2, 4]]
+            self.assertEqual([row[0] for row in expected], [row[0] for row in output])
+            self.assertEqual(list(range(1, len(expected) + 1)), [row[1] for row in output])
+            for (i, _, vector), (_, content, dimension, active) in zip(output, expected):
+                self.assertEqual(embedding(content, dimension) if active else None,
+                                 json.loads(vector) if vector is not None else None, i)
+            requested = [text for e in self.mock.events for text in e['body']['input']]
+            self.assertCountEqual([content for _, content, _, active in expected if active], requested)
+        finally:
+            self.cursor.execute('drop table hard_mask')
+            self.cursor.execute('drop table hard_case')
+
+    def test_embedding_failed_insert_is_atomic(self):
+        self.cursor.execute('create table hard_source(id int primary key, content text)')
+        self.cursor.execute('create table hard_sink(id int primary key, vector longtext)')
+        rows = [(i, 'transaction-' + str(i)) for i in range(131)]
+        try:
+            self.cursor.executemany('insert into hard_source values(%s,%s)', rows)
+            self.endpoint('embed', 'second-batch-failure')
+            self.mock.clear()
+            self.cursor.execute('start transaction')
+            self.cursor.execute("insert into hard_sink values(-1,'keep')")
+            with self.assertRaises(pymysql.Error) as failure:
+                self.cursor.execute("insert into hard_sink select id,ai_embed('reg_embed',content,4) from hard_source")
+            self.assertEqual(4216, failure.exception.args[0])
+            self.assertEqual(2, len(self.mock.events))
+            self.cursor.execute('select id,vector from hard_sink order by id')
+            self.assertEqual([(-1, 'keep')], list(self.cursor.fetchall()))
+            self.cursor.execute('rollback')
+            self.assertEqual(0, self.scalar('select count(*) from hard_sink'))
+            self.endpoint('embed', 'ok')
+            self.mock.clear()
+            self.cursor.execute("insert into hard_sink select id,ai_embed('reg_embed',content,4) from hard_source")
+            self.cursor.execute('select id,vector from hard_sink order by id')
+            output = self.cursor.fetchall()
+            self.assertEqual(list(range(131)), [row[0] for row in output])
+            for (i, vector), (_, content) in zip(output, rows):
+                self.assertEqual(embedding(content, 4), json.loads(vector), i)
+        finally:
+            self.cursor.execute('rollback')
+            self.cursor.execute('drop table hard_sink')
+            self.cursor.execute('drop table hard_source')
+
+    def test_embedding_late_invalid_dimension_rolls_back_insert(self):
+        self.cursor.execute('create table hard_late_dim(id int primary key, content text, dim int)')
+        self.cursor.execute('create table hard_late_sink(id int primary key, vector longtext)')
+        try:
+            for size in [65, 129]:
+                self.cursor.execute('delete from hard_late_dim')
+                self.cursor.executemany('insert into hard_late_dim values(%s,%s,%s)',
+                                        [(i, 'late-' + str(i), 3) for i in range(size)])
+                for invalid in [0, -1, None]:
+                    with self.subTest(rows=size, invalid_dimension=invalid):
+                        self.cursor.execute('update hard_late_dim set dim=%s where id=%s', (invalid, size - 1))
+                        self.mock.clear()
+                        with self.assertRaises(pymysql.Error):
+                            self.cursor.execute("insert into hard_late_sink select id,ai_embed('reg_embed',content,dim) from hard_late_dim")
+                        self.assertGreaterEqual(len(self.mock.events), (size - 1) // 64)
+                        self.assertEqual(0, self.scalar('select count(*) from hard_late_sink'))
+                self.cursor.execute('update hard_late_dim set dim=3')
+                self.cursor.execute("insert into hard_late_sink select id,ai_embed('reg_embed',content,dim) from hard_late_dim")
+                self.assertEqual(size, self.scalar('select count(*) from hard_late_sink'))
+                self.cursor.execute('delete from hard_late_sink')
+        finally:
+            self.cursor.execute('drop table hard_late_sink')
+            self.cursor.execute('drop table hard_late_dim')
+
+    def test_rerank_boundaries_ties_and_nested_fields(self):
+        for size in [19, 20, 21, 39, 40, 41, 101]:
+            with self.subTest(documents=size):
+                # Identical text makes every score tie, including across batches.
+                docs = [{'id': i, 'body': 'same😀', 'meta': {'tags': [i, None, True], 'text': '{0}'}}
+                        for i in range(size)]
+                self.mock.clear()
+                result = json.loads(self.scalar("select ai_rerank('reg_rerank','other',%s,'body')",
+                                                (json.dumps(docs, ensure_ascii=False),)))
+                self.assertEqual(list(range(size)), [item['id'] for item in result])
+                for actual, original in zip(result, docs):
+                    self.assertEqual(original, {key: actual[key] for key in original})
+                    self.assertEqual(len('same😀') % 5, actual['_model_score'])
+                requested = [doc for event in self.mock.events for doc in event['body']['documents']]
+                self.assertEqual(['same😀'] * size, requested)
+                self.assertTrue(all(1 <= len(e['body']['documents']) <= 20 for e in self.mock.events))
+
+    def test_strict_response_types_and_recovery(self):
+        for fault in ['fractional-index', 'negative-index', 'null-index', 'bool-index', 'extra-result', 'object-item']:
+            with self.subTest(function='embed', fault=fault):
+                self.endpoint('embed', fault)
+                with self.assertRaises(pymysql.Error):
+                    self.scalar("select ai_embed('reg_embed','strict-types',3)")
+                self.endpoint('embed', 'ok')
+                self.assertEqual(embedding('recovery', 3), json.loads(self.scalar("select ai_embed('reg_embed','recovery',3)")))
+        for fault in ['fractional-index', 'null-index', 'bool-index', 'extra-result', 'bool-score', 'null-score']:
+            with self.subTest(function='rerank', fault=fault):
+                self.endpoint('rerank', fault)
+                with self.assertRaises(pymysql.Error):
+                    self.scalar("select ai_rerank('reg_rerank','a','[\"a\",\"bb\"]',null)")
+                self.endpoint('rerank', 'ok')
+                result = json.loads(self.scalar("select ai_rerank('reg_rerank','a','[\"a\",\"bb\"]',null)"))
+                self.assertEqual([0, 1], [item['index'] for item in result])
+        self.assertEqual(2, self.scalar('select 1+1'))
+
+    def test_provider_switch_reuses_sql_without_stale_config(self):
+        sql = "select ai_complete('reg_complete',%s,%s)"
+        for provider, suffix, key in [('openai', '/chat/completions', 'key-a'),
+                                      ('oLlAmA', '/api/generate', ''),
+                                      ('OPENAI', '/chat/completions', 'key-b'),
+                                      ('OLLAMA', '/api/generate', '')]:
+            self.endpoint('complete', 'ok', suffix, provider, key)
+            for config in [json.dumps({'temperature': 0.7, 'max_tokens': 17}), None]:
+                tag = 'switch-' + provider
+                self.assertEqual(tag, self.scalar(sql, (tag, config)))
+                event = self.mock.events[-1]
+                body = event['body']
+                if provider.lower() == 'ollama':
+                    self.assertIsNone(event['authorization'])
+                    self.assertIs(body['stream'], False)
+                    self.assertEqual({'temperature': 0.7, 'num_predict': 17} if config else {}, body.get('options', {}))
+                else:
+                    self.assertEqual('Bearer ' + key, event['authorization'])
+                    if config:
+                        self.assertEqual(17, body['max_tokens'])
+                    else:
+                        self.assertNotIn('max_tokens', body)
+                        self.assertNotIn('temperature', body)
+
+    def test_rejected_endpoint_change_preserves_working_endpoint(self):
+        self.endpoint('complete', 'ok', '/api/generate', 'oLlAmA', '')
+        self.cursor.execute("select url,provider from oceanbase.DBA_OB_AI_MODEL_ENDPOINTS where endpoint_name='reg_complete_ep'")
+        original = self.cursor.fetchone()
+        for delta in [{'provider': 'openai'}, {'url': 'file:///tmp/ai-not-http'}, {'scope': 'local'}]:
+            with self.subTest(rejected_change=delta), self.assertRaises(pymysql.Error):
+                self.cursor.execute('call DBMS_AI_SERVICE.ALTER_AI_MODEL_ENDPOINT(%s,%s)',
+                                    ('reg_complete_ep', json.dumps(delta)))
+            self.cursor.execute("select url,provider from oceanbase.DBA_OB_AI_MODEL_ENDPOINTS where endpoint_name='reg_complete_ep'")
+            self.assertEqual(original, self.cursor.fetchone())
+            self.assertEqual('still-usable', self.completion(args=('still-usable',)))
+            self.assertIsNone(self.mock.events[-1]['authorization'])
+
+    def test_concurrent_sessions_do_not_mix_results(self):
+        for kind in ['complete', 'embed', 'rerank']:
+            self.endpoint(kind, 'delayed')
+        barrier = threading.Barrier(6, timeout=15)
+
+        def worker(client):
+            connection = pymysql.connect(host='127.0.0.1', port=int(os.getenv('SEEKDB_TEST_PORT', '2883')),
+                                         user=os.getenv('SEEKDB_TEST_USER', 'root'),
+                                         password=os.getenv('SEEKDB_TEST_PASSWORD', ''),
+                                         database='ai_enhancement_regression', charset='utf8mb4',
+                                         autocommit=True, read_timeout=60)
+            try:
+                cursor = connection.cursor()
+                barrier.wait()
+                for turn in range(10):
+                    tag = 'client-%d-turn-%d-中文😀' % (client, turn)
+                    dimension = 2 + client
+                    docs = [tag + '-other', tag]
+                    cursor.execute('set @client_tag=%s', (tag,))
+                    cursor.execute("select ai_complete('reg_complete',@client_tag),"
+                                   "ai_embed('reg_embed',@client_tag,%s),"
+                                   "ai_rerank('reg_rerank',@client_tag,%s,null)",
+                                   (dimension, json.dumps(docs, ensure_ascii=False)))
+                    complete, vector, ranked = cursor.fetchone()
+                    self.assertEqual(tag, complete)
+                    self.assertEqual(embedding(tag, dimension), json.loads(vector))
+                    self.assertEqual([1, 0], [item['index'] for item in json.loads(ranked)])
+                return client
+            finally:
+                connection.close()
+
+        with ThreadPoolExecutor(max_workers=6) as executor:
+            futures = [executor.submit(worker, client) for client in range(6)]
+            self.assertEqual(list(range(6)), [future.result(timeout=90) for future in futures])
+        self.assertEqual(180, len(self.mock.events))
 
     def test_existing_mysqltest_statements(self):
         """Execute the two supplied SQL suites, honoring their expected errors.

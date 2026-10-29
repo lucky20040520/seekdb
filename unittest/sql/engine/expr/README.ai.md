@@ -21,7 +21,9 @@ All modified C++ implementations and the new C++ test sources also passed
 standalone syntax compilation against the actual generated headers.
 The original 106 SQL source lines in `ai_prompt.test` were retained.
 
-The 16 Python SQL integration cases passed against the actual server. Native
+The 27 Python SQL integration cases passed against the actual server, including
+11 advanced scenarios described in [AI_ADVANCED_CASES.md](AI_ADVANCED_CASES.md).
+Native
 mysqltest result comparison passed for the new enhancement fixture and six
 existing cases: `ai_function.ai_prompt`, `ai_function.ai_endpoint_sql_name`,
 `ai_function.ai_model_ddl`, `ai_function.ai_model_endpoint_ddl`, `expr.expr_ceil`
@@ -72,6 +74,12 @@ HTTP/network failures, duplicate/missing/out-of-range response indices,
 invalid dimensions and vector elements, and failure of the second batch.
 Rerank cases cross the 20-document batch boundary, check stable ties, and
 retain the original IDs and object fields.
+
+Advanced cases cover 64/1,024-row boundaries, two embedding expressions per
+row, CASE/JOIN/window combinations, INSERT statement atomicity after a late
+HTTP or dimension failure, Rerank ties across up to 101 documents, strict
+response types, failed endpoint ALTER state, provider/config switching, and
+six concurrent sessions executing 60 SQL statements and 180 HTTP requests.
 
 The suite also executes the existing `ai_prompt.test` and the new
 `mysqltest/t/ai_function_enhancement.test`, honoring expected-error directives.
