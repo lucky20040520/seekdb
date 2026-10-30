@@ -1652,28 +1652,31 @@ int ObAIFuncPromptObjectUtils::replace_all_str_args_in_template(ObIAllocator &al
         int64_t index = 0;
         int64_t end_pos = i + 1;
         if (end_pos >= template_len || template_ptr[end_pos] < '0' || template_ptr[end_pos] > '9') {
-          ret = OB_INVALID_ARGUMENT;
-        }
-        while (OB_SUCC(ret) && end_pos < template_len && template_ptr[end_pos] != '}') {
-          if (template_ptr[end_pos] < '0' || template_ptr[end_pos] > '9'
-              || index > (INT64_MAX - (template_ptr[end_pos] - '0')) / 10) {
+          // Only braces followed by a decimal index are placeholders.  Other
+          // brace-delimited text, such as {name}, is ordinary template text.
+          ++result_len;
+        } else {
+          while (OB_SUCC(ret) && end_pos < template_len && template_ptr[end_pos] != '}') {
+            if (template_ptr[end_pos] < '0' || template_ptr[end_pos] > '9'
+                || index > (INT64_MAX - (template_ptr[end_pos] - '0')) / 10) {
+              ret = OB_INVALID_ARGUMENT;
+            } else {
+              index = index * 10 + (template_ptr[end_pos] - '0');
+              ++end_pos;
+            }
+          }
+          if (OB_SUCC(ret) && (end_pos >= template_len || index < 0
+                               || static_cast<uint64_t>(index) >= args_count)) {
             ret = OB_INVALID_ARGUMENT;
-          } else {
-            index = index * 10 + (template_ptr[end_pos] - '0');
-            ++end_pos;
+          } else if (OB_SUCC(ret) && result_len > INT64_MAX - arg_values[index].length()) {
+            ret = OB_SIZE_OVERFLOW;
+          } else if (OB_SUCC(ret)) {
+            result_len += arg_values[index].length();
+            i = end_pos;
           }
         }
-        if (OB_SUCC(ret) && (end_pos >= template_len || index < 0
-                             || static_cast<uint64_t>(index) >= args_count)) {
-          ret = OB_INVALID_ARGUMENT;
-        } else if (OB_SUCC(ret) && result_len > INT64_MAX - arg_values[index].length()) {
-          ret = OB_SIZE_OVERFLOW;
-        } else if (OB_SUCC(ret)) {
-          result_len += arg_values[index].length();
-          i = end_pos;
-        }
       } else if (template_ptr[i] == '}') {
-        ret = OB_INVALID_ARGUMENT;
+        ++result_len;
       } else if (result_len == INT64_MAX) {
         ret = OB_SIZE_OVERFLOW;
       } else {
@@ -1696,7 +1699,8 @@ int ObAIFuncPromptObjectUtils::replace_all_str_args_in_template(ObIAllocator &al
         } else if ((template_ptr[i] == '{' || template_ptr[i] == '}') && i + 1 < template_len
                    && template_ptr[i] == template_ptr[i + 1]) {
           result_buf[result_pos++] = template_ptr[i++];
-        } else if (template_ptr[i] == '{') {
+        } else if (template_ptr[i] == '{' && i + 1 < template_len
+                   && template_ptr[i + 1] >= '0' && template_ptr[i + 1] <= '9') {
           int64_t index = 0;
           while (template_ptr[++i] != '}') {
             index = index * 10 + (template_ptr[i] - '0');
