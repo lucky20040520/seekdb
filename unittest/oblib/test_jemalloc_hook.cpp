@@ -26,6 +26,8 @@ using namespace oceanbase::common;
 
 TEST(TestJemallocHook, CrossApiAllocationDomain)
 {
+  ASSERT_TRUE(is_jemalloc_backend());
+
   static const size_t SIZE = 128;
   void *ptr = malloc(SIZE);
   ASSERT_NE(nullptr, ptr);

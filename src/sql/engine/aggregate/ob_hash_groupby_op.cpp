@@ -16,7 +16,7 @@
 
 #define USING_LOG_PREFIX SQL_ENG
 
-#include "rust/config.h"
+#include "config_bridge.h"
 #include "sql/engine/aggregate/ob_hash_groupby_op.h"
 #include "sql/engine/expr/ob_expr_estimate_ndv.h"
 #include "share/rc/ob_server_runtime.h"

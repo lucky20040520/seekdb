@@ -16,7 +16,6 @@
 #ifndef OCEANBASE_COMMON_IALLOCATOR_BASE_H_
 #define OCEANBASE_COMMON_IALLOCATOR_BASE_H_
 
-#include "lib/ob_abort.h"
 #include "lib/ob_define.h"
 #include "lib/alloc/alloc_struct.h"
 

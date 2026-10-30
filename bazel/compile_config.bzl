@@ -33,6 +33,7 @@ _MODULE_INCLUDES = [
     "-Isrc",
     "-Isrc/data_plane/api",
     "-Isrc/query/api",
+    "-Isrc/objit/include",
     "-Isrc/oblib/easy",
     "-Isrc/oblib/easy/include",
     "-Isrc/oblib",

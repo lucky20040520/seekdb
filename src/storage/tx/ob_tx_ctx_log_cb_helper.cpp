@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "rust/config.h"
+#include "config_bridge.h"
 #include "storage/tx/ob_tx_ctx.h"
 
 #include "lib/allocator/ob_malloc.h"

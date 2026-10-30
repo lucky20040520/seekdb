@@ -15,3 +15,6 @@
  */
 
 #include "alloc_assist.h"
+#include "lib/resource/achunk_mgr.h"
+
+using namespace oceanbase::lib;

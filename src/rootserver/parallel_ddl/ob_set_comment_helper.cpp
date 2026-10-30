@@ -15,7 +15,7 @@
  */
 
 #define USING_LOG_PREFIX RS
-#include "rust/config.h"
+#include "config_bridge.h"
 #include "rootserver/parallel_ddl/ob_set_comment_helper.h"
 #include "share/ob_rpc_struct.h"
 #include "share/schema/ob_table_sql_service.h"

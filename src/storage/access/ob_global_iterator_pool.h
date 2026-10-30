@@ -17,7 +17,6 @@
 #ifndef OCEANBASE_STORAGE_OB_GLOBAL_ITERATOR_POOL_H_
 #define OCEANBASE_STORAGE_OB_GLOBAL_ITERATOR_POOL_H_
 #include <stdint.h>
-#include "lib/alloc/alloc_func.h"
 #include "ob_store_row_iterator.h"
 
 namespace oceanbase

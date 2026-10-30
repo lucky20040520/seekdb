@@ -18,13 +18,14 @@
 
 
 
-#include "rust/config.h"
+#include "config_bridge.h"
 #include "lib/stat/ob_diagnostic_info_guard.h"
 #include "lib/time/ob_time_utility.h"
 #include "ob_service.h"
 #include "storage/ob_storage_rpc_arg.h"
 #include "share/rc/ob_server_runtime.h"
 #include "share/ob_telemetry.h"
+#include "lib/alloc/memory_dump.h"
 
 #include "share/ob_version.h"
 
@@ -898,6 +899,11 @@ int ObService::get_wrs_info(const obcall::ObGetWRSArg &arg,
   UNUSEDx(arg, result);
   int ret = OB_NOT_SUPPORTED;
   return ret;
+}
+
+int ObService::refresh_memory_stat()
+{
+  return ObMemoryDump::get_instance().generate_mod_stat_task();
 }
 
 int ObService::build_ddl_local(const ObDDLLocalBuildArg &arg,

@@ -219,6 +219,7 @@
 #define N_FROZEN_VERSION "frozen_version"
 #define N_VERSION "version"
 #define N_OB_VERSION "ob_version"
+#define N_ICU_VERSION "icu_version"
 #define N_CONNECTION_ID "connection_id"
 #define N_SESSIONTIMEZONE "sessiontimezone"
 #define N_DBTIMEZONE "dbtimezone"

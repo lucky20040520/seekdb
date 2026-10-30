@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "rust/config.h"
+#include "config_bridge.h"
 #include "sql/resolver/ddl/ob_alter_table_stmt.h"
 #include "query/session/ob_session_access.h"
 #include "sql/session/ob_sql_session_info.h"

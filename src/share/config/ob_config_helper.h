@@ -134,6 +134,17 @@ private:
   DISALLOW_COPY_AND_ASSIGN(ObConfigTempStoreFormatChecker);
 };
 
+class ObConfigPxBFGroupSizeChecker
+  : public ObConfigChecker
+{
+public:
+  ObConfigPxBFGroupSizeChecker() {}
+  virtual ~ObConfigPxBFGroupSizeChecker() {}
+  bool check(const char *text) const;
+private:
+  DISALLOW_COPY_AND_ASSIGN(ObConfigPxBFGroupSizeChecker);
+};
+
 class ObConfigRowFormatChecker
   : public ObConfigChecker
 {
@@ -212,6 +223,18 @@ public:
 
 private:
   DISALLOW_COPY_AND_ASSIGN(KVCacheMemoryLimitConfigChecker);
+};
+
+class ObCtxMemoryLimitChecker
+  : public ObConfigChecker
+{
+public:
+  ObCtxMemoryLimitChecker() {}
+  virtual ~ObCtxMemoryLimitChecker() {};
+  bool check(const char *text) const;
+  bool check(const char* str, uint64_t& ctx_id, int64_t& limit) const;
+private:
+  DISALLOW_COPY_AND_ASSIGN(ObCtxMemoryLimitChecker);
 };
 
 class ObConfigEnableDefensiveChecker
@@ -322,6 +345,29 @@ private:
     TIME_DAY = 86400LL * 1000 * 1000,
   };
   DISALLOW_COPY_AND_ASSIGN(ObConfigTimeParser);
+};
+
+class ObCallClientAuthMethodChecker
+  : public ObConfigChecker
+{
+public:
+  ObCallClientAuthMethodChecker() {}
+  virtual ~ObCallClientAuthMethodChecker() {}
+  bool check(const char *text) const;
+private:
+  DISALLOW_COPY_AND_ASSIGN(ObCallClientAuthMethodChecker);
+};
+
+class ObCallServerAuthMethodChecker
+  : public ObConfigChecker
+{
+public:
+  ObCallServerAuthMethodChecker() {}
+  virtual ~ObCallServerAuthMethodChecker() {}
+  bool check(const char *text) const;
+  bool is_valid_server_auth_method(const ObString &str) const;
+private:
+  DISALLOW_COPY_AND_ASSIGN(ObCallServerAuthMethodChecker);
 };
 
 class ObConfigSQLTlsVersionChecker
