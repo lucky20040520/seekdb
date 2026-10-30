@@ -49,19 +49,27 @@ int ObExprAIPrompt::calc_result_typeN(ObExprResType &type,
                                     int64_t param_num,
                                     common::ObExprTypeCtx &type_ctx) const 
 {
+  UNUSED(type_ctx);
   int ret = OB_SUCCESS;
-  ObExprResType template_type = types_stack[0];
-  if (!ob_is_string_type(template_type.get_type())) {
+  if (!ob_is_string_type(types_stack[0].get_type())) {
     ret = OB_ERR_INVALID_TYPE_FOR_OP;
   } else {
+    // Do not coerce LOBs to VARCHAR: this loses their locator and truncates
+    // TEXT/LONGTEXT input before eval_ai_prompt can read the real data.
+    if (!ob_is_text_tc(types_stack[0].get_type())) {
+      types_stack[0].set_calc_type(ObVarcharType);
+    }
     types_stack[0].set_calc_collation_type(CS_TYPE_UTF8MB4_BIN);
   }
 
   for (int64_t i = 1; i < param_num && OB_SUCC(ret); i++) {
     if (ob_is_string_type(types_stack[i].get_type())) {
+      if (!ob_is_text_tc(types_stack[i].get_type())) {
+        types_stack[i].set_calc_type(ObVarcharType);
+      }
       types_stack[i].set_calc_collation_type(CS_TYPE_UTF8MB4_BIN);
     } else if (ob_is_json(types_stack[i].get_type())) {
-      // Keep JSON in its native representation, including nested prompts.
+      types_stack[i].set_calc_collation_type(CS_TYPE_UTF8MB4_BIN);
     } else {
       ret = OB_ERR_INVALID_TYPE_FOR_OP;
     }
@@ -91,7 +99,9 @@ int ObExprAIPrompt::eval_ai_prompt(const ObExpr &expr, ObEvalCtx &ctx, ObDatum &
   } else if (template_datum->is_null()) {
     ret = OB_INVALID_ARGUMENT;
   } else if (OB_FAIL(ObTextStringHelper::read_real_string_data(ctx.exec_ctx_, tmp_allocator,
-      *template_datum, arg0->datum_meta_, arg0->obj_meta_.has_lob_header(), template_str))) {
+                                                                 *template_datum, arg0->datum_meta_,
+                                                                 arg0->obj_meta_.has_lob_header(), template_str))) {
+  } else {
   }
 
   if (OB_FAIL(ret)) {
@@ -106,21 +116,20 @@ int ObExprAIPrompt::eval_ai_prompt(const ObExpr &expr, ObEvalCtx &ctx, ObDatum &
       } else if (datum->is_null()) {
         ret = OB_ERR_INVALID_TYPE_FOR_OP;
       } else if (ob_is_string_type(arg->datum_meta_.type_)) {
-        if (OB_FAIL(ObTextStringHelper::read_real_string_data(ctx.exec_ctx_, tmp_allocator,
-            *datum, arg->datum_meta_, arg->obj_meta_.has_lob_header(), arg_str))) {
+        if (OB_FAIL(ObTextStringHelper::read_real_string_data(ctx.exec_ctx_, tmp_allocator, *datum,
+                                                              arg->datum_meta_, arg->obj_meta_.has_lob_header(), arg_str))) {
         } else if (OB_FAIL(ObAIFuncJsonUtils::get_json_string(tmp_allocator, arg_str, arg_json_str))) {
         } else if (OB_FAIL(args_array->append(arg_json_str))) {
         }
       } else if (ob_is_json(arg->datum_meta_.type_)) {
-        ObIJsonBase *json = nullptr;
+        ObIJsonBase *json_arg = NULL;
         bool is_null = false;
-        if (OB_FAIL(ObJsonExprHelper::get_json_doc(expr, ctx, tmp_allocator, i, json, is_null))) {
-        } else if (OB_ISNULL(json) || is_null) {
+        if (OB_FAIL(ObJsonExprHelper::get_json_doc(expr, ctx, tmp_allocator, static_cast<uint16_t>(i),
+                                                    json_arg, is_null))) {
+        } else if (is_null || OB_ISNULL(json_arg)) {
           ret = OB_ERR_INVALID_TYPE_FOR_OP;
-        } else if (OB_FAIL(args_array->append(static_cast<ObJsonNode *>(json)))) {
+        } else if (OB_FAIL(args_array->append(static_cast<ObJsonNode *>(json_arg)))) {
         }
-      } else {
-        ret = OB_ERR_INVALID_TYPE_FOR_OP;
       }
     }
   }
