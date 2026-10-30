@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "rust/config.h"
+#include "config_bridge.h"
 #include "ob_tx_elr_util.h"
 
 namespace oceanbase

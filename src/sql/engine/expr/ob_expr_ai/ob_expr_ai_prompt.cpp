@@ -30,6 +30,18 @@ namespace oceanbase
 namespace sql 
 {
 
+namespace
+{
+// AI_PROMPT accepts character strings. TEXT / LONGTEXT share the ObTextTC type class
+// with the BLOB family; only the collation tells them apart, and CS_TYPE_BINARY means
+// the value is a blob (TINYBLOB / BLOB / MEDIUMBLOB / LONGBLOB), which AI_PROMPT keeps
+// rejecting.  BINARY(n) / VARBINARY(n) are ObStringTC, so they remain valid arguments.
+bool is_ai_prompt_string_type(const ObObjType type, const ObCollationType cs_type)
+{
+  return ob_is_string_tc(type) || (ob_is_text_tc(type) && CS_TYPE_BINARY != cs_type);
+}
+}  // namespace
+
 ObExprAIPrompt::ObExprAIPrompt(common::ObIAllocator &alloc)
     : ObFuncExprOperator(alloc, 
                     T_FUN_SYS_AI_PROMPT, 
@@ -52,7 +64,10 @@ int ObExprAIPrompt::calc_result_typeN(ObExprResType &type,
   int ret = OB_SUCCESS;
   bool is_null_res = false;
   ObExprResType template_type = types_stack[0];
-  if (!ob_is_string_tc(template_type.get_type())) {
+  // TEXT / LONGTEXT are text type class, not string type class, so ob_is_string_tc()
+  // would reject them.  They are valid templates: the calc type below casts them to
+  // varchar, so a TEXT template behaves exactly like a varchar one.  Blobs stay rejected.
+  if (!is_ai_prompt_string_type(template_type.get_type(), template_type.get_collation_type())) {
     ret = OB_ERR_INVALID_TYPE_FOR_OP;
   } else {
     types_stack[0].set_calc_type(ObVarcharType);
@@ -60,7 +75,7 @@ int ObExprAIPrompt::calc_result_typeN(ObExprResType &type,
   }
 
   for (int64_t i = 1; i < param_num && OB_SUCC(ret); i++) {
-    if (ob_is_string_tc(types_stack[i].get_type())) {
+    if (is_ai_prompt_string_type(types_stack[i].get_type(), types_stack[i].get_collation_type())) {
       types_stack[i].set_calc_type(ObVarcharType);
       types_stack[i].set_calc_collation_type(CS_TYPE_UTF8MB4_BIN);
     } else if (ob_is_json(types_stack[i].get_type())) {
@@ -107,7 +122,7 @@ int ObExprAIPrompt::eval_ai_prompt(const ObExpr &expr, ObEvalCtx &ctx, ObDatum &
       ObString arg_str;
       ObJsonString *arg_json_str = NULL;
       if (OB_FAIL(tmp_allocator.eval_arg(arg, ctx, datum))) {
-      } else if (ob_is_string_tc(arg->datum_meta_.type_)) {
+      } else if (is_ai_prompt_string_type(arg->datum_meta_.type_, arg->datum_meta_.cs_type_)) {
         arg_str = datum->get_string();
         if (OB_FAIL(ObAIFuncJsonUtils::get_json_string(tmp_allocator, arg_str, arg_json_str))) {
         } else if (OB_FAIL(args_array->append(arg_json_str))) {

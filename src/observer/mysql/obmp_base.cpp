@@ -16,7 +16,7 @@
 
 #define USING_LOG_PREFIX SERVER
 
-#include "rust/config.h"
+#include "config_bridge.h"
 #include "obmp_base.h"
 
 #include "sql/ob_mysql_end_trans_cb.h"

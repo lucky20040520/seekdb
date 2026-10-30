@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "rust/config.h"
+#include "config_bridge.h"
 #include "observer/ai_service/ob_ai_service_proxy.h"
 #include "share/ob_share_util.h"
 #include "share/ob_dml_sql_splicer.h"
@@ -32,6 +32,18 @@ using namespace oceanbase::common;
 using namespace oceanbase::sqlclient;
 using namespace oceanbase::transaction;
 
+// ObDMLSqlSplicer renders a *null* ObString as SQL NULL (see
+// ObDMLSqlSplicer::append_value(ObHexEscapeSqlStr &...)), while the endpoint
+// read path extracts access_key with EXTRACT_VARCHAR_FIELD_MYSQL, which fails
+// with OB_ERR_NULL_VALUE on a NULL cell.  A provider that needs no credential
+// (OLLAMA) therefore has to persist an empty string instead of NULL.
+static ObHexEscapeSqlStr access_key_sql_str(const ObString &access_key)
+{
+  static const char EMPTY_ACCESS_KEY[] = "";
+  return access_key.empty() ? ObHexEscapeSqlStr(ObString(0, EMPTY_ACCESS_KEY))
+                            : ObHexEscapeSqlStr(access_key);
+}
+
 int ObAiServiceProxy::insert_ai_endpoint(ObMySQLTransaction &trans, const int64_t new_endpoint_version, const ObAiModelEndpointInfo &endpoint)
 {
   int ret = OB_SUCCESS;
@@ -42,10 +54,10 @@ int ObAiServiceProxy::insert_ai_endpoint(ObMySQLTransaction &trans, const int64_
   if (OB_FAIL(sql.add_pk_column("endpoint_id", endpoint.endpoint_id_))) {
   } else if (OB_FAIL(sql.add_pk_column("scope", ObHexEscapeSqlStr(endpoint.scope_)))) {
   } else if (OB_FAIL(sql.add_column("version", new_endpoint_version))) {
-  } else if (OB_FAIL(sql.add_column("endpoint_name", ObHexEscapeSqlStr(endpoint.name_)))) {
+  } else if (OB_FAIL(sql.add_column("endpoint_name", endpoint.name_))) {
   } else if (OB_FAIL(sql.add_column("ai_model_name", ObHexEscapeSqlStr(endpoint.ai_model_name_)))) {
   } else if (OB_FAIL(sql.add_column("url", ObHexEscapeSqlStr(endpoint.url_)))) {
-  } else if (OB_FAIL(sql.add_column("access_key", ObHexEscapeSqlStr(endpoint.access_key_)))) {
+  } else if (OB_FAIL(sql.add_column("access_key", access_key_sql_str(endpoint.access_key_)))) {
   } else if (OB_FAIL(sql.add_column("request_model_name", ObHexEscapeSqlStr(endpoint.request_model_name_)))) {
   } else if (OB_FAIL(sql.add_column("provider", ObHexEscapeSqlStr(endpoint.provider_)))) {
   } else if (OB_FAIL(sql.add_column("parameters", ObHexEscapeSqlStr(endpoint.parameters_)))) {
@@ -74,10 +86,10 @@ int ObAiServiceProxy::update_ai_endpoint(ObMySQLTransaction &trans, const int64_
   if (OB_FAIL(sql.add_pk_column("endpoint_id", endpoint.endpoint_id_))) {
   } else if (OB_FAIL(sql.add_pk_column("scope", ObHexEscapeSqlStr(endpoint.scope_)))) {
   } else if (OB_FAIL(sql.add_column("version", new_endpoint_version))) {
-  } else if (OB_FAIL(sql.add_column("endpoint_name", ObHexEscapeSqlStr(endpoint.name_)))) {
+  } else if (OB_FAIL(sql.add_column("endpoint_name", endpoint.name_))) {
   } else if (OB_FAIL(sql.add_column("ai_model_name", ObHexEscapeSqlStr(endpoint.ai_model_name_)))) {
   } else if (OB_FAIL(sql.add_column("url", ObHexEscapeSqlStr(endpoint.url_)))) {
-  } else if (OB_FAIL(sql.add_column("access_key", ObHexEscapeSqlStr(endpoint.access_key_)))) {
+  } else if (OB_FAIL(sql.add_column("access_key", access_key_sql_str(endpoint.access_key_)))) {
   } else if (OB_FAIL(sql.add_column("request_model_name", ObHexEscapeSqlStr(endpoint.request_model_name_)))) {
   } else if (OB_FAIL(sql.add_column("provider", ObHexEscapeSqlStr(endpoint.provider_)))) {
   } else if (OB_FAIL(sql.add_column("parameters", ObHexEscapeSqlStr(endpoint.parameters_)))) {

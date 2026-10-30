@@ -18,6 +18,10 @@ plugins:
           name: English
           build: true
           link: /developer-guide/en/
+        - locale: zh
+          name: 中文
+          build: true
+          link: /developer-guide/zh/
   - git-authors
 nav:
   - Overview: README.md
@@ -29,8 +33,15 @@ nav:
       - WebAssembly: webassembly.md
       - Homebrew optimization: homebrew.md
   - Development:
+      - Coding conventions: coding-convention.md
+      - Coding standard: coding-standard.md
       - Unit tests: unittest.md
       - mysqltest: mysqltest.md
+      - Debug: debug.md
+  - Internals:
+      - Logging: logging.md
+      - Memory management: memory.md
+      - Containers: container.md
   - Contributing: contributing.md
 
 markdown_extensions:

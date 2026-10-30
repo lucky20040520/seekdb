@@ -114,7 +114,7 @@ pub mod ffi {
     }
 
     unsafe extern "C++" {
-        include!("rust/local/include/callbacks.h");
+        include!("callbacks.h");
         type WriteCallback;
         type RowCallback;
         fn run<'a>(self: &WriteCallback, transaction: &Transaction<'a>) -> i32;

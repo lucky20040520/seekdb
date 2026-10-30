@@ -15,6 +15,7 @@
  */
 
 #include "ob_malloc.h"
+#include "lib/utility/utility.h"
 #include <cstdlib>
 #include <cstring>
 #if defined(__linux__)
@@ -30,8 +31,8 @@
 #include <execinfo.h>
 #endif
 
-#if defined(ENABLE_SANITY) || (defined(OB_HAVE_BUNDLED_JEMALLOC) && defined(__APPLE__))
-// Darwin jemalloc builds have no background-thread support; enabling it leaves bootstrap incomplete.
+#if defined(ENABLE_SANITY) || (defined(OB_HAVE_BUNDLED_JEMALLOC) && defined(__APPLE__) && TARGET_OS_IPHONE)
+// The iOS jemalloc build has no background-thread support; enabling it leaves bootstrap incomplete.
 extern "C" {
 const char *je_malloc_conf =
     "background_thread:false,dirty_decay_ms:1000,muzzy_decay_ms:0";
@@ -47,6 +48,8 @@ namespace oceanbase
 {
 namespace common
 {
+std::atomic<int8_t> g_ob_malloc_backend(
+    static_cast<int8_t>(OB_MALLOC_BACKEND_UNINITIALIZED));
 static constexpr int64_t MEMORY_USAGE_TRACKER_RESOLVER_COUNT = 1024;
 std::atomic<MemoryUsageTrackerResolver>
     g_memory_usage_tracker_resolvers[MEMORY_USAGE_TRACKER_RESOLVER_COUNT];
@@ -54,7 +57,12 @@ std::atomic<MemoryUsageTrackerResolver>
 namespace
 {
 
-#if defined(__APPLE__) && defined(OB_HAVE_BUNDLED_JEMALLOC) && !defined(OB_USE_ASAN)
+ObMallocBackend detect_ob_malloc_backend()
+{
+  return parse_ob_malloc_backend(std::getenv(ob_malloc_backend_env_name()));
+}
+
+#if defined(__APPLE__) && defined(OB_HAVE_BUNDLED_JEMALLOC)
 malloc_zone_t *find_malloc_zone(const char *name)
 {
   malloc_zone_t **zones = nullptr;
@@ -112,26 +120,84 @@ bool promote_malloc_zone(malloc_zone_t *target)
 
 } // namespace
 
-bool restore_allocator_after_fork()
+const char *ob_malloc_backend_env_name()
 {
-#if defined(OB_HAVE_BUNDLED_JEMALLOC) && !defined(OB_USE_ASAN) && !defined(__APPLE__)
-  // Forked children do not inherit background threads, so jemalloc resets the
-  // state to disabled; re-enable it after returning to normal child execution.
-  return jemalloc_enable_background_threads();
-#else
-  return true;
-#endif
+  return "MALLOC_BACKEND";
 }
 
-#if defined(__APPLE__) && defined(OB_HAVE_BUNDLED_JEMALLOC) && !defined(OB_USE_ASAN)
-bool configure_darwin_malloc_zone()
+const char *ob_malloc_backend_name(const ObMallocBackend backend)
 {
-#if TARGET_OS_IPHONE
-  return true;
+  const char *name = "unknown";
+  switch (backend) {
+    case OB_MALLOC_BACKEND_OBMALLOC:
+      name = "obmalloc";
+      break;
+    case OB_MALLOC_BACKEND_JEMALLOC:
+      name = "jemalloc";
+      break;
+    case OB_MALLOC_BACKEND_UNINITIALIZED:
+    case OB_MALLOC_BACKEND_UNKNOWN:
+    default:
+      break;
+  }
+  return name;
+}
+
+ObMallocBackend parse_ob_malloc_backend(const char *name)
+{
+  ObMallocBackend backend = OB_MALLOC_BACKEND_UNKNOWN;
+  if (NULL == name || '\0' == name[0]) {
+#if defined(OB_HAVE_BUNDLED_JEMALLOC)
+    backend = OB_MALLOC_BACKEND_JEMALLOC;
 #else
-  malloc_zone_t *jemalloc_zone = find_malloc_zone("jemalloc_zone");
-  return promote_malloc_zone(jemalloc_zone);
+    backend = OB_MALLOC_BACKEND_OBMALLOC;
 #endif
+  } else if (0 == std::strcmp(name, "obmalloc")) {
+    backend = OB_MALLOC_BACKEND_OBMALLOC;
+  } else if (0 == std::strcmp(name, "jemalloc")) {
+#if defined(OB_HAVE_BUNDLED_JEMALLOC)
+    backend = OB_MALLOC_BACKEND_JEMALLOC;
+#endif
+  }
+  return backend;
+}
+
+ObMallocBackend initialize_ob_malloc_backend()
+{
+  static const ObMallocBackend backend = detect_ob_malloc_backend();
+  g_ob_malloc_backend.store(static_cast<int8_t>(backend), std::memory_order_relaxed);
+  return backend;
+}
+
+bool restore_malloc_backend_after_fork()
+{
+  // Forked children do not inherit background threads, so jemalloc resets the
+  // state to disabled; re-enable it after returning to normal child execution.
+  return !is_jemalloc_backend() || jemalloc_enable_background_threads();
+}
+
+#if defined(__APPLE__)
+bool configure_darwin_malloc_zone(const ObMallocBackend backend)
+{
+  bool configured = false;
+#if TARGET_OS_IPHONE
+  // iOS uses explicit je_* calls and must preserve the hosting app's malloc zone.
+  configured = is_ob_malloc_backend(backend);
+#if defined(OB_HAVE_BUNDLED_JEMALLOC)
+  configured = configured || is_jemalloc_backend(backend);
+#endif
+#elif defined(OB_HAVE_BUNDLED_JEMALLOC)
+  malloc_zone_t *jemalloc_zone = find_malloc_zone("jemalloc_zone");
+  if (is_jemalloc_backend(backend)) {
+    configured = promote_malloc_zone(jemalloc_zone);
+  } else if (is_ob_malloc_backend(backend)) {
+    malloc_zone_t *default_zone = find_malloc_zone("DefaultMallocZone");
+    configured = nullptr == jemalloc_zone || promote_malloc_zone(default_zone);
+  }
+#else
+  configured = is_ob_malloc_backend(backend);
+#endif
+  return configured;
 }
 #endif
 
@@ -159,12 +225,14 @@ int64_t oceanbase::common::ob_malloc_usable_size(void *ptr)
 {
   int64_t usable_size = 0;
   if (nullptr != ptr) {
-#if defined(OB_HAVE_BUNDLED_JEMALLOC) && !defined(OB_USE_ASAN)
-    usable_size = static_cast<int64_t>(jemalloc_usable_size(ptr));
-#elif defined(__linux__)
-    usable_size = static_cast<int64_t>(::malloc_usable_size(ptr));
+#if defined(__linux__)
+    usable_size = is_jemalloc_backend()
+        ? static_cast<int64_t>(jemalloc_usable_size(ptr))
+        : static_cast<int64_t>(::malloc_usable_size(ptr));
 #elif defined(__APPLE__)
-    usable_size = static_cast<int64_t>(::malloc_size(ptr));
+    usable_size = is_jemalloc_backend()
+        ? static_cast<int64_t>(jemalloc_usable_size(ptr))
+        : static_cast<int64_t>(::malloc_size(ptr));
 #elif defined(_WIN32)
     usable_size = static_cast<int64_t>(::_msize(ptr));
 #endif

@@ -15,7 +15,7 @@
  */
 
 #define USING_LOG_PREFIX STORAGE
-#include "rust/config.h"
+#include "config_bridge.h"
 #include "ob_sstable_row_whole_scanner.h"
 
 namespace oceanbase

@@ -133,7 +133,7 @@ int ObExprAIComplete::eval_ai_complete(const ObExpr &expr,
     }
 
     if (OB_FAIL(ret)) {
-    } else if (OB_NOT_NULL(arg_config)) {
+    } else if (OB_NOT_NULL(arg_config) && !arg_config->is_null()) {
       if (OB_FAIL(ObTextStringHelper::read_real_string_data(ctx.exec_ctx_, temp_allocator, *arg_config, expr.args_[2]->datum_meta_, expr.args_[2]->obj_meta_.has_lob_header(), config_str))) {
       } else if (OB_FAIL(ObAIFuncJsonUtils::get_json_object_form_str(temp_allocator, config_str, config))) {
       }
@@ -156,6 +156,11 @@ int ObExprAIComplete::eval_ai_complete(const ObExpr &expr,
       ObAIFuncModel model(temp_allocator, *info, *endpoint_info);
       ObString result;
       if (OB_FAIL(model.call_completion(prompt, config, result))) {
+      } else if (result.empty()) {
+        // A completion that carries no text is a malformed answer, not an empty value
+        // for the column: report it instead of silently writing an empty string.
+        ret = OB_ERR_UNEXPECTED;
+        LOG_USER_ERROR(OB_ERR_UNEXPECTED, "ai_complete, model response is empty");
       } else if (OB_FAIL(ObAIFuncUtils::set_string_result(expr, ctx, res, result))) {
       }
     }

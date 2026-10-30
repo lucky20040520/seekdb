@@ -15,6 +15,9 @@
  * limitations under the License.
  */
 
+#include <unicode/ucnv.h>
+#include <unicode/unistr.h>
+
 #include "lib/oblog/ob_log.h"
 #include "sql/engine/expr/ob_expr_util.h"
 #include "sql/engine/expr/ob_expr_url_codec.h"

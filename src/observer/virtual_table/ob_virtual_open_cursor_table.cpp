@@ -16,7 +16,7 @@
 
 #define USING_LOG_PREFIX SERVER
 
-#include "rust/config.h"
+#include "config_bridge.h"
 #include "ob_virtual_open_cursor_table.h"
 #include "observer/ob_server.h"
 #include "observer/ob_server_runtime_access.h"

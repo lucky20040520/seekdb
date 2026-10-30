@@ -16,7 +16,7 @@
 
 #define USING_LOG_PREFIX SHARE
 
-#include "rust/config.h"
+#include "config_bridge.h"
 #include "lib/compress/ob_compress_util.h"
 #include "ob_ddl_common.h"
 #include <inttypes.h>

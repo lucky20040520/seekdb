@@ -15,7 +15,7 @@
  */
 
 #define USING_LOG_PREFIX SHARE
-#include "rust/config.h"
+#include "config_bridge.h"
 #include "lib/oblog/ob_log_module.h"
 #include "share/rc/ob_server_runtime.h"
 #include "share/rc/ob_server_runtime.h"

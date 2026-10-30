@@ -16,7 +16,7 @@
 
 #define USING_LOG_PREFIX RS
 
-#include "rust/config.h"
+#include "config_bridge.h"
 #include "rootserver/fork_table/ob_fork_table_helper.h"
 #include "common/mysqlclient/ob_isql_connection.h"
 #include "share/rc/ob_server_runtime.h"

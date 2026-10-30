@@ -14,7 +14,7 @@
 
 #![cfg(all(unix, not(target_os = "emscripten")))]
 
-mod api;
+pub mod api;
 mod bridge;
 mod engine;
 mod parameters;

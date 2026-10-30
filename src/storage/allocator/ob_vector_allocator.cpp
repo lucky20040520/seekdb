@@ -28,7 +28,9 @@ namespace share {
 
 int64_t ObVectorAllocator::hold()
 {
-  return used();
+  return common::is_ob_malloc_backend()
+      ? lib::get_allocator_memory_hold(ObCtxIds::VECTOR_CTX_ID) + get_rb_mem_used()
+      : used();
 }
 
 int64_t ObVectorAllocator::get_rb_mem_used()

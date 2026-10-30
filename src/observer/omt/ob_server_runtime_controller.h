@@ -139,6 +139,7 @@ private:
 protected:
       enum class ObRuntimeCreateStep {
         STEP_BEGIN = 0,
+        STEP_CTX_MEM_CONFIG_SETTED,
         STEP_CREATION_PREPARED,
         STEP_RUNTIME_CREATED,
         STEP_FINISH,

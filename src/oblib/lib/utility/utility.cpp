@@ -18,7 +18,6 @@
 
 #include "utility.h"
 #include "lib/utility/ob_printf.h"
-#include "lib/alloc/alloc_func.h"
 #include "dirent.h"
 #if defined(__APPLE__)
 #include <sys/sysctl.h>

@@ -15,7 +15,7 @@
  */
 
 #include "share/config/ob_reload_config.h"
-#include "rust/config.h"
+#include "config_bridge.h"
 
 namespace oceanbase
 {

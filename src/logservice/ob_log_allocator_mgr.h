@@ -17,7 +17,6 @@
 #ifndef _OB_LOG_ALLOCATOR_MGR_H_
 #define _OB_LOG_ALLOCATOR_MGR_H_
 
-#include "lib/lock/ob_rwlock.h"
 #include "share/ob_define.h"
 #include "share/resource/ob_server_runtime_config.h"
 

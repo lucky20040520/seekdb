@@ -15,7 +15,7 @@
  */
 
 #define USING_LOG_PREFIX SQL_ENG
-#include "rust/config.h"
+#include "config_bridge.h"
 #include "ob_physical_plan.h"
 #include "lib/utility/ob_smart_call.h"
 #include "sql/engine/ob_operator_factory.h"
