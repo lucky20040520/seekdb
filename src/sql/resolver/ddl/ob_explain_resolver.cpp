@@ -64,6 +64,25 @@ int ObExplainResolver::resolve(const ParseNode &parse_tree)
         LOG_WARN("failed to generate stmt for child stmt");
       } else {
         explain_stmt->set_explain_query_stmt(static_cast<ObDMLStmt *>(child_stmt));
+        if (parse_tree.reserved_ == 1 && child_stmt->is_select_stmt()) {
+          bool enabled = false;
+          ObSelectStmt *query = static_cast<ObSelectStmt *>(child_stmt);
+          bool file_schema = !query->get_table_items().empty() && query->get_joined_tables().empty();
+          for (int64_t i = 0; file_schema && i < query->get_table_items().count(); ++i) {
+            const TableItem *table = query->get_table_items().at(i);
+            file_schema = table != nullptr && table->is_file_csv_;
+          }
+          // Limit the extension to direct file columns; ordinary DESCRIBE and
+          // EXPLAIN retain the server's existing execution-plan behavior.
+          for (int64_t i = 0; file_schema && i < query->get_select_item_size(); ++i) {
+            const ObRawExpr *expr = query->get_select_item(i).expr_;
+            file_schema = expr != nullptr && expr->is_column_ref_expr();
+          }
+          if (file_schema && OB_FAIL(session_info_->get_enable_file_sql(enabled))) {
+          } else if (file_schema && enabled) {
+            explain_stmt->set_file_schema(true);
+          }
+        }
         ParseNode *format = parse_tree.children_[EXPLAIN_FORMAT];
         if (NULL != format) {
           switch (format->type_) {

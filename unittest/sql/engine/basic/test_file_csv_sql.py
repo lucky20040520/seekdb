@@ -39,6 +39,9 @@ class FileCsvSqlTest(unittest.TestCase):
             self.assertEqual((0,), cursor.fetchone())
             with self.assertRaises(pymysql.Error):
                 cursor.execute('select count(*) from read_csv(%s)', (self.path,))
+            with self.assertRaises(pymysql.Error) as error:
+                cursor.execute('describe select * from read_csv(%s)', (self.path,))
+            self.assertEqual(1235, error.exception.args[0])
             with self.assertRaises(pymysql.Error):
                 cursor.execute('select count(*) from read_json(%s)', (str(Path(self.path).with_name('basic.jsonl')),))
             if self.parquet_path:
@@ -180,6 +183,46 @@ class FileCsvSqlTest(unittest.TestCase):
             self.cursor.execute('select count(*) from read_csv(%s)', (self.path + '.missing',))
         with self.assertRaises(pymysql.Error):
             self.cursor.execute('select count(*) from read_csv(%s,sample_size=1)', (self.path,))
+
+    def test_csv_option_error_codes(self):
+        self.cursor.execute('set session enable_file_sql = on')
+        for option in ("'xml'", "10", "true"):
+            with self.subTest(option=option):
+                with self.assertRaises(pymysql.Error) as error:
+                    self.cursor.execute('select * from read_csv(%s, ' + option + ')', (self.path,))
+                self.assertEqual(1064, error.exception.args[0])
+        with self.assertRaises(pymysql.Error) as error:
+            self.cursor.execute('select * from read_csv(%s, sample_size=10)', (self.path,))
+        self.assertEqual(1235, error.exception.args[0])
+
+    def test_describe_file_columns_and_preserve_explain(self):
+        self.cursor.execute('set session enable_file_sql = on')
+        self.cursor.execute('describe select * from read_csv(%s)', (self.path,))
+        self.assertEqual(('column_name', 'column_type', 'null', 'key', 'default', 'extra'),
+                         tuple(column[0] for column in self.cursor.description))
+        expected = (('id', 'BIGINT', 'NO'), ('name', 'VARCHAR', 'NO'),
+                    ('score', 'DOUBLE', 'NO'), ('active', 'BOOLEAN', 'NO'),
+                    ('day', 'DATE', 'YES'), ('created', 'DATETIME', 'YES'),
+                    ('note', 'VARCHAR', 'NO'), ('id__2', 'BIGINT', 'NO'))
+        self.assertEqual(tuple(row + (None, None, None) for row in expected), self.cursor.fetchall())
+        self.cursor.execute('desc select day as renamed, id from read_csv(%s)', (self.path,))
+        self.assertEqual((('renamed', 'DATE', 'YES', None, None, None),
+                          ('id', 'BIGINT', 'NO', None, None, None)), self.cursor.fetchall())
+        self.cursor.execute('explain select * from read_csv(%s)', (self.path,))
+        self.assertEqual(('Query Plan',), tuple(column[0] for column in self.cursor.description))
+        self.cursor.fetchall()
+        self.cursor.execute('describe select 1')
+        self.assertEqual(('Query Plan',), tuple(column[0] for column in self.cursor.description))
+        self.cursor.fetchall()
+
+    def test_describe_literal_header_does_not_execute_sql(self):
+        self.cursor.execute('set session enable_file_sql = on')
+        with tempfile.TemporaryDirectory(prefix='seekdb-describe-regression-') as directory:
+            path = Path(directory) / 'quoted-header.csv'
+            name = "名字'; select 1; --"
+            path.write_text(name + '\ntext\n', encoding='utf-8')
+            self.cursor.execute('describe select * from read_csv(%s)', (str(path),))
+            self.assertEqual(((name, 'VARCHAR', 'NO', None, None, None),), self.cursor.fetchall())
 
     def test_changed_schema_never_returns_old_types(self):
         self.cursor.execute('set session enable_file_sql = on')

@@ -270,6 +270,8 @@ int ObSql::fill_result_set(ObResultSet &result_set,
       break;
     }
     case stmt::T_EXPLAIN: {
+      const bool file_schema = static_cast<ObExplainStmt *>(stmt)->is_file_schema();
+      static const char *schema_names[] = {"column_name", "column_type", "null", "key", "default", "extra"};
       ObString tname = ObString::make_string("explain_table");
       ObString cname = ObString::make_string("Query Plan");
       field.tname_ = tname;
@@ -281,8 +283,16 @@ int ObSql::fill_result_set(ObResultSet &result_set,
       field.type_.set_collation_type(CS_TYPE_UTF8MB4_GENERAL_CI);
       field.type_.set_collation_level(CS_LEVEL_IMPLICIT);
       field.type_.set_varchar(type_name);
-      if (OB_FAIL(result_set.reserve_field_columns(1))) {
-      } else if (OB_FAIL(result_set.add_field_column(field))) {
+      const int64_t field_count = file_schema ? 6 : 1;
+      if (OB_FAIL(result_set.reserve_field_columns(field_count))) {
+      }
+      for (int64_t i = 0; OB_SUCC(ret) && i < field_count; ++i) {
+        if (file_schema) {
+          field.cname_ = ObString::make_string(schema_names[i]);
+          field.org_cname_ = field.cname_;
+        }
+        if (OB_FAIL(result_set.add_field_column(field))) {
+        }
       }
       break;
     }

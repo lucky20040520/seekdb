@@ -69,7 +69,41 @@ int ObExplainLogPlan::generate_normal_raw_plan()
       ObSEArray<common::ObString, 64> plan_strs;
       const ObString& into_table = explain_stmt->get_into_table();
       const ObString& statement_id = explain_stmt->get_statement_id();
-      if (OB_FAIL(sql_plan.store_sql_plan_for_explain(get_optimizer_context().get_exec_ctx(),
+      if (explain_stmt->is_file_schema()) {
+        const ObSelectStmt *query = static_cast<const ObSelectStmt *>(child_stmt);
+        for (int64_t i = 0; OB_SUCC(ret) && i < query->get_select_item_size(); ++i) {
+          const SelectItem &item = query->get_select_item(i);
+          if (OB_ISNULL(item.expr_)) {
+            ret = OB_ERR_UNEXPECTED;
+          } else {
+            const char *type_name = nullptr;
+            switch (item.expr_->get_result_type().get_type()) {
+              case ObTinyIntType: type_name = "BOOLEAN"; break;
+              case ObIntType: type_name = "BIGINT"; break;
+              case ObDoubleType: type_name = "DOUBLE"; break;
+              case ObDateType: type_name = "DATE"; break;
+              case ObDateTimeType: type_name = "DATETIME"; break;
+              case ObNullType: type_name = "NULL"; break;
+              case ObVarcharType: type_name = "VARCHAR"; break;
+              default: ret = OB_NOT_SUPPORTED; break;
+            }
+            if (OB_SUCC(ret)) {
+              ObObj cells[6];
+              cells[0].set_varchar(item.alias_name_.empty() ? item.expr_name_ : item.alias_name_);
+              cells[1].set_varchar(type_name);
+              cells[2].set_varchar(item.expr_->get_result_type().has_result_flag(NOT_NULL_FLAG) ? "NO" : "YES");
+              for (int64_t j = 0; j < 3; ++j) cells[j].set_collation_type(CS_TYPE_UTF8MB4_GENERAL_CI);
+              for (int64_t j = 3; j < 6; ++j) cells[j].set_null();
+              ObNewRow row;
+              row.cells_ = cells;
+              row.count_ = 6;
+              if (OB_FAIL(values_op->add_row(row))) {
+              }
+            }
+          }
+        }
+        optimizer_context_.set_packed(false);
+      } else if (OB_FAIL(sql_plan.store_sql_plan_for_explain(get_optimizer_context().get_exec_ctx(),
                                                       child_plan,
                                                       explain_stmt->get_explain_type(),
                                                       0 == into_table.length() ? "PLAN_TABLE" : into_table,
@@ -99,8 +133,13 @@ int ObExplainLogPlan::generate_normal_raw_plan()
     }
     get_optimizer_context().get_all_exprs().reuse();
     if (OB_FAIL(ret)) {
-    } else if (OB_FAIL(allocate_output_expr_for_values_op(*values_op))) {
     } else {
+      // Each schema row has six fields; normal EXPLAIN has one plan-text field.
+      const int64_t output_count = explain_stmt->is_file_schema() ? 6 : 1;
+      for (int64_t i = 0; OB_SUCC(ret) && i < output_count; ++i) {
+        if (OB_FAIL(allocate_output_expr_for_values_op(*values_op))) {
+        }
+      }
       get_optimizer_context().set_plan_type(ObPhyPlanType::OB_PHY_PLAN_LOCAL,
                                             ObPhyPlanType::OB_PHY_PLAN_LOCAL,
                                             false);

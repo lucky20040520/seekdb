@@ -3988,7 +3988,11 @@ int ObDMLResolver::resolve_file_csv_item(const ParseNode &parse_tree, TableItem 
         OB_ISNULL(arg->children_) || OB_ISNULL(key = arg->children_[0]) ||
         OB_ISNULL(value = arg->children_[1]) || key->type_ != T_COLUMN_REF ||
         OB_ISNULL(key->str_value_)) {
-      ret = OB_INVALID_ARGUMENT;
+      // Optional arguments use name = value syntax. Positional arguments are
+      // syntax errors, not invalid runtime values (mysqltest expects 1064).
+      ret = OB_ERR_PARSE_SQL;
+      LOG_USER_ERROR(OB_ERR_PARSE_SQL, ob_errpkt_strerror(OB_ERR_PARSER_SYNTAX),
+                     0, "", 1);
     } else {
       const ObString key_name(key->str_len_, key->str_value_);
       if (!is_jsonl && !is_parquet && key_name.case_compare("header") == 0 && !seen_header &&
