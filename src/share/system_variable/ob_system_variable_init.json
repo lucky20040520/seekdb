@@ -1,4 +1,17 @@
 {
+  "enable_file_sql": {
+    "id": 10754,
+    "name": "enable_file_sql",
+    "default_value": "0",
+    "base_value": "0",
+    "data_type": "bool",
+    "info": "Enable SQL access to authorized local files",
+    "flags": "SESSION | NEED_SERIALIZE | INFLUENCE_PLAN",
+    "publish_version": "",
+    "info_cn": "允许 SQL 访问授权的本地文件",
+    "background_cn": "文件 SQL 默认关闭并受 secure_file_priv 限制",
+    "ref_url": ""
+  },
   "auto_increment_increment": {
     "id": 0,
     "name": "auto_increment_increment",

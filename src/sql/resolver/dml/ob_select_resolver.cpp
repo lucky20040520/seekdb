@@ -3107,6 +3107,55 @@ int ObSelectResolver::resolve_into_clause(const ParseNode *node)
       if (T_INTO_OUTFILE == node->type_) { // into outfile
         if (is_in_set_query()) {
           ret = OB_INAPPROPRIATE_INTO;
+        } else if (node->value_ == 1) {
+          bool enabled = false;
+          bool seen_format = false;
+          bool seen_header = false;
+          bool seen_null = false;
+          if (OB_ISNULL(session_info_) || node->num_child_ != 2 || OB_ISNULL(node->children_) ||
+              OB_ISNULL(node->children_[0]) || node->children_[0]->type_ != T_VARCHAR ||
+              OB_ISNULL(node->children_[1])) {
+            ret = OB_INVALID_ARGUMENT;
+          } else if (OB_FAIL(session_info_->get_enable_file_sql(enabled))) {
+          } else if (!enabled) {
+            ret = OB_NOT_SUPPORTED;
+            LOG_USER_ERROR(OB_NOT_SUPPORTED, "file SQL when enable_file_sql is off");
+          } else if (OB_FAIL(resolve_into_const_node(node->children_[0], into_item->outfile_name_))) {
+          } else {
+            into_item->is_file_copy_ = true;
+            const ParseNode *options = node->children_[1];
+            for (int64_t i = 0; OB_SUCC(ret) && i < options->num_child_; ++i) {
+              const ParseNode *opt = options->children_[i];
+              if (OB_ISNULL(opt)) {
+                ret = OB_INVALID_ARGUMENT;
+              } else if (opt->type_ == T_EXTERNAL_FILE_FORMAT_TYPE && !seen_format &&
+                         opt->num_child_ == 1 && OB_NOT_NULL(opt->children_) && OB_NOT_NULL(opt->children_[0]) &&
+                         OB_NOT_NULL(opt->children_[0]->str_value_) &&
+                         ObString(opt->children_[0]->str_len_, opt->children_[0]->str_value_).case_compare("csv") == 0) {
+                seen_format = true;
+              } else if (OB_NOT_NULL(opt->str_value_) && !seen_header &&
+                         ObString(opt->str_len_, opt->str_value_).case_compare("header") == 0) {
+                into_item->copy_header_ = true;
+                seen_header = true;
+              } else if (opt->type_ == T_OP_EQ && !seen_null && opt->num_child_ == 2 &&
+                         OB_NOT_NULL(opt->children_) && OB_NOT_NULL(opt->children_[0]) &&
+                         OB_NOT_NULL(opt->children_[0]->str_value_) && OB_NOT_NULL(opt->children_[1]) &&
+                         opt->children_[1]->type_ == T_VARCHAR && OB_NOT_NULL(opt->children_[1]->str_value_) &&
+                         ObString(opt->children_[0]->str_len_, opt->children_[0]->str_value_).case_compare("nullstr") == 0) {
+                const ObString value(opt->children_[1]->str_len_, opt->children_[1]->str_value_);
+                if (value.length() > 1024 || value.find(',') != nullptr || value.find('"') != nullptr ||
+                    value.find('\r') != nullptr || value.find('\n') != nullptr) {
+                  ret = OB_INVALID_ARGUMENT;
+                } else if (OB_FAIL(ob_write_string(*allocator_, value, into_item->copy_null_))) {
+                } else {
+                  seen_null = true;
+                }
+              } else {
+                ret = OB_NOT_SUPPORTED;
+                LOG_USER_ERROR(OB_NOT_SUPPORTED, "COPY option");
+              }
+            }
+          }
         } else if (node->num_child_ == 3 && NULL != node->children_[1]
             && T_EXTERNAL_FILE_FORMAT == node->children_[1]->type_) { // Handle with `FORMAT`
           if (OB_FAIL(resolve_into_outfile_with_format(node, *into_item))) {

@@ -5460,6 +5460,8 @@ int ObStaticEngineCG::generate_spec(ObLogSelectInto &op, ObSelectIntoSpec &spec,
   } else if (OB_FAIL(spec.external_properties_.store_str(op.get_external_properties()))) {
   } else if (OB_FAIL(spec.user_vars_.init(op.get_user_vars().count()))) {
   } else if (OB_FAIL(spec.select_exprs_.init(op.get_select_exprs().count()))) {
+  } else if (OB_FAIL(spec.copy_column_names_.init(op.is_file_copy() ? op.get_select_exprs().count() : 0))) {
+  } else if (OB_FAIL(ob_write_string(alloc, op.copy_null(), spec.copy_null_))) {
   } else {
     ObString var;
     for (int64_t i = 0; OB_SUCC(ret) && i < op.get_user_vars().count(); ++i) {
@@ -5476,6 +5478,15 @@ int ObStaticEngineCG::generate_spec(ObLogSelectInto &op, ObSelectIntoSpec &spec,
       } else if (OB_FAIL(generate_rt_expr(*select_expr, rt_expr))) {
       } else if (OB_FAIL(spec.select_exprs_.push_back(rt_expr))) {
       }
+      if (OB_SUCC(ret) && op.is_file_copy()) {
+        const ObSelectStmt *stmt = static_cast<const ObSelectStmt *>(op.get_stmt());
+        ObString copied_name;
+        if (OB_ISNULL(stmt) || i >= stmt->get_select_item_size()) {
+          ret = OB_ERR_UNEXPECTED;
+        } else if (OB_FAIL(ob_write_string(alloc, stmt->get_select_item(i).alias_name_, copied_name))) {
+        } else if (OB_FAIL(spec.copy_column_names_.push_back(copied_name))) {
+        }
+      }
     }
     if (OB_SUCC(ret)) {
       spec.into_type_ = op.get_into_type();
@@ -5486,6 +5497,9 @@ int ObStaticEngineCG::generate_spec(ObLogSelectInto &op, ObSelectIntoSpec &spec,
       spec.cs_type_ = op.get_cs_type();
       spec.parallel_ = op.get_parallel();
       spec.is_overwrite_ = op.get_is_overwrite();
+      spec.is_file_copy_ = op.is_file_copy();
+      spec.copy_header_ = op.copy_header();
+      if (spec.is_file_copy_) spec.max_batch_size_ = 0;
       spec.plan_->need_drive_dml_query_ = true;
     }
   }
@@ -5509,6 +5523,27 @@ int ObStaticEngineCG::generate_spec(ObLogFunctionTable &op, ObFunctionTableSpec 
     ret = OB_ERR_UNEXPECTED;
   } else if (OB_FAIL(generate_rt_expr(*value_raw_expr, value_expr))) {
   } else {
+    const TableItem *table_item = op.get_stmt()->get_table_item_by_id(op.get_table_id());
+    if (OB_ISNULL(table_item)) {
+      ret = OB_ERR_UNEXPECTED;
+    } else if (table_item->is_file_csv_) {
+      spec.is_file_csv_ = true;
+      spec.is_file_jsonl_ = table_item->is_file_jsonl_;
+      spec.is_file_parquet_ = table_item->is_file_parquet_;
+      spec.is_file_glob_ = table_item->is_file_glob_;
+      spec.file_csv_header_ = table_item->file_csv_header_;
+      OZ (spec.file_column_indexes_.init(op.get_stmt()->get_column_size()));
+      OZ (spec.file_column_names_.init(table_item->file_column_names_.count()));
+      OZ (spec.file_column_types_.init(table_item->file_column_types_.count()));
+      OZ (spec.file_column_nullable_.init(table_item->file_column_nullable_.count()));
+      for (int64_t i = 0; OB_SUCC(ret) && i < table_item->file_column_names_.count(); ++i) {
+        ObString copied_name;
+        OZ (ob_write_string(alloc, table_item->file_column_names_.at(i), copied_name));
+        OZ (spec.file_column_names_.push_back(copied_name));
+        OZ (spec.file_column_types_.push_back(table_item->file_column_types_.at(i)));
+        OZ (spec.file_column_nullable_.push_back(table_item->file_column_nullable_.at(i)));
+      }
+    }
     spec.has_correlated_expr_ = value_raw_expr->has_flag(CNT_DYNAMIC_PARAM);
     spec.value_expr_ = value_expr;
     for (int64_t i = 0; OB_SUCC(ret) && i < op.get_output_exprs().count(); ++i) {
@@ -5526,6 +5561,9 @@ int ObStaticEngineCG::generate_spec(ObLogFunctionTable &op, ObFunctionTableSpec 
         OZ (mark_expr_self_produced(col_item->expr_));
         OZ (generate_rt_expr(*col_item->expr_, rt_expr));
         OZ (spec.column_exprs_.push_back(rt_expr));
+        if (OB_SUCC(ret) && spec.is_file_csv_) {
+          OZ (spec.file_column_indexes_.push_back(col_item->column_id_ - OB_APP_MIN_COLUMN_ID));
+        }
       }
     }
   }

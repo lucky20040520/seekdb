@@ -181,15 +181,33 @@ int TableItem::deep_copy(ObIRawExprCopier &expr_copier,
   skip_locked_ = other.skip_locked_;
   node_ = other.node_; // should deep copy ? seems to be unnecessary
   snapshot_query_type_ = other.snapshot_query_type_;
+  is_file_csv_ = other.is_file_csv_;
+  is_file_jsonl_ = other.is_file_jsonl_;
+  is_file_parquet_ = other.is_file_parquet_;
+  is_file_glob_ = other.is_file_glob_;
+  file_csv_header_ = other.file_csv_header_;
+  if (is_file_csv_) {
+    if (OB_ISNULL(allocator)) {
+      ret = OB_INVALID_ARGUMENT;
+    } else {
+      file_column_names_.set_block_allocator(ModulePageAllocator(*allocator));
+      file_column_types_.set_block_allocator(ModulePageAllocator(*allocator));
+      file_column_nullable_.set_block_allocator(ModulePageAllocator(*allocator));
+    }
+  }
   // ddl related
   ddl_schema_version_ = other.ddl_schema_version_;
   ddl_table_id_ = other.ddl_table_id_;
   ref_query_ = other.ref_query_;
   SampleInfo *buf = NULL;
-  if (is_json_table() 
+  if (OB_FAIL(ret)) {
+  } else if (is_json_table()
       && OB_FAIL(deep_copy_json_table_def(*other.json_table_def_, expr_copier, allocator))) {
   } else if (OB_FAIL(expr_copier.copy(other.snapshot_query_expr_, snapshot_query_expr_))) {
   } else if (OB_FAIL(expr_copier.copy(other.function_table_expr_, function_table_expr_))) {
+  } else if (OB_FAIL(file_column_names_.assign(other.file_column_names_))) {
+  } else if (OB_FAIL(file_column_types_.assign(other.file_column_types_))) {
+  } else if (OB_FAIL(file_column_nullable_.assign(other.file_column_nullable_))) {
   } else if (OB_FAIL(part_ids_.assign(other.part_ids_))) {
   } else if (OB_FAIL(part_names_.assign(other.part_names_))) {
   } else if (is_values_table() &&

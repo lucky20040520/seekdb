@@ -258,6 +258,7 @@ _SHARE_RUNTIME_GROUP_OBLIB_DEPS = {
         "//src/oblib:oblib_memory_runtime_base",
         "//src/oblib:oblib_memory_utilities",
         "//src/oblib:oblib_mysql_client_runtime",
+        "//src/oblib:oblib_mysql_client_services",
     ],
     "ob_share_geo_0": [
         "//src/oblib:oblib_collections_advanced",

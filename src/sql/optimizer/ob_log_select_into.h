@@ -44,6 +44,9 @@ public:
         escaped_cht_(),
         cs_type_(CS_TYPE_INVALID),
         is_overwrite_(false),
+        is_file_copy_(false),
+        copy_header_(false),
+        copy_null_(),
         external_properties_()
   {
   }
@@ -164,6 +167,11 @@ public:
   {
     return external_properties_;
   }
+  void set_file_copy(bool value, bool header, const common::ObString &null_value)
+  { is_file_copy_ = value; copy_header_ = header; copy_null_ = null_value; }
+  bool is_file_copy() const { return is_file_copy_; }
+  bool copy_header() const { return copy_header_; }
+  common::ObString copy_null() const { return copy_null_; }
   const common::ObIArray<ObRawExpr*> &get_select_exprs() const { return select_exprs_; }
   common::ObIArray<ObRawExpr*> &get_select_exprs() { return select_exprs_; }
   virtual int est_cost() override;
@@ -187,6 +195,9 @@ private:
   common::ObObj escaped_cht_;
   common::ObCollationType cs_type_;
   bool is_overwrite_;
+  bool is_file_copy_;
+  bool copy_header_;
+  common::ObString copy_null_;
   common::ObString external_properties_;
 };
 }

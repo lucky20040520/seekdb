@@ -27,16 +27,28 @@ namespace sql
 {
 
 class ObExpr;
+struct FileCsvExecState;
 class ObFunctionTableSpec : public ObOpSpec
 {
 OB_UNIS_VERSION_V(1);
 public:
   ObFunctionTableSpec(common::ObIAllocator &alloc, const ObPhyOperatorType type)
-    : ObOpSpec(alloc, type), value_expr_(nullptr), column_exprs_(alloc), has_correlated_expr_(false)
+    : ObOpSpec(alloc, type), value_expr_(nullptr), column_exprs_(alloc), has_correlated_expr_(false),
+      is_file_csv_(false), is_file_jsonl_(false), is_file_parquet_(false), is_file_glob_(false), file_csv_header_(true), file_column_indexes_(alloc),
+      file_column_names_(alloc), file_column_types_(alloc), file_column_nullable_(alloc)
   {}
   ObExpr *value_expr_;
   common::ObFixedArray<ObExpr*, common::ObIAllocator> column_exprs_;
   bool has_correlated_expr_;
+  bool is_file_csv_;
+  bool is_file_jsonl_;
+  bool is_file_parquet_;
+  bool is_file_glob_;
+  bool file_csv_header_;
+  common::ObFixedArray<int64_t, common::ObIAllocator> file_column_indexes_;
+  common::ObFixedArray<common::ObString, common::ObIAllocator> file_column_names_;
+  common::ObFixedArray<int64_t, common::ObIAllocator> file_column_types_;
+  common::ObFixedArray<int64_t, common::ObIAllocator> file_column_nullable_;
 };
 
 class ObFunctionTableOp : public ObOperator
@@ -48,7 +60,8 @@ public:
     already_calc_(false),
     row_count_(0),
     col_count_(0),
-    value_table_(NULL) 
+    value_table_(NULL),
+    file_csv_state_(nullptr)
   {}
 
   virtual int inner_open() override;
@@ -60,6 +73,8 @@ public:
 private:
   int inner_get_next_row_udf();
   int inner_get_next_row_sys_func();
+  int inner_open_file_csv();
+  int inner_get_next_row_file_csv();
   int get_current_result(common::ObObj &result);
   int64_t node_idx_;
   bool already_calc_;
@@ -67,6 +82,7 @@ private:
   int64_t col_count_;
   common::ObObj value_;
   pl::ObPLCollection *value_table_;
+  FileCsvExecState *file_csv_state_;
   int (ObFunctionTableOp::*next_row_func_)();
 };
 

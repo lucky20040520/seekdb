@@ -28,6 +28,7 @@ namespace oceanbase
 {
 namespace sql
 {
+struct FileCopyState;
 class ObSelectIntoOpInput : public ObOpInput
 {
   OB_UNIS_VERSION_V(1);
@@ -71,6 +72,10 @@ public:
       parallel_(1),
       buffer_size_(DEFAULT_BUFFER_SIZE),
       is_overwrite_(false),
+      is_file_copy_(false),
+      copy_header_(false),
+      copy_null_(),
+      copy_column_names_(alloc),
       external_properties_(alloc)
   {
   }
@@ -90,6 +95,10 @@ public:
   int64_t parallel_;
   int64_t buffer_size_;
   bool is_overwrite_;
+  bool is_file_copy_;
+  bool copy_header_;
+  common::ObString copy_null_;
+  common::ObFixedArray<common::ObString, common::ObIAllocator> copy_column_names_;
   ObExternalFileFormat::StringData external_properties_;
   static const int64_t DEFAULT_MAX_FILE_SIZE = 256LL * 1024 * 1024;
   static const int64_t DEFAULT_BUFFER_SIZE = 1LL * 1024 * 1024;
@@ -126,7 +135,8 @@ public:
       external_properties_(),
       format_type_(ObExternalFileFormat::FormatType::CSV_FORMAT),
       block_id_(0),
-      need_commit_(true)
+      need_commit_(true),
+      file_copy_state_(nullptr)
   {
   }
 
@@ -196,6 +206,8 @@ public:
 
 private:
   int init_env_common();
+  int open_file_copy();
+  int run_file_copy();
   int init_csv_env();
   void set_csv_format_options();
 
@@ -292,6 +304,7 @@ private:
   ObExternalFileFormat::FormatType format_type_;
   uint32_t block_id_;
   bool need_commit_;
+  FileCopyState *file_copy_state_;
   static const int64_t SHARED_BUFFER_SIZE = 2LL * 1024 * 1024;
 
 };
