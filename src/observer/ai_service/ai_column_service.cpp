@@ -35,11 +35,18 @@ struct DiagnosticsGuard {
   ObWarningBuffer *outer = ob_get_tsi_warning_buffer();
   DiagnosticsGuard() { ob_setup_tsi_warning_buffer(&local); }
   ~DiagnosticsGuard() { ob_setup_tsi_warning_buffer(outer); }
+  void propagate_error() {
+    if (outer != nullptr && local.get_err_code() != OB_MAX_ERROR_CODE) {
+      outer->set_error(local.get_err_msg(), local.get_err_code());
+      outer->set_sql_state(local.get_sql_state());
+    }
+  }
 };
 struct DdlCleanup {
-  std::function<void()> rollback;
+  std::function<int()> rollback;
   bool complete = false;
-  ~DdlCleanup() { if (!complete) { try { rollback(); } catch (...) {} } }
+  int run() { complete = true; return rollback(); }
+  ~DdlCleanup() { if (!complete) { try { int ret = run(); if (ret != OB_SUCCESS) LOG_WARN("AI column DDL cleanup failed", K(ret)); } catch (...) {} } }
 };
 using Rows = std::vector<std::vector<std::string>>;
 const char *META = "oceanbase.__all_ai_column";
@@ -141,6 +148,82 @@ std::string text_cast(const std::string &value) { return "CAST(" + value + " AS 
 std::string key_condition(const std::string &database, const std::string &table)
 {
   return "d.database_name=" + literal(database) + " AND t.table_name=" + literal(table);
+}
+
+int table_identity(const std::string &database, const std::string &table, uint64_t &id)
+{
+  Rows rows;
+  int ret = read_rows(*GCTX.sql_proxy_, "SELECT CAST(t.table_id AS CHAR) FROM oceanbase.__all_table t"
+      " JOIN oceanbase.__all_database d ON d.database_id=t.database_id WHERE " + key_condition(database, table), 1, rows);
+  if (OB_SUCC(ret)) {
+    if (rows.size() != 1) ret = OB_SCHEMA_ERROR;
+    else id = std::stoull(rows[0][0]);
+  }
+  return ret;
+}
+
+// Only the hidden-column ALTER is retried. A successful earlier CREATE/ADD
+// must never be replayed, and a replacement table must never be modified.
+int add_hidden_columns(sql::ObSQLSessionInfo &session, const std::string &sql_text,
+                       const std::string &database, const std::string &table, uint64_t table_id,
+                       const std::string &state, const std::string &request, const std::string &spec)
+{
+  int ret = OB_SUCCESS;
+  constexpr int max_attempts = 8;
+  for (int attempt = 0; attempt < max_attempts; ++attempt) {
+    DiagnosticsGuard diagnostics;
+    ret = user_write(session, sql_text);
+    if (ret != OB_EAGAIN || attempt + 1 == max_attempts) {
+      if (ret != OB_SUCCESS) diagnostics.propagate_error();
+      break;
+    }
+    int status = OB_SUCCESS;
+    if (session.is_terminate(status)) { ret = status; break; }
+    if (THIS_WORKER.is_timeout()) { ret = OB_TIMEOUT; break; }
+    Rows rows;
+    ret = read_rows(*GCTX.sql_proxy_, "SELECT CAST(t.table_id AS CHAR),CAST(COUNT(c.column_id) AS CHAR)"
+        " FROM oceanbase.__all_table t JOIN oceanbase.__all_database d ON d.database_id=t.database_id"
+        " LEFT JOIN oceanbase.__all_column c ON c.table_id=t.table_id AND c.column_name IN (" +
+        literal(state) + "," + literal(request) + "," + literal(spec) + ") WHERE " +
+        key_condition(database, table) + " GROUP BY t.table_id", 2, rows);
+    if (OB_FAIL(ret)) break;
+    if (rows.size() != 1 || std::stoull(rows[0][0]) != table_id || rows[0][1] != "0") {
+      ret = OB_SCHEMA_ERROR;
+      break;
+    }
+    const int64_t delay = std::min<int64_t>(100000, 10000L << attempt);
+    const int64_t remain = THIS_WORKER.get_timeout_remain();
+    if (remain <= 0) { ret = OB_TIMEOUT; break; }
+    ob_usleep(std::min(delay, remain));
+  }
+  return ret;
+}
+
+int trigger_ddl(const std::string &sql_text, const std::string &database, const std::string &table,
+                uint64_t table_id, const std::string &trigger_name, bool creating)
+{
+  int ret = OB_SUCCESS;
+  for (int attempt = 0; attempt < 8; ++attempt) {
+    ret = write_sql(*GCTX.sql_proxy_, sql_text);
+    if (ret != OB_EAGAIN || attempt == 7) break;
+    if (THIS_WORKER.is_timeout()) { ret = OB_TIMEOUT; break; }
+    uint64_t current_id = 0;
+    ret = table_identity(database, table, current_id);
+    if (OB_FAIL(ret)) break;
+    if (current_id != table_id) { ret = OB_SCHEMA_ERROR; break; }
+    if (creating) {
+      Rows rows;
+      ret = read_rows(*GCTX.sql_proxy_, "SELECT CAST(COUNT(*) AS CHAR) FROM information_schema.triggers"
+          " WHERE trigger_schema=" + literal(database) + " AND trigger_name=" + literal(trigger_name), 1, rows);
+      if (OB_FAIL(ret)) break;
+      // Never assume an existing trigger is ours or silently accept it.
+      if (rows.size() != 1 || rows[0][0] != "0") { ret = OB_SCHEMA_ERROR; break; }
+    }
+    const int64_t remain = THIS_WORKER.get_timeout_remain();
+    if (remain <= 0) { ret = OB_TIMEOUT; break; }
+    ob_usleep(std::min<int64_t>(remain, std::min<int64_t>(100000, 10000L << attempt)));
+  }
+  return ret;
 }
 
 bool contains_name(const std::vector<Token> &tokens, const std::string &name)
@@ -456,35 +539,81 @@ int AiColumnService::create_columns(const std::string &text, const std::vector<T
     " ON d.database_id=t.database_id WHERE " + key_condition(name.first, name.second), 1, existing);
   if (OB_FAIL(ret)) return ret;
   if (tokens[0].is("create") && !existing.empty() && existing[0][0] != "0") return user_write(session, lowered);
+  if (tokens[0].is("alter")) {
+    // Detect reserved-name collisions before changing the user table. The
+    // outer SQL retry controller can replay a duplicate-column error, which
+    // would otherwise repeatedly add and remove the visible result column.
+    for (const auto &d : definitions) {
+      Rows collisions;
+      ret = read_rows(*GCTX.sql_proxy_, "SELECT CAST(COUNT(*) AS CHAR) FROM oceanbase.__all_table t"
+          " JOIN oceanbase.__all_database d ON d.database_id=t.database_id"
+          " JOIN oceanbase.__all_column c ON c.table_id=t.table_id WHERE " + key_condition(name.first, name.second) +
+          " AND c.column_name IN (" + literal("__ai_state_" + d.name) + "," + literal("__ai_request_" + d.name) +
+          "," + literal("__ai_spec_" + d.name) + ")", 1, collisions);
+      if (OB_FAIL(ret)) return ret;
+      if (collisions.size() != 1 || collisions[0][0] != "0") {
+        LOG_USER_ERROR(OB_INVALID_ARGUMENT, "AI column hidden name conflicts with existing column");
+        return OB_INVALID_ARGUMENT;
+      }
+    }
+  }
   const std::vector<Column> old_columns = all;
   std::vector<std::string> hidden_added;
-  ret = user_write(session, lowered);
+  // A concurrent creator may win after the existence check. In that case
+  // IF NOT EXISTS must remain a no-op and must not claim its table for cleanup.
+  if (tokens[0].is("create") && tokens[2].is("if") && tokens.size() > 4 &&
+      tokens[3].is("not") && tokens[4].is("exists")) {
+    std::string exclusive = lowered;
+    exclusive.erase(tokens[2].begin, tokens[4].end - tokens[2].begin);
+    {
+      DiagnosticsGuard diagnostics;
+      ret = user_write(session, exclusive);
+      if (ret != OB_SUCCESS && ret != OB_ERR_TABLE_EXIST) diagnostics.propagate_error();
+    }
+    if (ret == OB_ERR_TABLE_EXIST) return user_write(session, lowered);
+  } else {
+    ret = user_write(session, lowered);
+  }
   if (OB_FAIL(ret)) return ret;
-  DdlCleanup cleanup{[&]() {
+  uint64_t owned_table_id = 0;
+  DdlCleanup cleanup{[&]() -> int {
+    uint64_t current_id = 0;
+    int cleanup_ret = table_identity(name.first, name.second, current_id);
+    if (cleanup_ret != OB_SUCCESS || owned_table_id == 0 || current_id != owned_table_id) {
+      LOG_WARN("AI column cleanup cannot establish table ownership", K(cleanup_ret), K(owned_table_id), K(current_id));
+      return cleanup_ret != OB_SUCCESS ? cleanup_ret : OB_SCHEMA_ERROR;
+    }
+    int first_error = OB_SUCCESS;
+    auto record = [&](int code) { if (first_error == OB_SUCCESS && code != OB_SUCCESS) first_error = code; };
     if (tokens[0].is("create")) {
-      (void)user_write(session, "DROP TABLE " + identifier(name.first) + "." + identifier(name.second));
+      record(user_write(session, "DROP TABLE " + identifier(name.first) + "." + identifier(name.second)));
     } else {
       for (const auto &d : definitions) {
         const std::string table = identifier(name.first) + "." + identifier(name.second);
         if (std::find(hidden_added.begin(), hidden_added.end(), d.name) != hidden_added.end()) {
-          (void)user_write(session, "ALTER TABLE " + table + " DROP COLUMN " + identifier("__ai_state_" + d.name) +
-            ", DROP COLUMN " + identifier("__ai_request_" + d.name) + ", DROP COLUMN " + identifier("__ai_spec_" + d.name));
+          record(user_write(session, "ALTER TABLE " + table + " DROP COLUMN " + identifier("__ai_state_" + d.name) +
+            ", DROP COLUMN " + identifier("__ai_request_" + d.name) + ", DROP COLUMN " + identifier("__ai_spec_" + d.name)));
         }
-        (void)user_write(session, "ALTER TABLE " + table + " DROP COLUMN " + identifier(d.name));
+        record(user_write(session, "ALTER TABLE " + table + " DROP COLUMN " + identifier(d.name)));
       }
     }
-    for (const auto &d : definitions) (void)write_sql(*GCTX.sql_proxy_, std::string("DELETE FROM ") + META + " WHERE database_name=" +
-      literal(name.first) + " AND table_name=" + literal(name.second) + " AND column_name=" + literal(d.name));
-    if (!old_columns.empty()) (void)install_triggers(old_columns);
-    (void)reload_columns();
+    for (const auto &d : definitions) record(write_sql(*GCTX.sql_proxy_, std::string("DELETE FROM ") + META + " WHERE table_id=" +
+      number(owned_table_id) + " AND column_name=" + literal(d.name)));
+    if (!old_columns.empty()) record(install_triggers(old_columns));
+    record(reload_columns());
+    return first_error;
   }};
+  auto perform = [&]() -> int {
+  ret = table_identity(name.first, name.second, owned_table_id);
+  if (OB_FAIL(ret)) return ret;
   for (const auto &d : definitions) {
     Column c;
     c.database = name.first; c.table = name.second; c.definition = d;
     const std::string hidden = " COMMENT '__seekdb_ai_hidden'";
-    ret = user_write(session, "ALTER TABLE " + c.qualified_table() + " ADD COLUMN " + identifier(c.state_name()) +
+    ret = add_hidden_columns(session, "ALTER TABLE " + c.qualified_table() + " ADD COLUMN " + identifier(c.state_name()) +
       " VARCHAR(8) DEFAULT 'PENDING'" + hidden + ", ADD COLUMN " + identifier(c.request_name()) +
-      " VARCHAR(64)" + hidden + ", ADD COLUMN " + identifier(c.spec_name()) + " LONGTEXT" + hidden);
+      " VARCHAR(64)" + hidden + ", ADD COLUMN " + identifier(c.spec_name()) + " LONGTEXT" + hidden,
+      c.database, c.table, owned_table_id, c.state_name(), c.request_name(), c.spec_name());
     if (OB_FAIL(ret)) return ret;
     hidden_added.push_back(d.name);
     Rows schema;
@@ -500,7 +629,7 @@ int AiColumnService::create_columns(const std::string &text, const std::vector<T
       if (r[2] == c.request_name()) request_id = std::stoull(r[1]);
       if (r[2] == c.spec_name()) spec_id = std::stoull(r[1]);
     }
-    if (!c.table_id || !c.column_id || !state_id || !request_id || !spec_id) return OB_ERR_UNEXPECTED;
+    if (c.table_id != owned_table_id || !c.column_id || !state_id || !request_id || !spec_id) return OB_ERR_UNEXPECTED;
     std::string expr = d.expression + (d.prompt.empty() ? "" : " /* " + d.prompt + " */");
     ret = write_sql(*GCTX.sql_proxy_, std::string("INSERT INTO ") + META + " VALUES(" + number(c.table_id) + "," + number(c.column_id) + "," +
       literal(d.name) + "," + literal(c.database) + "," + literal(c.table) + "," + number(state_id) + "," + number(request_id) + "," + number(spec_id) + "," + number(c.version) + "," +
@@ -518,7 +647,17 @@ int AiColumnService::create_columns(const std::string &text, const std::vector<T
     }
     ret = write_sql(*GCTX.sql_proxy_, "UPDATE " + identifier(name.first) + "." + identifier(name.second) + " SET " + assignments);
   }
-  cleanup.complete = OB_SUCC(ret);
+  return ret;
+  };
+  ret = perform();
+  if (OB_SUCC(ret)) cleanup.complete = true;
+  else {
+    int cleanup_ret = cleanup.run();
+    if (cleanup_ret != OB_SUCCESS) {
+      LOG_WARN("AI column DDL failed and cleanup was incomplete", K(ret), K(cleanup_ret));
+      ret = cleanup_ret;
+    }
+  }
   return ret;
 }
 
@@ -568,9 +707,11 @@ int AiColumnService::install_triggers(const std::vector<Column> &columns)
   const char *events[] = {"INSERT", "UPDATE", "DELETE"};
   const std::string bodies[] = {insert, update, remove};
   for (size_t i = 0; i < 3 && OB_SUCC(ret); ++i) {
-    std::string trigger = identifier(first.database) + "." + identifier("__ai_" + number(first.table_id) + "_" + events[i]);
-    ret = write_sql(*GCTX.sql_proxy_, "DROP TRIGGER IF EXISTS " + trigger);
-    if (OB_SUCC(ret)) ret = write_sql(*GCTX.sql_proxy_, "CREATE TRIGGER " + trigger + " BEFORE " + events[i] + " ON " + first.qualified_table() + " FOR EACH ROW " + bodies[i]);
+    const std::string trigger_name = "__ai_" + number(first.table_id) + "_" + events[i];
+    std::string trigger = identifier(first.database) + "." + identifier(trigger_name);
+    ret = trigger_ddl("DROP TRIGGER IF EXISTS " + trigger, first.database, first.table, first.table_id, trigger_name, false);
+    if (OB_SUCC(ret)) ret = trigger_ddl("CREATE TRIGGER " + trigger + " BEFORE " + events[i] + " ON " + first.qualified_table() + " FOR EACH ROW " + bodies[i],
+                                       first.database, first.table, first.table_id, trigger_name, true);
   }
   return ret;
 }

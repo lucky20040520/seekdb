@@ -201,7 +201,8 @@ class AiColumnIntegration(unittest.TestCase):
         with open("/tmp/seekdb-ai-column-regression-restart.log", "a") as output:
             process = subprocess.Popen(args, stdin=subprocess.DEVNULL, stdout=output,
                                        stderr=subprocess.STDOUT, start_new_session=True)
-        Path("/tmp/seekdb-ai-column-instance.pid").write_text(str(process.pid))
+        pid_file = Path(os.environ.get("SEEKDB_TEST_PID_FILE", "/tmp/seekdb-ai-column-instance.pid"))
+        pid_file.write_text(str(process.pid))
         for _ in range(300):
             try:
                 self.db = self.connect()
