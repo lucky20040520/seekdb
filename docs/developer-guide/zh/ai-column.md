@@ -41,7 +41,7 @@ python3 bazel.py --bazel "$BAZEL" --build-dir "$BUILD_DIR" build \
   --config=O1 --jobs=3 //src/observer:seekdb
 ```
 
-在专用实例上运行仓库提供的五个原始 mysqltest。运行器直接使用原始 SQL、期望结果、Mock 及请求断言，测试文件和期望结果无需修改：
+在专用实例上运行仓库提供的五个 mysqltest。运行器直接使用测试 SQL、期望结果、Mock 及请求断言：
 
 ```bash
 python3 unittest/sql/run_ai_column_mysqltests.py \
@@ -50,7 +50,7 @@ python3 unittest/sql/run_ai_column_mysqltests.py \
 
 赛题文档中的 mysqltest 路径写为 `ai_function`，当前基线实际目录为 `tools/deploy/mysql_test/test_suite/ai_column`。文档列举的 resolver/schema C++ 测试及 `tools/ai_gateway` 未包含在该基线中。
 
-向量用例的 EXPLAIN 估算行数及耗时受本地统计信息影响，运行器仅对比这两个估算字段时做归一化；原始 SQL 和期望文件均保持不变。原始实际输出及双方归一化结果保存在对应测试产物目录。索引扫描算子、索引名、访问列、过滤条件及所有 SQL 结果仍逐行比较。
+向量用例的 EXPLAIN 估算行数及耗时受本地统计信息影响，在 mysqltest 中仅对这两个估算字段做归一化，标准测试入口与本地运行器使用相同的比较规则。索引扫描算子、索引名、访问列、过滤条件及所有 SQL 结果仍逐行比较。
 
 补充回归覆盖非空表加列、直接及通过视图赋值的拒绝、事务内严格读取、快速删除重建同名表，以及任务持久化后的重启和租约回收。启用重启测试前必须传入专用测试实例的目录；该项会停止并重启对应进程：
 

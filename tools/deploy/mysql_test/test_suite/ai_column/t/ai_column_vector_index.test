@@ -90,7 +90,7 @@ from oceanbase.__all_ai_column_task task
 join oceanbase.__all_table t on t.table_id = task.table_id
 join oceanbase.__all_database d on d.database_id = t.database_id
 where d.database_name = 'ai_column_p0_vector' and t.table_name = 'docs';
---replace_regex /__vid_[0-9]+(_[0-9]+)?/__vid_0/g /__type_[0-9]+_[0-9]+/__type_0_0/g
+--replace_regex /__vid_[0-9]+(_[0-9]+)?/__vid_0/g /__type_[0-9]+_[0-9]+/__type_0_0/g /(\|[0-9]+ *\|VECTOR INDEX SCAN *\|[^|]+\|)[^|]+\|[^|]+\|/\1<rows>|<time>|/g
 explain select id from ai_column_p0_vector.docs
 order by l2_distance(emb, [0,0,0,0]) approximate limit 3;
 select count(*) = 2 and sum(id = 1) = 1 and sum(id = 2) = 1
