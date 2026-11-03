@@ -1,3 +1,4 @@
+#include "sql/engine/basic/ob_file_sql_bridge.h"
 /*
  * Copyright (c) 2025 OceanBase.
  *
@@ -1882,6 +1883,21 @@ int ObDMLResolver::resolve_basic_column_item(const TableItem &table_item,
     if (OB_FAIL(ret)) {
       //do nothing
     } else if (OB_FAIL(schema_checker_->get_table_schema( tid, table_schema))) {
+    } else if ((session_info_->ai_column_internal_read() || session_info_->ai_column_retry_id() != OB_INVALID_ID)
+        && table_schema->has_ai_column()) {
+      const auto *candidate = table_schema->get_column_schema(column_name);
+      if (candidate != nullptr && candidate->is_hidden()) {
+        for (auto it = table_schema->column_begin(); !include_hidden && it != table_schema->column_end(); ++it) {
+          if ((*it)->is_ai_column()) {
+            const auto &definition = (*it)->get_ai_column_schema();
+            const uint64_t id = candidate->get_column_id();
+            include_hidden = id == definition.get_state_column_id() || id == definition.get_request_column_id()
+                || id == definition.get_result_spec_column_id() || id == definition.get_incarnation_column_id();
+          }
+        }
+      }
+    }
+    if (OB_FAIL(ret)) {
     } else if (OB_FAIL(get_column_schema(tid, column_name, col_schema, include_hidden))) {
     } else if (OB_ISNULL(col_schema)) {
       ret = OB_ERR_UNEXPECTED;
@@ -2193,6 +2209,10 @@ int ObDMLResolver::resolve_qualified_identifier(ObQualifiedName &q_name,
 
   for (int64_t i = 0; OB_SUCC(ret) && i < columns.count(); ++i) {
     OZ (columns.at(i).replace_access_ident_params(q_name.ref_expr_, real_ref_expr));
+  }
+
+  if (OB_SUCC(ret) && OB_NOT_NULL(real_ref_expr)) {
+    ret = record_ai_column_read_reference(real_ref_expr);
   }
 
   return ret;
@@ -3940,7 +3960,15 @@ int ObDMLResolver::resolve_function_table_item(const ParseNode &parse_tree,
   }
   if (OB_SUCC(ret)) {
     OX (params_.is_resolve_table_function_expr_ = true);
-    OZ (resolve_sql_expr(*(parse_tree.children_[0]), function_table_expr));
+    if (parse_tree.value_ == 1701) {
+      OZ (bind_file_sql_expression(params_, *parse_tree.children_[0], function_table_expr));
+    } else {
+      OZ (resolve_sql_expr(*(parse_tree.children_[0]), function_table_expr));
+      if (OB_SUCC(ret) && is_file_sql_expression(function_table_expr)) {
+        ret = OB_NOT_SUPPORTED;
+        LOG_USER_ERROR(OB_NOT_SUPPORTED, "file scan descriptors must originate from read_* or glob");
+      }
+    }
     OX (params_.is_resolve_table_function_expr_ = false);
     CK (OB_NOT_NULL(function_table_expr));
     OX (alias_node = parse_tree.children_[1]);
@@ -5664,6 +5692,82 @@ int ObDMLResolver::resolve_partitions(const ParseNode *part_node,
         }
       }
     }
+  }
+  return ret;
+}
+
+int ObDMLResolver::record_ai_column_read_reference(ObRawExpr *expression)
+{
+  int ret = OB_SUCCESS;
+  auto *statement = get_stmt();
+  if (expression == nullptr || statement == nullptr || statement->get_query_ctx() == nullptr) {
+    return OB_SUCCESS;
+  }
+  if (expression->is_column_ref_expr()) {
+    auto *column = static_cast<ObColumnRefRawExpr *>(expression);
+    const auto *table = statement->get_table_item_by_id(column->get_table_id());
+    const auto *item = statement->get_column_item_by_id(column->get_table_id(), column->get_column_id());
+    if (table != nullptr && item != nullptr
+        && (table->is_basic_table() || item->base_tid_ != OB_INVALID_ID)) {
+      const uint64_t tid = item->base_tid_ != OB_INVALID_ID ? item->base_tid_ : table->ref_id_;
+      const uint64_t cid = item->base_cid_ != OB_INVALID_ID ? item->base_cid_ : column->get_column_id();
+      const ObColumnSchemaV2 *schema = nullptr;
+      if (OB_FAIL(schema_checker_->get_column_schema(tid, cid, schema, true))) {
+      } else if (schema != nullptr && schema->is_ai_column()) {
+        auto &refs = statement->get_query_ctx()->ai_column_read_refs_;
+        bool found = false;
+        for (int64_t i = 0; i + 1 < refs.count(); i += 2) {
+          found |= refs.at(i) == tid && refs.at(i + 1) == cid;
+        }
+        if (!found && OB_FAIL(refs.push_back(tid))) {
+        } else if (!found) { ret = refs.push_back(cid); }
+      }
+    }
+  }
+  for (int64_t i = 0; OB_SUCC(ret) && i < expression->get_param_count(); ++i) {
+    ret = SMART_CALL(record_ai_column_read_reference(expression->get_param_expr(i)));
+  }
+  return ret;
+}
+
+int ObDMLResolver::is_ai_result_column(const ObColumnRefRawExpr *column,
+                                     const ObDMLStmt *statement, bool &is_ai)
+{
+  int ret = OB_SUCCESS;
+  is_ai = false;
+  const TableItem *table = nullptr;
+  const ColumnItem *item = nullptr;
+  const ObColumnSchemaV2 *schema = nullptr;
+  if (column == nullptr || statement == nullptr || schema_checker_ == nullptr
+      || (table = statement->get_table_item_by_id(column->get_table_id())) == nullptr
+      || (item = statement->get_column_item_by_id(column->get_table_id(), column->get_column_id())) == nullptr) {
+    ret = OB_ERR_UNEXPECTED;
+  } else {
+    const uint64_t tid = item->base_tid_ != OB_INVALID_ID
+        ? item->base_tid_ : table->get_base_table_item().ref_id_;
+    const uint64_t cid = item->base_cid_ != OB_INVALID_ID ? item->base_cid_ : column->get_column_id();
+    if (OB_FAIL(schema_checker_->get_column_schema(tid, cid, schema, true))) {
+    } else if (schema == nullptr) {
+      ret = OB_ERR_UNEXPECTED;
+    } else {
+      is_ai = schema->is_ai_column();
+    }
+  }
+  return ret;
+}
+
+int ObDMLResolver::check_ai_column_assignment(const ObColumnRefRawExpr *column,
+                                            const ObDMLStmt *statement)
+{
+  int ret = OB_SUCCESS;
+  if (session_info_ != nullptr && session_info_->is_inner() && session_info_->ai_column_internal_write()) {
+    return ret;
+  }
+  bool is_ai = false;
+  if (OB_FAIL(is_ai_result_column(column, statement, is_ai))) {
+  } else if (is_ai) {
+    ret = OB_NOT_SUPPORTED;
+    LOG_USER_ERROR(OB_NOT_SUPPORTED, "direct assignment to an AI COLUMN is");
   }
   return ret;
 }
@@ -7632,6 +7736,38 @@ int ObDMLResolver::resolve_function_table_column_item_sys_func(const TableItem &
   CK (OB_NOT_NULL(table_expr = table_item.function_table_expr_));
   OZ (table_expr->deduce_type(session_info_));
   if (OB_FAIL(ret)) { // do nothing ...
+  } else if (is_file_sql_expression(table_expr)) {
+    try {
+      const ObString encoded = static_cast<ObConstRawExpr *>(table_expr)->get_value().get_string();
+      const auto spec = file_sql::Spec::decode(std::string(encoded.ptr(), encoded.length()));
+      for (size_t i = 0; OB_SUCC(ret) && i < spec.columns.size(); ++i) {
+        const auto &column = spec.columns[i];
+        common::ObObjMeta meta;
+        switch (column.type) {
+          case file_sql::Type::NIL: meta.set_null(); break;
+          case file_sql::Type::BIGINT: meta.set_int(); break;
+          case file_sql::Type::DOUBLE: meta.set_double(); break;
+          case file_sql::Type::BOOLEAN: meta.set_tinyint(); break;
+          case file_sql::Type::DATE: meta.set_date(); break;
+          case file_sql::Type::DATETIME: meta.set_datetime(); break;
+          default: meta.set_varchar(); meta.set_collation_type(CS_TYPE_UTF8MB4_BIN); meta.set_collation_level(CS_LEVEL_IMPLICIT); break;
+        }
+        ObString name;
+        ObAccuracy accuracy(ObAccuracy::DDL_DEFAULT_ACCURACY[meta.get_type()]);
+        if (meta.is_varchar()) accuracy.set_length(file_sql::MAX_RECORD_BYTES);
+        if (meta.is_datetime()) accuracy.set_scale(column.scale);
+        OZ (ob_write_string(*allocator_, ObString(int32_t(column.name.size()), column.name.data()), name));
+        col_item = stmt->get_column_item_by_id(table_item.table_id_, OB_APP_MIN_COLUMN_ID + i);
+        if (col_item == nullptr) {
+          OZ (resolve_function_table_column_item(table_item, meta, accuracy, name, OB_APP_MIN_COLUMN_ID + i, col_item));
+        }
+        if (OB_SUCC(ret)) {
+          if (!column.nullable) col_item->expr_->set_result_flag(NOT_NULL_FLAG);
+          OZ (col_items.push_back(*col_item));
+        }
+      }
+    } catch (const std::exception &e) { ret = OB_INVALID_ARGUMENT; LOG_USER_ERROR(OB_INVALID_ARGUMENT, e.what()); }
+    return ret;
   } else if (!ObResolverUtils::is_expr_can_be_used_in_table_function(*table_expr)) {
     ret = OB_NOT_SUPPORTED;
     LOG_USER_ERROR(OB_NOT_SUPPORTED, "access rows from a non-nested table item");

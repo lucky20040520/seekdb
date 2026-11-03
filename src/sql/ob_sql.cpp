@@ -1,3 +1,4 @@
+#include "sql/engine/basic/ob_file_sql_bridge.h"
 /*
  * Copyright (c) 2025 OceanBase.
  *
@@ -2369,6 +2370,8 @@ int ObSql::generate_plan(ParseResult &parse_result,
     }
 
     if (OB_SUCC(ret)) {
+      ret = phy_plan->ai_column_read_refs_.assign(stmt->get_query_ctx()->ai_column_read_refs_);
+      if (!phy_plan->ai_column_read_refs_.empty()) { phy_plan->set_has_nested_sql(true); }
       phy_plan->set_fetch_cur_time(stmt->get_fetch_cur_time());
       phy_plan->set_stmt_type(stmt->get_stmt_type());
       phy_plan->set_literal_stmt_type(stmt->get_query_ctx()->get_literal_stmt_type());
@@ -3290,6 +3293,13 @@ int ObSql::parser_and_check(const ObString &outlined_stmt,
 
   if (OB_FAIL(ret)) {
      // do nothing
+  } else if (contains_file_sql_node(parse_result.result_tree_)) {
+    // File contents and schemas are external to schema-version invalidation.
+    // Rebind each statement and keep literal paths/options unparameterized.
+    add_plan_to_pc = false;
+    is_explain_parameterize = false;
+    OZ(ob_write_string(allocator, pc_ctx.raw_sql_, pc_ctx.fp_result_.pc_key_.name_));
+    OZ(ob_write_string(allocator, pc_ctx.raw_sql_, pc_ctx.sql_ctx_.plan_key_.constructed_sql_));
   } else if (!is_enable_transform_tree) {
     //pc_ctx.fp_result_.pc_key_.name_
     if (OB_FAIL(ob_write_string(allocator,

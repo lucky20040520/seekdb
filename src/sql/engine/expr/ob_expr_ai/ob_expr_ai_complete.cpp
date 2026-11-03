@@ -104,6 +104,7 @@ int ObExprAIComplete::eval_ai_complete(const ObExpr &expr,
     ObString model_id = arg_model_id->get_string();
     ObString prompt;
     ObJsonObject *config = nullptr;
+    ObString config_str;
     share::ObAiModelEndpointInfo resolved_endpoint;
     const share::ObAiModelEndpointInfo *endpoint_info = &resolved_endpoint;
     query::ObIAiEndpointResolver *endpoint_resolver =
@@ -113,16 +114,12 @@ int ObExprAIComplete::eval_ai_complete(const ObExpr &expr,
       ret = OB_ERR_UNEXPECTED;
     } else if (arg_expr_prompt->datum_meta_.type_ == ObJsonType) {
       ObIJsonBase *j_base = nullptr;
-      ObIJsonBase *j_tree = nullptr;
       ObJsonObject *prompt_object = nullptr;
       bool is_null = false;
       if (OB_FAIL(ObJsonExprHelper::get_json_doc(expr, ctx, temp_allocator, PROMPT_IDX, j_base, is_null))) {
-      } else if (is_null || OB_ISNULL(j_base) || j_base->json_type() != ObJsonNodeType::J_OBJECT) {
+      } else if (j_base->json_type() != ObJsonNodeType::J_OBJECT) {
         ret = OB_INVALID_ARGUMENT;
-      } else if (OB_FAIL(ObJsonBaseFactory::transform(&temp_allocator, j_base, ObJsonInType::JSON_TREE, j_tree))) {
-      } else if (OB_ISNULL(j_tree)) {
-        ret = OB_ERR_UNEXPECTED;
-      } else if (OB_FALSE_IT(prompt_object = static_cast<ObJsonObject *>(j_tree))) {
+      } else if (OB_FALSE_IT(prompt_object = static_cast<ObJsonObject *>(j_base))) {
       } else if (!ObAIFuncPromptObjectUtils::is_valid_prompt_object(prompt_object)) {
         ret = OB_INVALID_ARGUMENT;
         LOG_USER_ERROR(OB_INVALID_ARGUMENT, "prompt is not valid");
@@ -135,16 +132,12 @@ int ObExprAIComplete::eval_ai_complete(const ObExpr &expr,
     if (OB_FAIL(ret)) {
     } else if (OB_NOT_NULL(arg_config) && !arg_config->is_null()) {
       ObIJsonBase *config_base = nullptr;
-      ObIJsonBase *config_tree = nullptr;
-      bool config_is_null = false;
-      if (OB_FAIL(ObJsonExprHelper::get_json_doc(expr, ctx, temp_allocator, CONFIG_IDX, config_base, config_is_null))) {
-      } else if (config_is_null || OB_ISNULL(config_base) || config_base->json_type() != ObJsonNodeType::J_OBJECT) {
+      bool is_null = false;
+      if (OB_FAIL(ObJsonExprHelper::get_json_doc(expr, ctx, temp_allocator, CONFIG_IDX, config_base, is_null))) {
+      } else if (OB_ISNULL(config_base) || config_base->json_type() != ObJsonNodeType::J_OBJECT) {
         ret = OB_INVALID_ARGUMENT;
-      } else if (OB_FAIL(ObJsonBaseFactory::transform(&temp_allocator, config_base, ObJsonInType::JSON_TREE, config_tree))) {
-      } else if (OB_ISNULL(config_tree)) {
-        ret = OB_ERR_UNEXPECTED;
       } else {
-        config = static_cast<ObJsonObject *>(config_tree);
+        config = static_cast<ObJsonObject *>(config_base);
       }
     }
 

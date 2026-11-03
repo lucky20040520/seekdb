@@ -534,7 +534,6 @@ seekdb_semantic_unity_cc_library(
         ":cluster_version_interface",
         ":error_codes",
         ":io",
-        ":local_storage_interface",
         ":resource_limit_interface",
         ":sql_persistence_support",
         ":task_control",
@@ -1767,7 +1766,6 @@ seekdb_semantic_unity_cc_library(
     ),
     implementation_deps = [
         ":_share_implementation_headers",
-        ":local_table_schema",
         "//rust:config_headers",
     ] + _SHARE_RUNTIME_COMPILE_DEPS,
     features = ["layering_check"],

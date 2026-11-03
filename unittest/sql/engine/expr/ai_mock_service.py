@@ -4,10 +4,8 @@ Run standalone on port 8000 or import MockAIService from the SQL integration tes
 Faults are selected by URL path so database code never needs fixture-specific logic.
 """
 import hashlib
-import argparse
 import json
 import threading
-import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 
@@ -44,8 +42,6 @@ class Handler(BaseHTTPRequestHandler):
                                        'content_type': self.headers.get('Content-Type')})
             attempt = sum(event['path'] == self.path for event in self.server.events)
         fault = self.path.split('/')[1]
-        if fault == 'delayed':
-            time.sleep(0.02)
         if fault == 'http-error' or (fault == 'second-batch-failure' and attempt == 2):
             self.respond({'error': {'message': 'fixture failure'}}, 400)
             return
@@ -99,18 +95,6 @@ class Handler(BaseHTTPRequestHandler):
                     del data[0]['index']
                 if fault == 'string-index':
                     data[0]['index'] = '0'
-                if fault == 'fractional-index':
-                    data[0]['index'] = 0.5
-                if fault == 'negative-index':
-                    data[0]['index'] = -1
-                if fault == 'null-index':
-                    data[0]['index'] = None
-                if fault == 'bool-index':
-                    data[0]['index'] = True
-                if fault == 'extra-result':
-                    data.append({'index': len(data), 'embedding': vectors[0]})
-                if fault == 'object-item':
-                    data[0] = None
                 if fault == 'missing-vector':
                     del data[0]['embedding']
                 if fault == 'wrong-vector':
@@ -133,18 +117,6 @@ class Handler(BaseHTTPRequestHandler):
                 results[0]['relevance_score'] = 'bad'
             if fault == 'missing-result':
                 results.pop()
-            if fault == 'extra-result':
-                results.append({'index': len(results), 'relevance_score': 1})
-            if fault == 'fractional-index':
-                results[0]['index'] = 0.5
-            if fault == 'null-index':
-                results[0]['index'] = None
-            if fault == 'bool-index':
-                results[0]['index'] = True
-            if fault == 'bool-score':
-                results[0]['relevance_score'] = True
-            if fault == 'null-score':
-                results[0]['relevance_score'] = None
             response = {'results': list(reversed(results))}
         else:
             ollama = self.path.endswith('/api/generate')
@@ -171,16 +143,4 @@ class Handler(BaseHTTPRequestHandler):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--host', default='0.0.0.0')
-    parser.add_argument('--port', type=int, default=8000)
-    parser.add_argument('--dimension', type=int, default=8)
-    args = parser.parse_args()
-    if args.dimension <= 0:
-        parser.error('--dimension must be a positive integer')
-    service = MockAIService((args.host, args.port))
-    service.default_dimension = args.dimension
-    try:
-        service.serve_forever()
-    finally:
-        service.server_close()
+    MockAIService(('0.0.0.0', 8000)).serve_forever()

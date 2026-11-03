@@ -225,6 +225,7 @@ SQL_UNITY_GROUPS = [
             "src/sql/engine/basic/ob_chunk_row_store.cpp",
             "src/sql/engine/basic/ob_expr_values_op.cpp",
             "src/sql/engine/basic/ob_function_table_op.cpp",
+            "src/sql/engine/basic/ob_file_sql_bridge.cpp",
             "src/sql/engine/basic/ob_group_join_buffer.cpp",
             "src/sql/engine/basic/ob_hash_partitioning_infrastructure_op.cpp",
             "src/sql/engine/basic/ob_json_table_op.cpp",
@@ -319,6 +320,8 @@ SQL_UNITY_GROUPS = [
             "src/sql/engine/dml/ob_conflict_checker.cpp",
             "src/sql/engine/dml/ob_dml_ctx_define.cpp",
             "src/sql/engine/dml/ob_dml_service.cpp",
+              "src/sql/engine/dml/ai_column_dml.cpp",
+              "src/sql/engine/dml/ai_column_read.cpp",
             "src/sql/engine/dml/ob_table_delete_op.cpp",
             "src/sql/engine/dml/ob_table_insert_op.cpp",
             "src/sql/engine/dml/ob_table_insert_up_op.cpp",
@@ -1440,6 +1443,7 @@ SQL_UNITY_GROUPS = [
             "src/sql/resolver/ddl/ob_create_table_stmt.cpp",
             "src/sql/resolver/ddl/ob_create_view_resolver.cpp",
             "src/sql/resolver/ddl/ob_ddl_resolver.cpp",
+            "src/sql/resolver/ddl/ob_ai_column_resolver.cpp",
             "src/sql/resolver/ddl/ob_ddl_stmt.cpp",
             "src/sql/resolver/ddl/ob_drop_database_resolver.cpp",
             "src/sql/resolver/ddl/ob_drop_index_resolver.cpp",
@@ -1661,6 +1665,7 @@ SQL_SIMD_UNITY_GROUPS = [
 ]
 
 SQL_STANDALONE_SOURCES = [
+    struct(path = "src/sql/engine/basic/ob_file_scan_utils.cpp", language = "c++", kind = "source"),
     struct(path = "src/sql/engine/aggregate/ob_aggregate_processor.cpp", language = "c++", kind = "source"),
     struct(path = "src/sql/engine/expr/ob_expr_add.cpp", language = "c++", kind = "source"),
     struct(path = "src/sql/engine/expr/ob_expr_array_sort.cpp", language = "c++", kind = "source"),

@@ -1,3 +1,4 @@
+#include "sql/engine/basic/ob_file_sql_bridge.h"
 /*
  * Copyright (c) 2025 OceanBase.
  *
@@ -120,6 +121,19 @@ int ObResolverUtils::get_all_function_table_column_names(const TableItem &table_
                                                          ObResolverParams &params,
                                                          ObIArray<ObString> &column_names)
 {
+  if (is_file_sql_expression(table_item.function_table_expr_)) {
+    int ret = OB_SUCCESS;
+    try {
+      const ObString encoded = static_cast<ObConstRawExpr *>(table_item.function_table_expr_)->get_value().get_string();
+      const auto spec = file_sql::Spec::decode(std::string(encoded.ptr(), encoded.length()));
+      for (const auto &column : spec.columns) {
+        ObString name;
+        OZ(ob_write_string(*params.allocator_, ObString(int32_t(column.name.size()), column.name.data()), name));
+        OZ(column_names.push_back(name));
+      }
+    } catch (const std::exception &e) { ret = OB_INVALID_ARGUMENT; LOG_USER_ERROR(OB_INVALID_ARGUMENT, e.what()); }
+    return ret;
+  }
   int ret = OB_SUCCESS;
   ObRawExpr *table_expr = NULL;
   ObPLPackageGuard *package_guard = nullptr;
@@ -5294,11 +5308,11 @@ int ObResolverUtils::set_parallel_info(sql::ObSQLSessionInfo &session_info,
 int ObResolverUtils::wait_for_sys_package_ready(ObSQLSessionInfo &session_info)
 {
   int ret = OB_SUCCESS;
-  if (config::_enable_async_load_sys_package() && !GCTX.sys_package_ready_
+  if (config::_enable_async_load_sys_package() && !ATOMIC_LOAD(&GCTX.sys_package_ready_)
       && session_info.is_user_session() && share::server_is_write_enabled()) {
     const int64_t retry_interval_us = 100L * 1000L; // 100ms
     bool waited = false;
-    while (!GCTX.sys_package_ready_ && OB_SUCC(ret)) {
+    while (!ATOMIC_LOAD(&GCTX.sys_package_ready_) && OB_SUCC(ret)) {
       if (NULL != session_info.get_cur_exec_ctx() && OB_FAIL(session_info.get_cur_exec_ctx()->check_status())) {
       } else {
         if (!waited) {
@@ -5309,7 +5323,7 @@ int ObResolverUtils::wait_for_sys_package_ready(ObSQLSessionInfo &session_info)
       }
     }
     if (OB_FAIL(ret)) {
-    } else if (!GCTX.sys_package_ready_) {
+    } else if (!ATOMIC_LOAD(&GCTX.sys_package_ready_)) {
       LOG_WARN("sys package not ready after waiting");
     } else {
       if (waited) {
