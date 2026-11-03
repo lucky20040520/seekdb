@@ -26,6 +26,7 @@ namespace storage
 ObSRMergeCmp::ObSRMergeCmp()
   : cmp_func_(nullptr),
     iter_ids_(nullptr),
+    is_binary_string_(false),
     is_inited_(false)
 {
 }
@@ -44,6 +45,8 @@ int ObSRMergeCmp::init(
     if (OB_ISNULL(cmp_func_)) {
       ret = OB_ERR_UNEXPECTED;
     } else {
+      is_binary_string_ = common::ObVarcharType == id_meta.type_
+          && common::CS_TYPE_BINARY == id_meta.cs_type_;
       is_inited_ = true;
     }
   }
@@ -60,8 +63,18 @@ int ObSRMergeCmp::cmp(
     ret = OB_NOT_INIT;
   } else {
     int tmp_ret = 0;
-    if (OB_FAIL(cmp_func_(
-            get_id_datum(l.iter_idx_), get_id_datum(r.iter_idx_), tmp_ret, nullptr))) {
+    const ObDatum &left = get_id_datum(l.iter_idx_);
+    const ObDatum &right = get_id_datum(r.iter_idx_);
+    if (is_binary_string_ && !left.is_null() && !right.is_null()
+        && !left.is_ext() && !right.is_ext()) {
+      // CS_TYPE_BINARY compares all bytes (including trailing spaces).
+      const int64_t length = MIN(left.len_, right.len_);
+      tmp_ret = length > 0 ? MEMCMP(left.ptr_, right.ptr_, length) : 0;
+      if (0 == tmp_ret) {
+        tmp_ret = (left.len_ > right.len_) - (left.len_ < right.len_);
+      }
+      cmp_ret = (tmp_ret > 0) - (tmp_ret < 0);
+    } else if (OB_FAIL(cmp_func_(left, right, tmp_ret, nullptr))) {
     } else {
       cmp_ret = tmp_ret;
     }
@@ -280,15 +293,13 @@ int ObSRDaaTIterImpl::fill_merge_heap()
     ObISRDaaTDimIter *dim_iter = nullptr;
     if (OB_ISNULL(dim_iter = dim_iters_->at(iter_idx))) {
       ret = OB_ERR_UNEXPECTED;
-    } else if (OB_FAIL(dim_iter->get_next_row())) {
+    } else if (OB_FAIL(dim_iter->get_next_row_with_data(iter_domain_ids_[iter_idx], item.relevance_))) {
       if (OB_UNLIKELY(OB_ITER_END != ret)) {
         LOG_WARN("fail to try load next batch dimension data", K(ret));\
       } else {
         ret = OB_SUCCESS;
       }
-    } else if (OB_FAIL(dim_iter->get_curr_score(item.relevance_))) {
     } else if (OB_NOT_NULL(iter_param_->dim_weights_) && FALSE_IT(item.relevance_ = item.relevance_ * iter_param_->field_boost_ * iter_param_->dim_weights_->at(iter_idx))) {
-    } else if (OB_FAIL(dim_iter->get_curr_id(iter_domain_ids_[iter_idx]))) {
     } else if (FALSE_IT(item.iter_idx_ = iter_idx)) {
     } else if (OB_FAIL(merge_heap_->push(item))) {
     } else {

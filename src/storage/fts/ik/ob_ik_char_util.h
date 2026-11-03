@@ -57,6 +57,18 @@ public:
                                    const int64_t buf_size,
                                    int64_t &char_len);
 
+  // The caller may resolve the immutable collation's charset once per document.
+  static int classify_first_char(ObCollationType coll_type,
+                                 ObCharsetType charset_type,
+                                 const char *input,
+                                 const uint8_t char_len,
+                                 CharType &type);
+  static int first_valid_char_fast(ObCollationType coll_type,
+                                   ObCharsetType charset_type,
+                                   const char *buf,
+                                   const int64_t buf_size,
+                                   int64_t &char_len);
+
   static int classify_utf8mb4_fast(const char *input,
                                    const uint8_t char_len,
                                    CharType &type);
@@ -541,8 +553,17 @@ inline int ObFTCharUtil::classify_first_char(ObCollationType coll_type,
                                              const uint8_t char_len,
                                              CharType &type)
 {
+  return classify_first_char(coll_type, ObCharset::charset_type_by_coll(coll_type),
+                             input, char_len, type);
+}
+
+inline int ObFTCharUtil::classify_first_char(ObCollationType coll_type,
+                                             ObCharsetType cs_type,
+                                             const char *input,
+                                             const uint8_t char_len,
+                                             CharType &type)
+{
   int ret = OB_SUCCESS;
-  ObCharsetType cs_type = ObCharset::charset_type_by_coll(coll_type);
 
   switch (cs_type) {
   case CHARSET_UTF8MB4: {
@@ -570,8 +591,18 @@ inline int ObFTCharUtil::first_valid_char_fast(ObCollationType coll_type,
                                                 const int64_t buf_size,
                                                 int64_t &char_len)
 {
+  return first_valid_char_fast(coll_type, ObCharset::charset_type_by_coll(coll_type),
+                               buf, buf_size, char_len);
+}
+
+inline int ObFTCharUtil::first_valid_char_fast(ObCollationType coll_type,
+                                                ObCharsetType charset_type,
+                                                const char *buf,
+                                                const int64_t buf_size,
+                                                int64_t &char_len)
+{
   int ret = OB_SUCCESS;
-  if (OB_UNLIKELY(ObCharset::charset_type_by_coll(coll_type) != CHARSET_UTF8MB4)) {
+  if (OB_UNLIKELY(charset_type != CHARSET_UTF8MB4)) {
     ret = ObCharset::first_valid_char(coll_type, buf, buf_size, char_len);
   } else if (OB_ISNULL(buf)) {
     ret = OB_NOT_INIT;
@@ -608,6 +639,11 @@ inline int ObFTCharUtil::first_valid_char_fast(ObCollationType coll_type,
       }
     } else {
       ret = OB_INVALID_ARGUMENT;
+    }
+    if (OB_INVALID_ARGUMENT == ret) {
+      // Keep the charset library's behavior for non-scalar encodings and
+      // malformed input. The common valid UTF-8 path stays entirely inline.
+      ret = ObCharset::first_valid_char(coll_type, buf, buf_size, char_len);
     }
   }
   return ret;

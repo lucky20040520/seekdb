@@ -117,10 +117,12 @@ int ObIKArbitrator::output_result(TokenizeContext &ctx)
     ObFTCharUtil::CharType type;
     // maybe not so good to keep single, check it later
     if (OB_FAIL(ObFTCharUtil::first_valid_char_fast(ctx.collation(),
+                                                    ctx.charset_type(),
                                                     ctx.fulltext() + current,
                                                     ctx.fulltext_len() - current,
                                                     char_len))) {
     } else if (OB_FAIL(ObFTCharUtil::classify_first_char(ctx.collation(),
+                                                         ctx.charset_type(),
                                                          ctx.fulltext() + current,
                                                          char_len,
                                                          type))) {
@@ -167,6 +169,7 @@ int ObIKArbitrator::output_result(TokenizeContext &ctx)
           // output single word between two token
           while (OB_SUCC(ret) && current < token.offset_) {
             if (OB_FAIL(ObFTCharUtil::first_valid_char_fast(ctx.collation(),
+                                                            ctx.charset_type(),
                                                             ctx.fulltext() + current,
                                                             ctx.fulltext_len() - current,
                                                             char_len))) {

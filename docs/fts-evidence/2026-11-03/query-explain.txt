@@ -1,0 +1,53 @@
+==================================================================
+|ID|OPERATOR             |NAME             |EST.ROWS|EST.TIME(us)|
+------------------------------------------------------------------
+|0 |SCALAR GROUP BY      |                 |1       |834767      |
+|1 |└─TEXT RETRIEVAL SCAN|docs(fti_en_beng)|18000   |834441      |
+==================================================================
+Outputs & filters:
+-------------------------------------
+  0 - output([T_FUN_COUNT(*)(0x7fffeb743aa0)]), filter(nil), rowset=256
+      group(nil), agg_func([T_FUN_COUNT(*)(0x7fffeb743aa0)])
+  1 - output(nil), filter(nil), rowset=256
+      access(nil), partitions(p0)
+      is_index_back=false, is_global_index=false,
+      calc_relevance=true, match_expr(MATCH(docs.title_en(0x7fffeb7434f0), docs.content_en(0x7fffeb743640)) AGAINST('database performance audit'(0x7fffeb743360))(0x7fffeb742d70)),
+
+      pushdown_match_filter(BOOL(MATCH(docs.title_en(0x7fffeb7434f0), docs.content_en(0x7fffeb743640)) AGAINST('database performance audit'(0x7fffeb743360))(0x7fffeb742d70))(0x7fffeb743850))
+Used Hint:
+-------------------------------------
+  /*+
+
+  */
+Qb name trace:
+-------------------------------------
+  stmt_id:0, stmt_type:T_EXPLAIN
+  stmt_id:1, SEL$1
+Outline Data:
+-------------------------------------
+  /*+
+      BEGIN_OUTLINE_DATA
+      INDEX(@"SEL$1" "fts_large_bench"."docs"@"SEL$1" "fti_en_beng")
+      END_OUTLINE_DATA
+  */
+Optimization Info:
+-------------------------------------
+  docs:
+      table_rows:19999
+      physical_range_rows:18000
+      logical_range_rows:18000
+      index_back_rows:0
+      output_rows:18000
+      table_dop:1
+      dop_method:Table DOP
+      avaiable_index_name:[fti_all_ik, fti_content_ik, fti_en_beng, docs]
+      pruned_index_name:[fti_all_ik, fti_content_ik, docs]
+      stats info:[version=1970-01-01 08:00:00.000000, is_locked=0, is_expired=0]
+      dynamic sampling level:0
+      estimation method:[DEFAULT, STORAGE]
+  Plan Type:
+      LOCAL
+  Parameters:
+      :0 => 'database performance audit'
+  Note:
+      Degree of Parallelisim is 1 because of table property

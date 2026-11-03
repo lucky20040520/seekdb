@@ -76,6 +76,19 @@ public:
   // interface for daat processing
   virtual int get_curr_score(double &score) const = 0;
   virtual int get_curr_id(const ObDatum *&datum) const = 0;
+  // Fetch metadata with the advance so implementations can avoid repeated
+  // virtual dispatch and cursor checks. Other dimension types keep this path.
+  virtual int get_next_row_with_data(const ObDatum *&datum, double &score)
+  {
+    int ret = get_next_row();
+    if (OB_SUCCESS == ret) {
+      ret = get_curr_score(score);
+    }
+    if (OB_SUCCESS == ret) {
+      ret = get_curr_id(datum);
+    }
+    return ret;
+  }
   // interface for plain dynamic pruning algorithms such as WAND and MaxScore
   virtual int get_dim_max_score(double &score)
   {

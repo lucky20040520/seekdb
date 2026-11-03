@@ -472,7 +472,10 @@ seekdb_test_interface(
     deps = [
         ":storage_runtime_internal_headers",
     ] + _STORAGE_HEADER_SHARE_DEPS + storage_test_oblib_deps(),
-    visibility = ["//unittest/storage:__pkg__"],
+    visibility = [
+        "//unittest/storage:__pkg__",
+        "//unittest/storage/fts:__pkg__",
+    ],
 )
 
 _STORAGE_RUNTIME_UNITY_GROUPS = STORAGE_UNITY_GROUPS + storage_singleton_unity_groups(
