@@ -15,6 +15,7 @@
  */
 
 #define USING_LOG_PREFIX SQL_RESV
+#include "sql/ob_sql.h"
 #include "config_bridge.h"
 #include "ob_ddl_resolver.h"
 #include "data_plane/blocksstable/ob_index_block_util.h"
@@ -1965,6 +1966,10 @@ int ObDDLResolver::resolve_column_definition(ObColumnSchemaV2 &column,
         }
       }
     }
+  }
+  if (OB_SUCC(ret) && ObSql::is_ai_column_internal_ddl() &&
+      column.get_comment_str() == ObString::make_string("__seekdb_ai_hidden")) {
+    column.set_is_hidden(true);
   }
   return ret;
 }

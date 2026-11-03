@@ -398,7 +398,8 @@ public:
                                 const share::schema::ObTableSchema* table_schema,
                                 ObRecordType *&record_type,
                                 pl::ObPLEnumSetCtx *enum_set_ctx,
-                                bool with_rowid = false);
+                                bool with_rowid = false,
+                                bool include_ai_state = false);
   static int collect_dep_info_by_view_schema(const ObPLResolveCtx &ctx,
                                              const ObTableSchema* view_schema,
                                              ObIArray<ObSchemaObjVersion> &dependency_objects);

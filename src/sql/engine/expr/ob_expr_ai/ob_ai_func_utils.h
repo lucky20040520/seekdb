@@ -353,6 +353,8 @@ public:
    virtual ~ObAIFuncModel() {}
    // completion
    int call_completion(ObString &prompt, ObJsonObject *config, ObString &result);
+   int call_column_completion(ObString &input, ObString &system_prompt, ObString &result);
+   int call_column_embedding(ObString &input, ObString &result, int64_t dimension);
    int call_completion_vector(ObArray<ObString> &prompts, ObJsonObject *config, ObArray<ObString> &results);
    // dense_embedding
    int call_dense_embedding(ObString &content, ObJsonObject *config, ObString &result);

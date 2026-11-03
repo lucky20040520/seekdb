@@ -5217,6 +5217,14 @@ public:
 };
 
 
+class AiColumnStrictReadSysVar : public ObBoolSysVar
+{
+public:
+  AiColumnStrictReadSysVar() : ObBoolSysVar(NULL, NULL, NULL, NULL, NULL) {}
+  share::ObSysVarClassType get_type() const override { return share::SYS_VAR_AI_COLUMN_STRICT_READ; }
+  const common::ObObj &get_global_default_value() const override { return share::ObSysVariables::get_default_value(720); }
+};
+
 class ObSysVarFactory
 {
 public:

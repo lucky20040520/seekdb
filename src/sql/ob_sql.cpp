@@ -53,6 +53,8 @@ namespace sql
 
 const int64_t ObSql::max_error_length = 80;
 const int64_t ObSql::SQL_MEM_SIZE_LIMIT = 1024 * 1024 * 64;
+ObSql::AiColumnSqlHook ObSql::ai_column_sql_hook_ = nullptr;
+thread_local bool ObSql::ai_column_internal_ddl_ = false;
 
 int ObSql::init(common::ObOptStatManager *opt_stat_mgr,
                 common::ObITabletScan *vt_partition_service,
@@ -1207,6 +1209,11 @@ int ObSql::handle_sql_execute(const ObString &sql,
     ret = OB_INVALID_ARGUMENT;
   } else {
     use_plan_cache = session->get_local_ob_enable_plan_cache();
+    bool strict_ai_read = false;
+    if (OB_FAIL(session->get_sys_variable(SYS_VAR_AI_COLUMN_STRICT_READ, strict_ai_read))) {
+    } else if (strict_ai_read) {
+      use_plan_cache = false;
+    }
   }
 
   ObPlanCacheCtx pc_ctx(sql, mode, allocator, context, ectx);
@@ -1810,7 +1817,15 @@ int ObSql::handle_ps_execute(const ObPsStmtId client_stmt_id,
   ObPhysicalPlanCtx *pctx = ectx.get_physical_plan_ctx();
   ObSchemaGetterGuard *schema_guard = context.schema_guard_;
   int64_t origin_params_count = params.count();
-  if (OB_ISNULL(ps_cache) || OB_ISNULL(pctx) || OB_ISNULL(schema_guard) || OB_ISNULL(plan_cache)) {
+  bool strict_ai_read = false;
+  if (OB_FAIL(session.get_sys_variable(SYS_VAR_AI_COLUMN_STRICT_READ, strict_ai_read))) {
+  } else if (strict_ai_read) {
+    // A prepared SELECT may have been compiled while all rows were READY.
+    // Readiness must be resolved again for each EXECUTE, just as for text SQL.
+    use_plan_cache = false;
+  }
+  if (OB_FAIL(ret)) {
+  } else if (OB_ISNULL(ps_cache) || OB_ISNULL(pctx) || OB_ISNULL(schema_guard) || OB_ISNULL(plan_cache)) {
     ret = OB_INVALID_ARGUMENT;
     LOG_ERROR("physical plan context or ps plan cache is NULL or schema_guard is null",
               K(ret), K(pctx), K(ps_cache));
@@ -1954,12 +1969,23 @@ OB_INLINE int ObSql::handle_text_query(const ObString &stmt, ObSqlCtx &context, 
 
   ObIAllocator &allocator = THIS_WORKER.get_sql_arena_allocator();
   ObSQLSessionInfo &session = result.get_session();
+  if (OB_SUCC(ret) && ai_column_sql_hook_ != nullptr) {
+    ret = ai_column_sql_hook_(stmt, session, allocator, trimed_stmt);
+    if (OB_FAIL(ret)) result.get_exec_context().set_need_disconnect(false);
+  }
   
   ObExecContext& ectx = result.get_exec_context();
   int get_plan_err = OB_SUCCESS; //used for judge whether add plan to plan cache
   bool use_plan_cache = session.get_local_ob_enable_plan_cache();
   ObPlanCacheCtx *pc_ctx = NULL;
   bool is_begin_commit_stmt = false;
+  bool strict_ai_read = false;
+  if (OB_SUCC(ret) && OB_FAIL(session.get_sys_variable(SYS_VAR_AI_COLUMN_STRICT_READ, strict_ai_read))) {
+  } else if (strict_ai_read) {
+    // Column readiness is mutable data, so its resolver checks must run for
+    // every strict statement, including statements previously cached READY.
+    use_plan_cache = false;
+  }
 
   if (OB_FAIL(ret)) {
     // do nothing

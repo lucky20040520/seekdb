@@ -103,6 +103,11 @@ class ObSql : public ObIPLSqlRuntime,
   static const int64_t SQL_MEM_SIZE_LIMIT;
 public:
   /// init SQL module
+  using AiColumnSqlHook = int (*)(const common::ObString &, ObSQLSessionInfo &,
+                                  common::ObIAllocator &, common::ObString &);
+  static void set_ai_column_sql_hook(AiColumnSqlHook hook) { ai_column_sql_hook_ = hook; }
+  static bool is_ai_column_internal_ddl() { return ai_column_internal_ddl_; }
+  static void set_ai_column_internal_ddl(bool enabled) { ai_column_internal_ddl_ = enabled; }
   int init(common::ObOptStatManager *opt_stat_mgr,
            common::ObITabletScan *vt_partition_service,
            common::ObAddr &addr,
@@ -546,6 +551,8 @@ public:
                                    const ObIArray<int64_t> &fixed_param_idx);
 private:
   bool inited_;
+  static AiColumnSqlHook ai_column_sql_hook_;
+  static thread_local bool ai_column_internal_ddl_;
   // Process-lifetime collaborators supplied by the Observer composition root.
   common::ObOptStatManager *opt_stat_mgr_;
   common::ObITabletScan *vt_partition_service_;

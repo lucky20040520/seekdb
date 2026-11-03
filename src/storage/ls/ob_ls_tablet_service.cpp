@@ -2991,8 +2991,12 @@ int ObLSTabletService::insert_tablet_rows(
   int ret = OB_SUCCESS;
   ObRelativeTable &table = run_ctx.relative_table_;
   const int64_t row_count = rows_info.get_rowkey_cnt();
+  // A vector delta table stores the latest I/D marker for each vector id.
+  // Repeated invalidation and regeneration legitimately replace these markers,
+  // including during a primary-key update executed with DOP conflict checks.
+  const bool is_vector_delta = run_ctx.dml_param_.table_param_->get_data_table().is_vector_delta_buffer();
   const bool check_exists = !table.is_storage_index_table() || table.is_unique_index() ||
-      run_ctx.store_ctx_.mvcc_acc_ctx_.write_flag_.is_update_pk_dop();
+      (run_ctx.store_ctx_.mvcc_acc_ctx_.write_flag_.is_update_pk_dop() && !is_vector_delta);
 
   // 1. Defensive checking of new rows.
   if ((config::_enable_defensive_check() > 0)) {
@@ -3259,6 +3263,10 @@ int ObLSTabletService::insert_vector_index_rows(
           // process for each row or call batch
           // set vector null for not to storage
           rows[k].storage_datums_[vector_idx].set_null();
+          // Delta markers are upserts, even when the public DML API used to
+          // record them is insert_rows(). Reusing a committed I/D marker is
+          // valid; marking it INSERT would fail MVCC's double-insert check.
+          rows[k].row_flag_.set_flag(ObDmlFlag::DF_UPDATE);
         }
         adaptor_guard.get_adatper()->update_can_skip(NOT_SKIP);
       }

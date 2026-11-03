@@ -15,6 +15,8 @@
  */
 
 #define USING_LOG_PREFIX SQL_RESV
+#include "sql/ai_column_check.h"
+#include "sql/ob_sql.h"
 #include "config_bridge.h"
 #include "ob_dml_resolver.h"
 #include "sql/resolver/dml/ob_view_table_resolver.h"
@@ -1840,6 +1842,9 @@ int ObDMLResolver::resolve_basic_column_item(const TableItem &table_item,
   ObColumnRefRawExpr *col_expr = NULL;
   ObSchemaGetterGuard *schema_guard = NULL;
   ColumnItem column_item;
+  if (session_info_ != nullptr && (!session_info_->is_user_session() || ObSql::is_ai_column_internal_ddl()) && column_name.prefix_match("__ai_")) {
+    include_hidden = true;
+  }
   if (NULL == stmt) {
     stmt = get_stmt();
   }
@@ -1963,6 +1968,9 @@ int ObDMLResolver::resolve_basic_column_item(const TableItem &table_item,
         col_item = stmt->get_column_item(stmt->get_column_size() - 1);
       }
     }
+  }
+  if (OB_SUCC(ret) && !include_hidden && col_item != nullptr) {
+    ret = AiColumnCheck::check(*session_info_, table_item.ref_id_, col_item->column_id_);
   }
   return ret;
 }

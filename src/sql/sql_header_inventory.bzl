@@ -1,6 +1,7 @@
 """Native public/private header ownership for the SQL module."""
 
 SQL_PUBLIC_HEADER_ROOTS = [
+    "ai_column_check.h",
     "code_generator/ob_expr_generator_impl.h",
     "code_generator/ob_static_engine_expr_cg.h",
     "das/iter/ob_das_iter.h",
@@ -78,6 +79,7 @@ SQL_PUBLIC_HEADER_ROOTS = [
     "optimizer/stat/ob_opt_stat_service.h",
     "parser/ob_non_reserved_keywords.h",
     "parser/ob_parser.h",
+    "parser/ai_column_definition.h",
     "parser/parse_define.h",
     "parser/parse_malloc.h",
     "parser/parse_node.h",

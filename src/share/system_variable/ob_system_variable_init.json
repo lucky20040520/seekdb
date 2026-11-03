@@ -1,4 +1,17 @@
 {
+  "ai_column_strict_read": {
+    "id": 10755,
+    "name": "ai_column_strict_read",
+    "default_value": "0",
+    "base_value": "0",
+    "data_type": "bool",
+    "info": "Reject references to AI columns containing unfinished or failed rows",
+    "flags": "SESSION | NEED_SERIALIZE | INFLUENCE_PLAN",
+    "publish_version": "",
+    "info_cn": "引用包含未就绪行的 AI 列时报错",
+    "background_cn": "",
+    "ref_url": ""
+  },
   "enable_file_sql": {
     "id": 10754,
     "name": "enable_file_sql",

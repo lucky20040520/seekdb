@@ -2,6 +2,7 @@
 
 _OBSERVER_RUNTIME_GROUP_OBLIB_DEPS = {
     "ob_server_ai_service_0": [
+        "//src/oblib:oblib_rpc_transport_services",
         "//src/oblib:common_sql_mode",
         "//src/oblib:oblib_collections_advanced",
         "//src/oblib:oblib_collections_base",

@@ -1223,7 +1223,8 @@ int ObPLResolver::build_record_type_by_table_schema(ObSchemaGetterGuard &schema_
                                                     const ObTableSchema* table_schema,
                                                     ObRecordType *&record_type,
                                                     pl::ObPLEnumSetCtx *enum_set_ctx,
-                                                    bool with_rowid)
+                                                    bool with_rowid,
+                                                    bool include_ai_state)
 {
   int ret = OB_SUCCESS;
   CK (OB_NOT_NULL(table_schema));
@@ -1233,7 +1234,8 @@ int ObPLResolver::build_record_type_by_table_schema(ObSchemaGetterGuard &schema_
     ObTableSchema::const_column_iterator cs_iter_end = table_schema->column_end();
     for (; OB_SUCC(ret) && cs_iter != cs_iter_end; cs_iter++) {
       const ObColumnSchemaV2 &column_schema = **cs_iter;
-      if (!column_schema.is_hidden()) {
+      if (!column_schema.is_hidden() || (include_ai_state &&
+          column_schema.get_comment_str() == ObString::make_string("__seekdb_ai_hidden"))) {
         ObPLDataType pl_type;
         ObDataType data_type;
         data_type.set_meta_type(column_schema.get_meta_type());
@@ -1332,7 +1334,8 @@ int ObPLResolver::build_record_type_by_schema(
         resolve_ctx, table_schema, record_type));
     } else {
       OZ (build_record_type_by_table_schema(
-        resolve_ctx.schema_guard_, resolve_ctx.allocator_, table_schema, record_type, resolve_ctx.enum_set_ctx_, with_rowid));
+        resolve_ctx.schema_guard_, resolve_ctx.allocator_, table_schema, record_type, resolve_ctx.enum_set_ctx_, with_rowid,
+        resolve_ctx.session_info_.is_for_trigger_package()));
     }
   }
   return ret;

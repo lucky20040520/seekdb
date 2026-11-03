@@ -15,6 +15,7 @@
  */
 
 #define USING_LOG_PREFIX SQL_RESV
+#include "sql/ai_column_check.h"
 #include "ob_del_upd_resolver.h"
 #include "sql/resolver/dml/ob_default_value_utils.h"
 #include "sql/resolver/dml/ob_update_stmt.h"
@@ -118,6 +119,9 @@ int ObDelUpdResolver::resolve_assignments(const ParseNode &parse_node,
             }
           }
         }
+      }
+      if (OB_SUCC(ret) && column != nullptr) {
+        ret = AiColumnCheck::check_assignment(*session_info_, column->base_tid_, column->base_cid_);
       }
       if (OB_SUCC(ret) && T_INSERT_SCOPE == scope) {
         if (OB_FAIL(mock_values_column_ref(ref_expr))) {
@@ -2223,6 +2227,11 @@ int ObDelUpdResolver::resolve_insert_columns(const ParseNode *node,
         }
       }
     }
+  }
+  for (int64_t i = 0; OB_SUCC(ret) && i < table_info.values_desc_.count(); ++i) {
+    const auto *expression = table_info.values_desc_.at(i);
+    const ColumnItem *column = del_upd_stmt->get_column_item_by_id(table_info.table_id_, expression->get_column_id());
+    if (column != nullptr) ret = AiColumnCheck::check_assignment(*session_info_, column->base_tid_, column->base_cid_);
   }
   return ret;
 }

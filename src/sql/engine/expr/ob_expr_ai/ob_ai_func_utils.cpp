@@ -1381,6 +1381,72 @@ int ObAIFuncModel::call_completion(ObString &prompt, ObJsonObject *config, ObStr
   return ret;
 }
 
+int ObAIFuncModel::call_column_completion(ObString &input, ObString &system_prompt, ObString &result)
+{
+  int ret = OB_SUCCESS;
+  ObArray<ObString> headers;
+  ObJsonObject *body = nullptr;
+  ObJsonObject *response = nullptr;
+  ObIJsonBase *value = nullptr;
+  ObAIFuncIComplete *provider = nullptr;
+  ObAIFuncClient client;
+  client.set_timeout_sec(5);
+  client.set_max_retry_times(0);
+  ObString key;
+  ObString model = get_request_model_name();
+  if (!is_completion_type()) {
+    ret = OB_INVALID_ARGUMENT;
+  } else if (OB_FAIL(ObAIFuncUtils::get_complete_provider(*allocator_, endpoint_info_.get_provider(), provider))) {
+  } else if (OB_FAIL(endpoint_info_.get_unencrypted_access_key(*allocator_, key))) {
+  } else if (OB_FAIL(provider->get_header(*allocator_, key, headers))) {
+  } else if (OB_FAIL(provider->get_body(*allocator_, model, system_prompt, input, nullptr, body))) {
+  } else if (OB_FAIL(client.send_post(*allocator_, endpoint_info_.get_url(), headers, body, response))) {
+  } else if (OB_FAIL(provider->parse_output(*allocator_, response, value))) {
+  } else if (OB_ISNULL(value) || value->json_type() != ObJsonNodeType::J_STRING ||
+             value->get_data_length() > INT32_MAX) {
+    ret = OB_INVALID_DATA;
+  } else {
+    result.assign_ptr(value->get_data(), static_cast<int32_t>(value->get_data_length()));
+  }
+  return ret;
+}
+
+int ObAIFuncModel::call_column_embedding(ObString &input, ObString &result, int64_t dimension)
+{
+  int ret = OB_SUCCESS;
+  ObArray<ObString> headers;
+  ObArray<ObString> contents;
+  ObJsonObject *body = nullptr;
+  ObJsonObject *response = nullptr;
+  ObIJsonBase *value = nullptr;
+  ObAIFuncIEmbed *provider = nullptr;
+  ObJsonObject config(allocator_);
+  ObJsonInt dim_value(dimension);
+  ObAIFuncClient client;
+  client.set_timeout_sec(5);
+  client.set_max_retry_times(0);
+  ObString key;
+  ObString model = get_request_model_name();
+  if (!is_dense_embedding_type()) {
+    ret = OB_INVALID_ARGUMENT;
+  } else if (OB_FAIL(config.add("dimensions", &dim_value))) {
+  } else if (OB_FAIL(contents.push_back(input))) {
+  } else if (OB_FAIL(ObAIFuncUtils::get_embed_provider(*allocator_, endpoint_info_.get_provider(), provider))) {
+  } else if (OB_FAIL(endpoint_info_.get_unencrypted_access_key(*allocator_, key))) {
+  } else if (OB_FAIL(provider->get_header(*allocator_, key, headers))) {
+  } else if (OB_FAIL(provider->get_body(*allocator_, model, contents, &config, body))) {
+  } else if (OB_FAIL(client.send_post(*allocator_, endpoint_info_.get_url(), headers, body, response))) {
+  } else if (OB_FAIL(provider->parse_output(*allocator_, response, value))) {
+  } else if (OB_ISNULL(value) || value->json_type() != ObJsonNodeType::J_ARRAY || value->element_count() != 1) {
+    ret = OB_INVALID_DATA;
+  } else {
+    ObJsonNode *vector = static_cast<ObJsonArray *>(value)->get_value(0);
+    if (OB_ISNULL(vector) || vector->json_type() != ObJsonNodeType::J_ARRAY) ret = OB_INVALID_DATA;
+    else ret = ObAIFuncJsonUtils::print_json_to_str(*allocator_, vector, result);
+  }
+  return ret;
+}
+
 int ObAIFuncModel::call_completion_vector(ObArray<ObString> &prompts, ObJsonObject *config, ObArray<ObString> &results)
 {
   int ret = OB_SUCCESS;
