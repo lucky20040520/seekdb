@@ -669,10 +669,12 @@ int AiColumnService::install_triggers(const std::vector<Column> &columns)
   int ret = read_rows(*GCTX.sql_proxy_, "SELECT c.column_name,CAST(c.rowkey_position AS CHAR),CAST(c.data_type AS CHAR) FROM oceanbase.__all_column c WHERE c.table_id=" +
     number(first.table_id) + " ORDER BY c.rowkey_position,c.column_id", 3, schema);
   if (OB_FAIL(ret)) return ret;
-  std::vector<std::string> names, keys;
+  std::vector<std::string> names, keys, binary_names;
   std::string new_key = "CONCAT(", old_key = "CONCAT(";
   for (const auto &r : schema) {
     names.push_back(r[0]);
+    const auto type = static_cast<ObObjType>(std::stoi(r[2]));
+    if (ob_is_string_or_lob_type(type) || type == ObJsonType) binary_names.push_back(r[0]);
     if (std::stoi(r[1]) > 0) {
       bool numeric = ob_is_numeric_type(static_cast<ObObjType>(std::stoi(r[2])));
       if (!keys.empty()) { new_key += ",' AND ',"; old_key += ",' AND ',"; }
@@ -692,8 +694,14 @@ int AiColumnService::install_triggers(const std::vector<Column> &columns)
     const auto input_tokens = tokenize(d.input);
     std::string changed = "NOT(NEW." + identifier(c.request_name()) + " <=> OLD." + identifier(c.request_name()) + ")";
     for (const auto &n : names) {
-      if (std::find(keys.begin(), keys.end(), n) != keys.end() || contains_name(input_tokens, n))
-        changed += " OR NOT(NEW." + identifier(n) + " <=> OLD." + identifier(n) + ")";
+      if (std::find(keys.begin(), keys.end(), n) != keys.end() || contains_name(input_tokens, n)) {
+        const std::string new_value = "NEW." + identifier(n);
+        const std::string old_value = "OLD." + identifier(n);
+        const bool binary = std::find(binary_names.begin(), binary_names.end(), n) != binary_names.end();
+        // Model inputs are byte-sensitive even when the SQL collation is not.
+        changed += binary ? " OR NOT(CAST(" + new_value + " AS BINARY) <=> CAST(" + old_value + " AS BINARY))"
+                          : " OR NOT(" + new_value + " <=> " + old_value + ")";
+      }
     }
     const std::string set = "SET NEW." + identifier(d.name) + "=NULL,NEW." + identifier(c.state_name()) + "='PENDING',NEW." +
       identifier(c.request_name()) + "=ai_request,NEW." + identifier(c.spec_name()) + "=" + qualify_input(d, names, "NEW.") + "; ";

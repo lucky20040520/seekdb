@@ -37,7 +37,7 @@ class EmbeddingHandler(BaseHTTPRequestHandler):
         if any(value.startswith("slow-") for value in values):
             self.server.slow_started.set()
             self.server.release_slow.wait(4)
-        vectors = {"zero": 0, "ten": 10, "twenty": 20, "slow-ten": 10}
+        vectors = {"zero": 0, "ZERO": 10, "ZERO ": 0, "ten": 10, "twenty": 20, "slow-ten": 10}
         data = [{"index": i, "embedding": [vectors[value], 0, 0, 0]}
                 for i, value in enumerate(values)]
         response = json.dumps({"data": data}).encode()
@@ -132,6 +132,23 @@ class AiColumnVectorRegression(unittest.TestCase):
         for content, value in (("ten", 10), ("twenty", 20), ("zero", 0)):
             self.q.execute("UPDATE docs SET content=%s WHERE id=1", (content,))
             self.wait_vector(1, value)
+        self.assertEqual((1,), self.nearest(0))
+
+    def test_case_only_dependency_change_invalidates_indexed_vector(self):
+        self.q.execute("INSERT INTO docs(id,content) VALUES(1,'zero'),(2,'twenty')")
+        self.wait_vector(1, 0)
+        self.wait_vector(2, 20)
+        self.index()
+        self.q.execute("START TRANSACTION")
+        self.q.execute("UPDATE docs SET content='ZERO' WHERE id=1")
+        self.q.execute("SELECT emb FROM docs WHERE id=1")
+        self.assertIsNone(self.q.fetchone()[0])
+        self.assertEqual((2,), self.nearest(0))
+        self.q.execute("COMMIT")
+        self.wait_vector(1, 10)
+        self.assertEqual((1,), self.nearest(10))
+        self.q.execute("UPDATE docs SET content='ZERO ' WHERE id=1")
+        self.wait_vector(1, 0)
         self.assertEqual((1,), self.nearest(0))
 
     def test_rollback_restores_vector_and_does_not_call_model(self):
