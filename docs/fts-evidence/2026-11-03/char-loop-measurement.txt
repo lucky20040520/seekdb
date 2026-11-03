@@ -1,0 +1,14 @@
+sample=1 variant=baseline seconds=0.088448207 checksum=346900000 documents=100000 bytes_per_document=245
+sample=1 variant=candidate seconds=0.066077939 checksum=346900000 documents=100000 bytes_per_document=245
+sample=2 variant=candidate seconds=0.066296421 checksum=346900000 documents=100000 bytes_per_document=245
+sample=2 variant=baseline seconds=0.090656852 checksum=346900000 documents=100000 bytes_per_document=245
+sample=3 variant=baseline seconds=0.089266123 checksum=346900000 documents=100000 bytes_per_document=245
+sample=3 variant=candidate seconds=0.065609175 checksum=346900000 documents=100000 bytes_per_document=245
+sample=4 variant=candidate seconds=0.065274202 checksum=346900000 documents=100000 bytes_per_document=245
+sample=4 variant=baseline seconds=0.087737348 checksum=346900000 documents=100000 bytes_per_document=245
+sample=5 variant=baseline seconds=0.090023345 checksum=346900000 documents=100000 bytes_per_document=245
+sample=5 variant=candidate seconds=0.065321809 checksum=346900000 documents=100000 bytes_per_document=245
+sample=6 variant=candidate seconds=0.065002966 checksum=346900000 documents=100000 bytes_per_document=245
+sample=6 variant=baseline seconds=0.088924043 checksum=346900000 documents=100000 bytes_per_document=245
+sample=7 variant=baseline seconds=0.088422202 checksum=346900000 documents=100000 bytes_per_document=245
+sample=7 variant=candidate seconds=0.065536792 checksum=346900000 documents=100000 bytes_per_document=245

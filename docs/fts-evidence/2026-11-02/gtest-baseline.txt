@@ -1,0 +1,143 @@
+Running main() from gtest_main.cc
+[==========] Running 2 tests from 1 test case.
+[----------] Global test environment set-up.
+[----------] 2 tests from TestFtsDictionaryCache
+[ RUN      ] TestFtsDictionaryCache.reused_map_address_reads_current_dictionary
+/home/wh-yin/seekdb-fts/test_fts_dictionary_cache.cpp:42: Failure
+      Expected: OB_ENTRY_NOT_EXIST
+      Which is: -4018
+To be equal to: map->find(word, code)
+      Which is: 0
+[  FAILED  ] TestFtsDictionaryCache.reused_map_address_reads_current_dictionary (0 ms)
+[ RUN      ] TestFtsDictionaryCache.rebuilt_map_with_different_probe_locations
+/home/wh-yin/seekdb-fts/test_fts_dictionary_cache.cpp:75: Failure
+      Expected: i + 101
+      Which is: 101
+To be equal to: code
+      Which is: 1
+/home/wh-yin/seekdb-fts/test_fts_dictionary_cache.cpp:75: Failure
+      Expected: i + 101
+      Which is: 102
+To be equal to: code
+      Which is: 2
+/home/wh-yin/seekdb-fts/test_fts_dictionary_cache.cpp:75: Failure
+      Expected: i + 101
+      Which is: 103
+To be equal to: code
+      Which is: 3
+/home/wh-yin/seekdb-fts/test_fts_dictionary_cache.cpp:75: Failure
+      Expected: i + 101
+      Which is: 104
+To be equal to: code
+      Which is: 4
+/home/wh-yin/seekdb-fts/test_fts_dictionary_cache.cpp:75: Failure
+      Expected: i + 101
+      Which is: 105
+To be equal to: code
+      Which is: 5
+/home/wh-yin/seekdb-fts/test_fts_dictionary_cache.cpp:75: Failure
+      Expected: i + 101
+      Which is: 106
+To be equal to: code
+      Which is: 6
+/home/wh-yin/seekdb-fts/test_fts_dictionary_cache.cpp:75: Failure
+      Expected: i + 101
+      Which is: 111
+To be equal to: code
+      Which is: 11
+/home/wh-yin/seekdb-fts/test_fts_dictionary_cache.cpp:75: Failure
+      Expected: i + 101
+      Which is: 112
+To be equal to: code
+      Which is: 12
+/home/wh-yin/seekdb-fts/test_fts_dictionary_cache.cpp:75: Failure
+      Expected: i + 101
+      Which is: 113
+To be equal to: code
+      Which is: 13
+/home/wh-yin/seekdb-fts/test_fts_dictionary_cache.cpp:75: Failure
+      Expected: i + 101
+      Which is: 114
+To be equal to: code
+      Which is: 14
+/home/wh-yin/seekdb-fts/test_fts_dictionary_cache.cpp:75: Failure
+      Expected: i + 101
+      Which is: 115
+To be equal to: code
+      Which is: 15
+/home/wh-yin/seekdb-fts/test_fts_dictionary_cache.cpp:75: Failure
+      Expected: i + 101
+      Which is: 116
+To be equal to: code
+      Which is: 16
+/home/wh-yin/seekdb-fts/test_fts_dictionary_cache.cpp:75: Failure
+      Expected: i + 101
+      Which is: 125
+To be equal to: code
+      Which is: 25
+/home/wh-yin/seekdb-fts/test_fts_dictionary_cache.cpp:75: Failure
+      Expected: i + 101
+      Which is: 126
+To be equal to: code
+      Which is: 26
+/home/wh-yin/seekdb-fts/test_fts_dictionary_cache.cpp:75: Failure
+      Expected: i + 101
+      Which is: 127
+To be equal to: code
+      Which is: 27
+/home/wh-yin/seekdb-fts/test_fts_dictionary_cache.cpp:75: Failure
+      Expected: i + 101
+      Which is: 128
+To be equal to: code
+      Which is: 28
+/home/wh-yin/seekdb-fts/test_fts_dictionary_cache.cpp:75: Failure
+      Expected: i + 101
+      Which is: 129
+To be equal to: code
+      Which is: 29
+/home/wh-yin/seekdb-fts/test_fts_dictionary_cache.cpp:75: Failure
+      Expected: i + 101
+      Which is: 130
+To be equal to: code
+      Which is: 30
+/home/wh-yin/seekdb-fts/test_fts_dictionary_cache.cpp:75: Failure
+      Expected: i + 101
+      Which is: 135
+To be equal to: code
+      Which is: 35
+/home/wh-yin/seekdb-fts/test_fts_dictionary_cache.cpp:75: Failure
+      Expected: i + 101
+      Which is: 136
+To be equal to: code
+      Which is: 36
+/home/wh-yin/seekdb-fts/test_fts_dictionary_cache.cpp:75: Failure
+      Expected: i + 101
+      Which is: 137
+To be equal to: code
+      Which is: 37
+/home/wh-yin/seekdb-fts/test_fts_dictionary_cache.cpp:75: Failure
+      Expected: i + 101
+      Which is: 138
+To be equal to: code
+      Which is: 38
+/home/wh-yin/seekdb-fts/test_fts_dictionary_cache.cpp:75: Failure
+      Expected: i + 101
+      Which is: 139
+To be equal to: code
+      Which is: 39
+/home/wh-yin/seekdb-fts/test_fts_dictionary_cache.cpp:75: Failure
+      Expected: i + 101
+      Which is: 140
+To be equal to: code
+      Which is: 40
+[  FAILED  ] TestFtsDictionaryCache.rebuilt_map_with_different_probe_locations (0 ms)
+[----------] 2 tests from TestFtsDictionaryCache (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 2 tests from 1 test case ran. (0 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 2 tests, listed below:
+[  FAILED  ] TestFtsDictionaryCache.reused_map_address_reads_current_dictionary
+[  FAILED  ] TestFtsDictionaryCache.rebuilt_map_with_different_probe_locations
+
+ 2 FAILED TESTS

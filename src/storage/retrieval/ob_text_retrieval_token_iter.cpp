@@ -496,6 +496,25 @@ int ObTextRetrievalDaaTTokenIter::get_next_row() {
   return ret;
 }
 
+int ObTextRetrievalDaaTTokenIter::get_next_row_with_data(
+    const ObDatum *&id_datum, double &score)
+{
+  int ret = get_next_row();
+  if (OB_SUCC(ret)) {
+    if (OB_UNLIKELY(cur_idx_ < 0 || cur_idx_ >= count_)) {
+      ret = OB_ARRAY_OUT_OF_RANGE;
+    } else {
+      // Batch loading has already checked and populated both fixed arrays.
+      // Their storage remains owned by this iterator until the next refill.
+      if (nullptr != relevance_expr_) {
+        score = relevance_.get_data()[cur_idx_];
+      }
+      id_datum = &doc_id_.get_data()[cur_idx_].get_datum();
+    }
+  }
+  return ret;
+}
+
 int ObTextRetrievalDaaTTokenIter::save_relevances_and_docids()
 {
   int ret = OB_SUCCESS;

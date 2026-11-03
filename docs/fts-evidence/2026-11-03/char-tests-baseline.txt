@@ -1,0 +1,57 @@
+Running main() from gtest_main.cc
+[==========] Running 8 tests from 1 test case.
+[----------] Global test environment set-up.
+[----------] 8 tests from TestFtsCharClassify
+[ RUN      ] TestFtsCharClassify.ascii_characters
+[       OK ] TestFtsCharClassify.ascii_characters (0 ms)
+[ RUN      ] TestFtsCharClassify.cjk_characters
+[       OK ] TestFtsCharClassify.cjk_characters (0 ms)
+[ RUN      ] TestFtsCharClassify.full_width_characters
+[       OK ] TestFtsCharClassify.full_width_characters (0 ms)
+[ RUN      ] TestFtsCharClassify.utf8_fast_path_matches_charset_for_all_scalar_values
+[       OK ] TestFtsCharClassify.utf8_fast_path_matches_charset_for_all_scalar_values (74 ms)
+[ RUN      ] TestFtsCharClassify.utf8_fast_path_preserves_invalid_input_results
+/home/wh-yin/seekdb-fts/char-tests/cases.cpp:129: Failure
+      Expected: reference_ret
+      Which is: 0
+To be equal to: ObFTCharUtil::first_valid_char_fast( ObCollationType::CS_TYPE_UTF8MB4_BIN, input.bytes, input.size, fast_len)
+      Which is: -4002
+Google Test trace:
+/home/wh-yin/seekdb-fts/char-tests/cases.cpp:123: 11
+/home/wh-yin/seekdb-fts/char-tests/cases.cpp:130: Failure
+      Expected: reference_len
+      Which is: 3
+To be equal to: fast_len
+      Which is: -1
+Google Test trace:
+/home/wh-yin/seekdb-fts/char-tests/cases.cpp:123: 11
+/home/wh-yin/seekdb-fts/char-tests/cases.cpp:129: Failure
+      Expected: reference_ret
+      Which is: 0
+To be equal to: ObFTCharUtil::first_valid_char_fast( ObCollationType::CS_TYPE_UTF8MB4_BIN, input.bytes, input.size, fast_len)
+      Which is: -4002
+Google Test trace:
+/home/wh-yin/seekdb-fts/char-tests/cases.cpp:123: 12
+/home/wh-yin/seekdb-fts/char-tests/cases.cpp:130: Failure
+      Expected: reference_len
+      Which is: 3
+To be equal to: fast_len
+      Which is: -1
+Google Test trace:
+/home/wh-yin/seekdb-fts/char-tests/cases.cpp:123: 12
+[  FAILED  ] TestFtsCharClassify.utf8_fast_path_preserves_invalid_input_results (1 ms)
+[ RUN      ] TestFtsCharClassify.cn_number_predicate
+[       OK ] TestFtsCharClassify.cn_number_predicate (0 ms)
+[ RUN      ] TestFtsCharClassify.connector_predicates
+[       OK ] TestFtsCharClassify.connector_predicates (0 ms)
+[ RUN      ] TestFtsCharClassify.ignore_single_cjk_predicate
+[       OK ] TestFtsCharClassify.ignore_single_cjk_predicate (0 ms)
+[----------] 8 tests from TestFtsCharClassify (75 ms total)
+
+[----------] Global test environment tear-down
+[==========] 8 tests from 1 test case ran. (75 ms total)
+[  PASSED  ] 7 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] TestFtsCharClassify.utf8_fast_path_preserves_invalid_input_results
+
+ 1 FAILED TEST

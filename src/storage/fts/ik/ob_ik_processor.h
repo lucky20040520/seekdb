@@ -51,6 +51,7 @@ public:
   int step_next();
 
   ObCollationType collation() const;
+  ObCharsetType charset_type() const { return charset_type_; }
   int64_t get_end_cursor() const;
   const char *fulltext() const;
   int64_t fulltext_len() const;
@@ -77,6 +78,7 @@ private:
   int prepare_next_char();
 
   ObCollationType coll_type_;
+  ObCharsetType charset_type_;
   const char *fulltext_;
   int64_t fulltext_len_;
 

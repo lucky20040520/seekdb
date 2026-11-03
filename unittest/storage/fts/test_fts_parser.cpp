@@ -25,7 +25,7 @@ namespace oceanbase
 namespace storage
 {
 
-using ObFTCharUtil::CharType;
+using CharType = ObFTCharUtil::CharType;
 
 // The IK segmenters classify every character of the document and then run a
 // few more block predicates on it. The predicates below pin down the expected
@@ -75,6 +75,77 @@ TEST_F(TestFtsCharClassify, full_width_characters)
   EXPECT_EQ(CharType::ENGLISH_LETTER, classify("\xef\xbc\xa1", 3));
   // U+FF11, full width '1'
   EXPECT_EQ(CharType::ARABIC_LETTER, classify("\xef\xbc\x91", 3));
+}
+
+TEST_F(TestFtsCharClassify, utf8_fast_path_matches_charset_for_all_scalar_values)
+{
+  const ObCollationType coll = ObCollationType::CS_TYPE_UTF8MB4_BIN;
+  for (int32_t cp = 0; cp <= 0x10ffff; ++cp) {
+    if (cp >= 0xd800 && cp <= 0xdfff) {
+      continue; // Surrogates are not Unicode scalar values.
+    }
+    char bytes[4];
+    int32_t size = 0;
+    ASSERT_EQ(OB_SUCCESS, ObCharset::wc_mb(coll, cp, bytes, sizeof(bytes), size)) << cp;
+    int64_t reference_len = -1;
+    int64_t fast_len = -1;
+    ASSERT_EQ(OB_SUCCESS, ObCharset::first_valid_char(coll, bytes, size, reference_len)) << cp;
+    ASSERT_EQ(OB_SUCCESS, ObFTCharUtil::first_valid_char_fast(coll, bytes, size, fast_len)) << cp;
+    ASSERT_EQ(reference_len, fast_len) << cp;
+
+    CharType expected = CharType::USELESS;
+    if (ObUnicodeBlockUtils::is_chinese(cp)) {
+      expected = CharType::CHINESE;
+    } else if (ObUnicodeBlockUtils::is_alpha(cp)) {
+      expected = CharType::ENGLISH_LETTER;
+    } else if (ObUnicodeBlockUtils::is_arabic(cp)) {
+      expected = CharType::ARABIC_LETTER;
+    } else if (ObUnicodeBlockUtils::is_other_cjk(cp)) {
+      expected = CharType::OTHER_CJK;
+    }
+    ASSERT_EQ(expected, classify(bytes, size)) << cp;
+  }
+}
+
+TEST_F(TestFtsCharClassify, utf8_fast_path_preserves_invalid_input_results)
+{
+  struct Input { const char *bytes; int64_t size; };
+  const Input inputs[] = {
+      {nullptr, 0}, {"", 0}, {"a", -1}, {"\x80", 1}, {"\xbf", 1},
+      {"\xc0\x80", 2}, {"\xc1\xbf", 2}, {"\xc2", 1}, {"\xc2 ", 2},
+      {"\xe0\x9f\xbf", 3}, {"\xe0\xa0", 2}, {"\xed\xa0\x80", 3},
+      {"\xed\xbf\xbf", 3}, {"\xe4\xb8", 2}, {"\xe4 \xad", 3},
+      {"\xf0\x8f\xbf\xbf", 4}, {"\xf0\x90\x80", 3},
+      {"\xf4\x90\x80\x80", 4}, {"\xf5\x80\x80\x80", 4}, {"\xff", 1},
+  };
+  int case_idx = 0;
+  for (const Input &input : inputs) {
+    SCOPED_TRACE(case_idx++);
+    int64_t reference_len = -1;
+    int64_t fast_len = -1;
+    const int reference_ret = ObCharset::first_valid_char(
+        ObCollationType::CS_TYPE_UTF8MB4_BIN, input.bytes, input.size, reference_len);
+    EXPECT_EQ(reference_ret, ObFTCharUtil::first_valid_char_fast(
+        ObCollationType::CS_TYPE_UTF8MB4_BIN, input.bytes, input.size, fast_len));
+    EXPECT_EQ(reference_len, fast_len);
+  }
+}
+
+TEST_F(TestFtsCharClassify, unretained_charsets_preserve_generic_errors)
+{
+  const ObCollationType collations[] = {CS_TYPE_UTF16_BIN, CS_TYPE_UTF16LE_BIN};
+  const char bytes[] = {'A', 0, 'B', 0};
+  for (ObCollationType coll : collations) {
+    int64_t reference_len = -1;
+    int64_t fast_len = -1;
+    const int reference_ret = ObCharset::first_valid_char(coll, bytes, sizeof(bytes), reference_len);
+    // This repository retains UTF8MB4 and binary collations, not UTF-16.
+    EXPECT_EQ(OB_NOT_SUPPORTED, reference_ret);
+    EXPECT_EQ(reference_ret, ObFTCharUtil::first_valid_char_fast(coll, bytes, sizeof(bytes), fast_len));
+    EXPECT_EQ(reference_len, fast_len);
+    CharType type = CharType::USELESS;
+    EXPECT_EQ(OB_NOT_SUPPORTED, ObFTCharUtil::classify_first_char(coll, bytes, 2, type));
+  }
 }
 
 TEST_F(TestFtsCharClassify, cn_number_predicate)

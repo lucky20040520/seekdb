@@ -47,9 +47,12 @@ public:
       return false;
     }
     const Entry &entry = entries_[hash(map, word_str)];
-    if (entry.map_ == map && entry.len_ == word_str.length()
-        && 0 == MEMCMP(entry.word_, word_str.ptr(), entry.len_)) {
-      code = entry.code_;
+    if (entry.map_ == map
+        && entry.index_ < map->capacity_ && map->data[entry.index_].used
+        && map->data[entry.index_].word == word) {
+      // An allocator can reuse this map address for a different dictionary.
+      // Cache the probe location, but validate it and read the current code.
+      code = map->data[entry.index_].code;
       return true;
     }
     return false;
@@ -57,7 +60,7 @@ public:
 
   void put(const ObArrayHashMap::Header *map,
            const ObFTSingleWord &word,
-           const ObFTWordCode code)
+           const uint64_t index)
   {
     const ObString word_str = word.get_word();
     if (word_str.length() <= 0 || word_str.length() > MAX_KEY_LEN) {
@@ -65,9 +68,7 @@ public:
     }
     Entry &entry = entries_[hash(map, word_str)];
     entry.map_ = map;
-    entry.len_ = static_cast<uint8_t>(word_str.length());
-    MEMCPY(entry.word_, word_str.ptr(), word_str.length());
-    entry.code_ = code;
+    entry.index_ = index;
   }
 
 private:
@@ -75,12 +76,10 @@ private:
 
   struct Entry
   {
-    Entry() : map_(nullptr), len_(0), code_(0), word_() {}
+    Entry() : map_(nullptr), index_(0) {}
 
     const ObArrayHashMap::Header *map_;
-    uint8_t len_;
-    ObFTWordCode code_;
-    char word_[MAX_KEY_LEN];
+    uint64_t index_;
   };
 
   static uint64_t hash(const ObArrayHashMap::Header *map, const ObString &word)
@@ -381,7 +380,7 @@ int ObArrayHashMap::find(const ObFTSingleWord &word, ObFTWordCode &code) const
   while (header_.data[index].used) {
     if (header_.data[index].word == word) {
       code = header_.data[index].code;
-      array_hash_lookup_cache().put(&header_, word, code);
+      array_hash_lookup_cache().put(&header_, word, index);
       ret = OB_SUCCESS;
       break;
     } else {

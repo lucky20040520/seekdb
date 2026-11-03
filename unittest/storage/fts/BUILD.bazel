@@ -5,11 +5,15 @@ package(default_testonly = True)
 
 cc_library(
     name = "fts_parser_cases",
-    srcs = ["test_fts_parser.cpp"],
+    srcs = [
+        "test_fts_daat.cpp",
+        "test_fts_dictionary_cache.cpp",
+        "test_fts_parser.cpp",
+    ],
     alwayslink = True,
     deps = [
         "//bazel/third_party:gtest",
-        "//src/storage:fts_test_headers",
+        "//src/storage:storage_unit_test_interface",
     ],
 )
 
