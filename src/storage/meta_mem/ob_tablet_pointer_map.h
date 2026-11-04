@@ -82,6 +82,7 @@ public:
 private:
   static int read_from_disk(
       const bool is_full_load,
+      const int64_t ls_epoch,
       const ObMetaDiskAddr &load_addr,
       common::ObArenaAllocator &allocator,
       char *&r_buf,

@@ -44,7 +44,9 @@ namespace palf
 {
 class FlushLogCbCtx;
 class LSN;
+class FlushMetaCbCtx;
 class LogIOFlushLogTask;
+class LogIOFlushMetaTask;
 class ReadBuf;
 class LogWriteBuf;
 class LogIOWorker;
@@ -189,9 +191,10 @@ public:
   virtual const share::SCN get_end_scn() const = 0;
   virtual const LSN get_readable_end_lsn() const = 0;
   virtual int get_total_used_disk_space(int64_t &total_used_disk_space, int64_t &unrecyclable_disk_space) const = 0;
-  virtual LSN get_base_lsn_used_for_block_gc() const = 0;
+  virtual const LSN &get_base_lsn_used_for_block_gc() const = 0;
   virtual int delete_block(const block_id_t &block_id) = 0;
   virtual int inner_after_flush_log(const FlushLogCbCtx &flush_log_cb_ctx) = 0;
+  virtual int inner_after_flush_meta(const FlushMetaCbCtx &flush_meta_cb_ctx) = 0;
   virtual int inner_after_truncate_prefix_blocks(const TruncatePrefixBlocksCbCtx &truncate_prefix_cb_ctx) = 0;
   virtual int advance_reuse_lsn(const LSN &flush_log_end_lsn) = 0;
   virtual int inner_append_log(const LSN &lsn,
@@ -200,6 +203,8 @@ public:
   virtual int inner_append_log(const LSNArray &lsn_array,
                                const LogWriteBufArray &write_buf_array,
                                const SCNArray &scn_array) = 0;
+  virtual int inner_append_meta(const char *buf,
+                                const int64_t buf_len) = 0;
   virtual int inner_truncate_prefix_blocks(const LSN &lsn) = 0;
   virtual int check_and_switch_state() = 0;
   virtual int check_and_switch_freeze_mode() = 0;
@@ -246,7 +251,7 @@ class PalfHandleImpl : public IPalfHandleImpl
 public:
   PalfHandleImpl();
   ~PalfHandleImpl() override;
-  int init(share::LocalStore &store, const AccessMode &access_mode,
+  int init(const AccessMode &access_mode,
            const PalfBaseInfo &palf_base_info,
            const char *log_dir,
            ObILogAllocator *alloc_mgr,
@@ -259,8 +264,11 @@ public:
            LogIOAdapter *io_adapter);
   bool check_can_be_used() const override final;
   // Restart interface
-  // Load local metadata, recover the log tail, and initialize the in-memory state.
-  int load(share::LocalStore &store, const char *log_dir,
+  // 1. Generate iterator, locate the end of meta_storage and log_storage;
+  // 2. Read the latest data from meta storage, initialize dio_aligned_buf;
+  // 3. Initialize dio_aligned_buf in log_storage;
+  // 4. Initialize other fields of palf_handle_impl.
+  int load(const char *log_dir,
            ObILogAllocator *alloc_mgr,
            ILogBlockPool *log_block_pool,
            LogIOWorker*log_io_worker,
@@ -357,12 +365,13 @@ public:
   }
   int get_total_used_disk_space(int64_t &total_used_disk_space, int64_t &unrecyclable_disk_space) const;
   // return the smallest recycable lsn
-  LSN get_base_lsn_used_for_block_gc() const override final
+  const LSN &get_base_lsn_used_for_block_gc() const override final
   {
     return log_engine_.get_base_lsn_used_for_block_gc();
   }
   // =====================  LogIOTask start ==========================
   int inner_after_flush_log(const FlushLogCbCtx &flush_log_cb_ctx) override final;
+  int inner_after_flush_meta(const FlushMetaCbCtx &flush_meta_cb_ctx) override final;
   int inner_after_truncate_prefix_blocks(const TruncatePrefixBlocksCbCtx &truncate_prefix_cb_ctx) override final;
   int advance_reuse_lsn(const LSN &flush_log_end_lsn);
   int inner_append_log(const LSN &lsn,
@@ -371,6 +380,8 @@ public:
   int inner_append_log(const LSNArray &lsn_array,
                        const LogWriteBufArray &write_buf_array,
                        const SCNArray &scn_array);
+  int inner_append_meta(const char *buf,
+                        const int64_t buf_len) override final;
   int inner_truncate_prefix_blocks(const LSN &lsn) override final;
   // ==================================================================
   int check_and_switch_state() override final;
@@ -393,6 +404,7 @@ private:
                    const common::ObAddr &self,
                    ObILogAllocator *alloc_mgr,
                    IPalfEnvImpl *palf_env_impl);
+  int after_flush_snapshot_meta_(const LSN &lsn);
   int get_prev_log_info_(const LSN &lsn, LogInfo &log_info);
   int construct_palf_base_info_(const LSN &max_committed_lsn,
                                 PalfBaseInfo &palf_base_info);

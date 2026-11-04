@@ -15,7 +15,7 @@
  */
 
 #define USING_LOG_PREFIX SERVER_OMT
-#include "rust/config.h"
+#include "config_bridge.h"
 #include "ob_server_runtime.h"
 #include "observer/ob_server.h"   // T3d
 #include "share/rc/ob_server_runtime.h"
@@ -236,6 +236,10 @@ void ObPxPool::run1()
   int ret = OB_SUCCESS;
   ObDIActionGuard action_guard("PxPool", "PxWorker", "");
   set_px_thread_name();
+  auto *pm = common::ObPageManager::thread_local_instance();
+  if (OB_LIKELY(nullptr != pm)) {
+    pm->set_ctx(common::ObCtxIds::DEFAULT_CTX_ID);
+  }
   CLEAR_INTERRUPTABLE();
   LOG_INFO("run px pool", K(group_id_), K_(active_threads));
 
@@ -379,7 +383,13 @@ int ObServerRuntime::construct_module_init_ctx(const ObServerRuntimeMeta &meta, 
 bool ObServerRuntime::is_hidden()
 {
   TCRLockGuard guard(meta_lock_);
-  return runtime_meta_.is_hidden_;
+  return runtime_meta_.super_block_.is_hidden_;
+}
+
+ObServerRuntimeMeta ObServerRuntime::get_runtime_meta()
+{
+  TCRLockGuard guard(meta_lock_);
+  return runtime_meta_;
 }
 
 ObServerRuntimeConfig ObServerRuntime::get_runtime_config()
@@ -388,16 +398,22 @@ ObServerRuntimeConfig ObServerRuntime::get_runtime_config()
   return runtime_meta_.runtime_config_;
 }
 
+ObServerRuntimeSuperBlock ObServerRuntime::get_super_block()
+{
+  TCRLockGuard guard(meta_lock_);
+  return runtime_meta_.super_block_;
+}
+
 void ObServerRuntime::set_server_resources(const ObServerRuntimeConfig &runtime_config)
 {
   TCWLockGuard guard(meta_lock_);
   runtime_meta_.runtime_config_ = runtime_config;
 }
 
-void ObServerRuntime::activate()
+void ObServerRuntime::set_server_super_block(const ObServerRuntimeSuperBlock &super_block)
 {
   TCWLockGuard guard(meta_lock_);
-  runtime_meta_.is_hidden_ = false;
+  runtime_meta_.super_block_ = super_block;
 }
 
 ERRSIM_POINT_DEF(CREATE_MODULES_FAIL)

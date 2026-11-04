@@ -15,7 +15,7 @@
  */
 
 #define USING_LOG_PREFIX SERVER
-#include "rust/config.h"
+#include "config_bridge.h"
 #include "standby/control/standby_state_store.h"
 #include "lib/oblog/ob_log.h"
 #include "lib/string/ob_string.h"

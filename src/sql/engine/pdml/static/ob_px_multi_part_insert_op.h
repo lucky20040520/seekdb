@@ -93,7 +93,7 @@ public:
                common::ObTabletID &tablet_id,
                bool &is_skipped) override;
   int write_rows(ObExecContext &ctx,
-                 const DASRuntimeTabletAccess *tablet_access,
+                 const ObDASTabletLoc *tablet_loc,
                  ObPDMLOpRowIterator &iterator) override;
 
   virtual int inner_get_next_row();

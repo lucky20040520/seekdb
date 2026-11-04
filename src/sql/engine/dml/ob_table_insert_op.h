@@ -86,9 +86,9 @@ protected:
   int insert_row_to_das();
   virtual int write_row_to_das_buffer() override;
   virtual int write_rows_post_proc(int last_errno) override;
-  int resolve_tablet_access(const ObInsCtDef &ins_ctdef,
+  int calc_tablet_loc(const ObInsCtDef &ins_ctdef,
                       ObInsRtDef &ins_rtdef,
-                      DASRuntimeTabletAccess *&tablet_access);
+                      ObDASTabletLoc *&tablet_loc);
   int open_table_for_each();
   int close_table_for_each();
 

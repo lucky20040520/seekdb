@@ -16,7 +16,7 @@
 // Storage-owned DDL algorithms operating on tablets, macro blocks and LOBs.
 #define USING_LOG_PREFIX STORAGE
 
-#include "rust/config.h"
+#include "config_bridge.h"
 #include "share/rc/ob_server_runtime.h"
 #include "storage/ob_tablet_autoinc_seq_service.h"
 #include "share/ob_ddl_common.h"
@@ -227,7 +227,10 @@ int oceanbase::storage::ObDDLStorageUtil::report_ddl_sstable_checksum(
         break;
       }
     }
-    ob_usleep(100L * 1000L);
+    // Successful checksum writes are synchronous; only delay a failed report.
+    if (OB_FAIL(ret)) {
+      ob_usleep(100L * 1000L);
+    }
   }
   return ret;
 }

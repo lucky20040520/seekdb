@@ -1537,7 +1537,8 @@ int ObDASIterUtils::create_text_retrieval_sub_tree(
   }
 
   if (OB_FAIL(ret)) {
-  } else if (size > 0 && !ir_scan_ctdef->need_estimate_total_doc_cnt()) {
+  } else if (size > 0 && ir_scan_ctdef->need_calc_relevance()
+             && !ir_scan_ctdef->need_estimate_total_doc_cnt()) {
     ObDASScanIterParam doc_cnt_agg_param;
     ObDASScanIter *doc_cnt_agg_iter = nullptr;
     init_scan_iter_param(doc_cnt_agg_param, ir_scan_ctdef->get_doc_agg_ctdef(), ir_scan_rtdef);
@@ -2636,6 +2637,8 @@ int ObDASIterUtils::create_global_lookup_iter_tree(const ObTableScanCtDef &tsc_c
     param.need_update_partition_id_ = false;
     param.used_for_keep_order_ = tsc_ctdef.is_das_keep_order_;
     if (OB_FAIL(create_das_iter(exec_ctx.get_allocator(), param, data_table_iter))) {
+    } else {
+      index_table_iter->set_global_lookup_iter(data_table_iter);
     }
   }
 

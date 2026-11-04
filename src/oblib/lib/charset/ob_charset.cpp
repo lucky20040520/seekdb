@@ -15,7 +15,6 @@
  */
 
 #define USING_LOG_PREFIX LIB_CHARSET
-#include <climits>
 #include "ob_charset.h"
 #include "lib/worker.h"
 
@@ -393,7 +392,7 @@ char* ObCharset::lltostr(int64_t val, char *dst, int radix, int upcase)
   //use dst(start) and pret(end) to locate string, please.
   char buffer[MAX_BUFFER_SIZE];
   char *p = NULL;
-#if LONG_MAX >= INT64_MAX
+#ifndef _WIN32
   long int new_val = 0;
 #endif
   char *dig_vec= upcase ? DIG_VEC_UPPER : DIG_VEC_LOWER;
@@ -416,7 +415,7 @@ char* ObCharset::lltostr(int64_t val, char *dst, int radix, int upcase)
   if (OB_SUCC(ret)) {
     p = &buffer[sizeof(buffer)-1];
     *p = '\0';
-#if LONG_MAX < INT64_MAX
+#ifdef _WIN32
     // Windows uses LLP64, where long is 32-bit.  Keep the unsigned value in
     // fixed-width arithmetic so positive-radix conversion preserves uint64
     // semantics for negative inputs.
@@ -552,8 +551,12 @@ int ObCharset::strcmp(ObCollationType collation_type,
                       int64_t str2_len)
 {
   int result = 0;
-  if (is_argument_valid(collation_type, str1, str1_len, str2, str2_len)) {
-    const ObCharsetInfo *cs = get_charset(collation_type);
+  // Resolve the charset once, then validate both strings using that descriptor.
+  const ObCharsetInfo *cs = NULL;
+  if (collation_type > CS_TYPE_INVALID && collation_type < CS_TYPE_MAX) {
+    cs = get_charset(collation_type);
+  }
+  if (is_argument_valid(cs, str1, str1_len) && is_argument_valid(cs, str2, str2_len)) {
     const bool t_is_prefix = false;
     result = cs->coll->strnncoll(cs,
                               reinterpret_cast<const unsigned char *>(str1),
@@ -572,8 +575,12 @@ int ObCharset::strcmpsp(ObCollationType collation_type,
                         bool cmp_endspace)
 {
   int result = 0;
-  if (is_argument_valid(collation_type, str1, str1_len, str2, str2_len)) {
-    const ObCharsetInfo *cs = get_charset(collation_type);
+  // Reuse the resolved descriptor for validation and comparison.
+  const ObCharsetInfo *cs = NULL;
+  if (collation_type > CS_TYPE_INVALID && collation_type < CS_TYPE_MAX) {
+    cs = get_charset(collation_type);
+  }
+  if (is_argument_valid(cs, str1, str1_len) && is_argument_valid(cs, str2, str2_len)) {
     result = cs->coll->strnncollsp(cs,
                                 reinterpret_cast<const unsigned char *>(str1),
                                 str1_len,
@@ -718,8 +725,13 @@ uint64_t ObCharset::hash(ObCollationType collation_type,
       ret = OB_ERR_UNEXPECTED;
     } else {
       seed = 0xc6a4a7935bd1e995;
+      // hash_sort expects ulong* (unsigned long*), but ret and seed are uint64_t
+      // On macOS ARM64, ulong is unsigned long, while uint64_t is unsigned long long
+      ulong ret_ulong = static_cast<ulong>(ret);
+      ulong seed_ulong = static_cast<ulong>(seed);
       cs->coll->hash_sort(cs, reinterpret_cast<const unsigned char *>(str), str_len,
-                          &ret, &seed, calc_end_space, hash_algo);
+                          &ret_ulong, &seed_ulong, calc_end_space, hash_algo);
+      ret = static_cast<uint64_t>(ret_ulong);
     }
   }
   return ret;

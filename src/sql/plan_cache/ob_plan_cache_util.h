@@ -46,8 +46,9 @@ namespace sql
 class ObPCVSet;
 class ObPhysicalPlan;
 struct ObSqlCtx;
-class TableAccessPlan;
-class TableAccessTargets;
+class ObTableLocation;
+class ObPhyTableLocation;
+class ObCandiTableLoc;
 class ObTablePartitionInfo;
 class ObPlanCacheValue;
 class ObDASCtx;
@@ -917,22 +918,23 @@ public:
   common::ObIArray<uint64_t> *key_array_;
 };
 
-struct TableAccessTargetBuilder
+struct ObPhyLocationGetter
 {
 public:
   // used for getting plan
-  static int collect_access_targets(const ObIArray<TableAccessPlan> &table_access_plans,
+  static int get_phy_locations(const ObIArray<ObTableLocation> &table_locations,
                                const ObPlanCacheCtx &pc_ctx,
-                               ObIArray<TableAccessTargets> &table_targets);
+                               ObIArray<ObCandiTableLoc> &phy_location_infos);
 
   // used for adding plan
-  static int collect_access_targets(const common::ObIArray<ObTablePartitionInfo *> &partition_infos,
-                               ObIArray<TableAccessTargets> &table_targets);
+  static int get_phy_locations(const common::ObIArray<ObTablePartitionInfo *> &partition_infos,
+                               //ObIArray<ObDASTableLoc> &phy_locations,
+                               ObIArray<ObCandiTableLoc> &phy_location_infos);
 
-  static int build_runtime_accesses(ObDASCtx &das_ctx,
-                              const common::ObIArray<TableAccessPlan> &table_access_plans,
-                              const common::ObIArray<TableAccessTargets> &table_targets);
-  static int build_related_tablet_info(const TableAccessPlan &table_access_plan,
+  static int build_table_locs(ObDASCtx &das_ctx,
+                              const common::ObIArray<ObTableLocation> &table_locations,
+                              const common::ObIArray<ObCandiTableLoc> &candi_table_locs);
+  static int build_related_tablet_info(const ObTableLocation &table_location,
                                        ObExecContext &exec_ctx,
                                        DASRelatedTabletMap *&related_map);
 

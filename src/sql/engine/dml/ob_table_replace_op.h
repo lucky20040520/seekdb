@@ -132,12 +132,12 @@ protected:
   // batch execution insert process_row and then write to das,
   int delete_row_to_das(bool need_do_trigger);
 
-  int resolve_insert_tablet_access(const ObInsCtDef &ins_ctdef,
+  int calc_insert_tablet_loc(const ObInsCtDef &ins_ctdef,
                              ObInsRtDef &ins_rtdef,
-                             DASRuntimeTabletAccess *&tablet_access);
-  int resolve_delete_tablet_access(const ObDelCtDef &del_ctdef,
+                             ObDASTabletLoc *&tablet_loc);
+  int calc_delete_tablet_loc(const ObDelCtDef &del_ctdef,
                              ObDelRtDef &del_rtdef,
-                             DASRuntimeTabletAccess *&tablet_access);
+                             ObDASTabletLoc *&tablet_loc);
 
   int inner_open_with_das();
 

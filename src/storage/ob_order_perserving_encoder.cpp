@@ -17,7 +17,7 @@
 #define USING_LOG_PREFIX COMMON
 
 #include "ob_order_perserving_encoder.h"
-#if defined(__linux__)
+#ifdef __linux__
 #include <byteswap.h>
 #elif defined(__APPLE__)
 #include <libkern/OSByteOrder.h>
@@ -43,17 +43,6 @@ namespace oceanbase
 using namespace common;
 namespace share
 {
-namespace {
-#ifdef __EMSCRIPTEN__
-inline uint16_t encoder_bswap16(uint16_t value) { return __builtin_bswap16(value); }
-inline uint32_t encoder_bswap32(uint32_t value) { return __builtin_bswap32(value); }
-inline uint64_t encoder_bswap64(uint64_t value) { return __builtin_bswap64(value); }
-#else
-inline uint16_t encoder_bswap16(uint16_t value) { return bswap_16(value); }
-inline uint32_t encoder_bswap32(uint32_t value) { return bswap_32(value); }
-inline uint64_t encoder_bswap64(uint64_t value) { return bswap_64(value); }
-#endif
-} // namespace
 
 // used for memcmp comparsion
 OB_DECLARE_AVX2_SPECIFIC_CODE(
@@ -299,7 +288,7 @@ int ObOrderPerservingEncoder::convert_ob_charset_utf8mb4_bin_sp(unsigned char *d
       }
       to += 2;
       sp_cnt = ((sp_cnt) ^ sp_cnt_mask) ^ 0x8000;
-      sp_cnt = encoder_bswap16(sp_cnt);
+      sp_cnt = bswap_16(sp_cnt);
       MEMCPY(to, (unsigned char *)&sp_cnt, 2);
       to += 2;
       to_len += 4;
@@ -463,7 +452,7 @@ int ObOrderPerservingEncoder::encode_from_int8(int8_t val, unsigned char *to, in
 int ObOrderPerservingEncoder::encode_from_int16(int16_t val, unsigned char *to, int64_t &to_len)
 {
   val ^= SIGN_MASK_16;
-  val = encoder_bswap16(val);
+  val = bswap_16(val);
   to_len += sizeof(int16_t);
   MEMCPY(to, (unsigned char *)&val, sizeof(val));
   return OB_SUCCESS;
@@ -472,7 +461,7 @@ int ObOrderPerservingEncoder::encode_from_int16(int16_t val, unsigned char *to, 
 int ObOrderPerservingEncoder::encode_from_int32(int32_t val, unsigned char *to, int64_t &to_len)
 {
   val ^= SIGN_MASK_32;
-  val = encoder_bswap32(val);
+  val = bswap_32(val);
   to_len += sizeof(int32_t);
   MEMCPY(to, (unsigned char *)&val, sizeof(val));
   return OB_SUCCESS;
@@ -481,7 +470,7 @@ int ObOrderPerservingEncoder::encode_from_int32(int32_t val, unsigned char *to, 
 int ObOrderPerservingEncoder::encode_from_int(int64_t val, unsigned char *to, int64_t &to_len)
 {
   val ^= SIGN_MASK_64;
-  val = encoder_bswap64(val);
+  val = bswap_64(val);
   to_len += sizeof(int64_t);
   MEMCPY(to, (unsigned char *)&val, sizeof(val));
   return OB_SUCCESS;
@@ -496,7 +485,7 @@ int ObOrderPerservingEncoder::encode_from_uint8(uint8_t val, unsigned char *to, 
 
 int ObOrderPerservingEncoder::encode_from_uint16(uint16_t val, unsigned char *to, int64_t &to_len)
 {
-  val = encoder_bswap16(val);
+  val = bswap_16(val);
   to_len += sizeof(uint16_t);
   MEMCPY(to, (unsigned char *)&val, sizeof(val));
   return OB_SUCCESS;
@@ -504,7 +493,7 @@ int ObOrderPerservingEncoder::encode_from_uint16(uint16_t val, unsigned char *to
 
 int ObOrderPerservingEncoder::encode_from_uint32(uint32_t val, unsigned char *to, int64_t &to_len)
 {
-  val = encoder_bswap32(val);
+  val = bswap_32(val);
   to_len += sizeof(uint32_t);
   MEMCPY(to, (unsigned char *)&val, sizeof(val));
   return OB_SUCCESS;
@@ -512,7 +501,7 @@ int ObOrderPerservingEncoder::encode_from_uint32(uint32_t val, unsigned char *to
 
 int ObOrderPerservingEncoder::encode_from_uint(uint64_t val, unsigned char *to, int64_t &to_len)
 {
-  val = encoder_bswap64(val);
+  val = bswap_64(val);
   to_len += sizeof(uint64_t);
   MEMCPY(to, (unsigned char *)&val, sizeof(val));
   return OB_SUCCESS;
@@ -530,7 +519,7 @@ int ObOrderPerservingEncoder::encode_from_double(double val, unsigned char *to, 
   MEMCPY(&val_int, &val, sizeof(val));
   // int: neg pad FF, pos pad 00
   val_int = (val_int ^ (val_int >> 63)) | ((~val_int) & 0x8000000000000000ULL);
-  val_int = encoder_bswap64(val_int);
+  val_int = bswap_64(val_int);
   MEMCPY(to, &val_int, sizeof(val));
   return OB_SUCCESS;
 }
@@ -547,7 +536,7 @@ int ObOrderPerservingEncoder::encode_from_float(float val, unsigned char *to, in
   MEMCPY(&val_int, &val, sizeof(val));
   // int: neg pad FF, pos pad 00
   val_int = (val_int ^ (val_int >> 31)) | ((~val_int) & 0x80000000U);
-  val_int = encoder_bswap32(val_int);
+  val_int = bswap_32(val_int);
   MEMCPY(to, &val_int, sizeof(val));
   return OB_SUCCESS;
 }
@@ -572,7 +561,7 @@ int ObOrderPerservingEncoder::encode_from_number(ObNumber val,
     int32_t digits_mask = static_cast<int32_t>((int64_t)((~se) ^ 0x80) >> 8);
     uint32_t *digits_ptr = val.get_digits();
     for (int64_t i = 0; i < desc.len_; i++) {
-      uint32_t dig = encoder_bswap32((digits_ptr[i] + 1) ^ digits_mask);
+      uint32_t dig = bswap_32((digits_ptr[i] + 1) ^ digits_mask);
       MEMCPY(to, &dig, sizeof(dig));
       to_len += sizeof(dig);
       to += sizeof(dig);
@@ -595,12 +584,12 @@ int ObOrderPerservingEncoder::encode_from_decint(const T &decint, unsigned char 
   int64_t high = static_cast<int64_t>(decint.items_[item_count - 1]);
   // encode_from_int(high, to, to_len);
   high ^= SIGN_MASK_64;
-  high = encoder_bswap64(high);
+  high = bswap_64(high);
   MEMCPY(to, (unsigned char *)&high, sizeof(high));
   to += sizeof(high);
   to_len += sizeof(high);
   for (int i = item_count - 2; i >= 0; i--) {
-    uint64_t val = encoder_bswap64(decint.items_[i]);
+    uint64_t val = bswap_64(decint.items_[i]);
     MEMCPY(to, (unsigned char *)&val, sizeof(val));
     to_len += sizeof(val);
     to += sizeof(val);

@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "rust/local.h"
+#include "local_bridge.h"
 #include "lib/ob_define.h"
 #include <algorithm>
 #include <cstring>

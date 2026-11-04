@@ -57,6 +57,12 @@ const char *const perf_compress_funcs[] =
   "zstd_1.3.8",
 };
 
+const char *const syslog_compress_funcs[] =
+{
+  "none",
+  "zstd_1.3.8",
+};
+
 const char *const sql_temp_store_compress_funcs[] =
 {
   "none",

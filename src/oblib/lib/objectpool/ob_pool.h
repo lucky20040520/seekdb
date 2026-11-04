@@ -60,7 +60,7 @@ private:
   {
     FreeNode *next_;
   };
-  struct alignas(uint64_t) BlockHeader
+  struct BlockHeader
   {
     BlockHeader *next_;
   };

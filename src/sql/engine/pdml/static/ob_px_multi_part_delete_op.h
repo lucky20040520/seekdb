@@ -96,7 +96,7 @@ public:
   // impl. ObDMLDataWriter
   // Write cached data in bulk to the storage layer
   int write_rows(ObExecContext &ctx,
-                 const DASRuntimeTabletAccess *tablet_access,
+                 const ObDASTabletLoc *tablet_loc,
                  ObPDMLOpRowIterator &iterator) override;
   // Upper layer op reads a line from ObPxMultiPartDelete
   virtual int inner_get_next_row();

@@ -16,7 +16,6 @@
 
 #define USING_LOG_PREFIX SQL_ENG
 
-#include <openssl/rand.h>
 #include "sql/engine/expr/ob_expr_random_bytes.h"
 
 

@@ -23,7 +23,6 @@
 //#include "lib/thread_local/ob_tsi_factory.h"
 #include "lib/allocator/page_arena.h"
 #include "lib/allocator/ob_allocator.h"
-#include <cinttypes>
 #include <type_traits>  // For std::is_arithmetic_v, std::is_integral_v, etc.
 namespace oceanbase
 {
@@ -97,7 +96,7 @@ struct ObLogPrintHex
   {
     int64_t pos = 0;
     int ret = OB_SUCCESS;
-    if (OB_FAIL(logdata_printf(buf, len, pos, "\"data_size:%" PRId64 ", data:", data_size_))) {
+    if (OB_FAIL(logdata_printf(buf, len, pos, "\"data_size:%ld, data:", data_size_))) {
     } else if (OB_FAIL(hex_print(data_, data_size_, buf, len, pos))) {
     } else if (OB_FAIL(logdata_printf(buf, len, pos, "\""))) {
     } else {}
@@ -126,11 +125,8 @@ int64_t to_string(const T &obj, char *buffer, const int64_t buffer_size, TrueTyp
 {
   int ret = OB_SUCCESS;
   int64_t pos = 0;
-  if constexpr (std::is_unsigned_v<std::underlying_type_t<T>>) {
-    ret = databuff_printf(buffer, buffer_size, pos, "%" PRIu64, static_cast<uint64_t>(obj));
-  } else {
-    ret = databuff_printf(buffer, buffer_size, pos, "%" PRId64, static_cast<int64_t>(obj));
-  }
+  if (OB_FAIL(databuff_printf(buffer, buffer_size, pos, "%ld", static_cast<int64_t>(obj)))) {
+  } else {}
   return pos;
 }
 
@@ -164,9 +160,9 @@ template <>
 int64_t to_string<int64_t>(const int64_t &obj, char *buffer, const int64_t buffer_size);
 template <>
 int64_t to_string<uint64_t>(const uint64_t &obj, char *buffer, const int64_t buffer_size);
-// On macOS, Windows and wasm32, long types are distinct from int64_t/uint64_t.
+// On macOS and Windows, long/unsigned long are distinct from int64_t/uint64_t.
 // On Linux x86_64 they are the same types, so these specializations are omitted there.
-#if defined(__APPLE__) || defined(_WIN32) || (defined(__EMSCRIPTEN__) && __SIZEOF_LONG__ == 4)
+#if defined(__APPLE__) || defined(_WIN32)
 template <>
 int64_t to_string<long>(const long &obj, char *buffer, const int64_t buffer_size);
 template <>
@@ -412,20 +408,13 @@ int databuff_print_obj(char *buf, const int64_t buf_len, int64_t &pos, const T &
 template<class T>
 int databuff_print_obj(char *buf, const int64_t buf_len, int64_t &pos, const T &obj, TrueType)
 {
-  if constexpr (std::is_unsigned_v<std::underlying_type_t<T>>) {
-    return databuff_printf(buf, buf_len, pos, "%" PRIu64, static_cast<uint64_t>(obj));
-  } else {
-    return databuff_printf(buf, buf_len, pos, "%" PRId64, static_cast<int64_t>(obj));
-  }
+  return databuff_printf(buf, buf_len, pos, "%ld", static_cast<int64_t>(obj));
 }
 
 // Detect pthread-like types (opaque on macOS) to avoid calling to_string
 template <typename U>
 struct is_pthread_like {
-  // An integral pthread_t typedef is indistinguishable from ordinary numbers.
-  // Only opaque thread handles need the address-formatting fallback.
-  static constexpr bool value = std::is_same_v<std::remove_cv_t<U>, pthread_t>
-      && !std::is_integral_v<std::remove_cv_t<U>>;
+  static constexpr bool value = std::is_same_v<std::remove_cv_t<U>, pthread_t>;
 };
 #ifdef __APPLE__
 template <>
@@ -459,9 +448,9 @@ int databuff_print_obj(char *buf, const int64_t buf_len, int64_t &pos, const T &
     // Check if T is an arithmetic type (basic types like int, long, unsigned long, etc.)
     if constexpr (std::is_integral_v<T>) {
       if constexpr (std::is_unsigned_v<T>) {
-        return databuff_printf(buf, buf_len, pos, "%" PRIu64, static_cast<uint64_t>(obj));
+        return databuff_printf(buf, buf_len, pos, "%lu", static_cast<unsigned long>(obj));
       } else {
-        return databuff_printf(buf, buf_len, pos, "%" PRId64, static_cast<int64_t>(obj));
+        return databuff_printf(buf, buf_len, pos, "%ld", static_cast<long>(obj));
       }
     } else if constexpr (std::is_floating_point_v<T>) {
       return databuff_printf(buf, buf_len, pos, "%f", static_cast<double>(obj));
@@ -535,22 +524,38 @@ inline int databuff_print_obj(char *buf, const int64_t buf_len, int64_t &pos, co
 }
 inline int databuff_print_obj(char *buf, const int64_t buf_len, int64_t &pos, const volatile int64_t &obj)
 {
-  return databuff_printf(buf, buf_len, pos, "%" PRId64, obj);
+#ifdef _WIN32
+  return databuff_printf(buf, buf_len, pos, "%lld", obj);
+#else
+  return databuff_printf(buf, buf_len, pos, "%ld", obj);
+#endif
 }
 template<>
 inline int databuff_print_obj(char *buf, const int64_t buf_len, int64_t &pos, const uint64_t &obj)
 {
-  return databuff_printf(buf, buf_len, pos, "%" PRIu64, obj);
+#ifdef _WIN32
+  return databuff_printf(buf, buf_len, pos, "%llu", obj);
+#else
+  return databuff_printf(buf, buf_len, pos, "%lu", obj);
+#endif
 }
 template<>
 inline int databuff_print_obj(char *buf, const int64_t buf_len, int64_t &pos, const volatile uint64_t &obj)
 {
-  return databuff_printf(buf, buf_len, pos, "%" PRIu64, obj);
+#ifdef _WIN32
+  return databuff_printf(buf, buf_len, pos, "%llu", obj);
+#else
+  return databuff_printf(buf, buf_len, pos, "%lu", obj);
+#endif
 }
 template<>
 inline int databuff_print_obj(char *buf, const int64_t buf_len, int64_t &pos, const int64_t &obj)
 {
-  return databuff_printf(buf, buf_len, pos, "%" PRId64, obj);
+#ifdef _WIN32
+  return databuff_printf(buf, buf_len, pos, "%lld", obj);
+#else
+  return databuff_printf(buf, buf_len, pos, "%ld", obj);
+#endif
 }
 template<>
 inline int databuff_print_obj(char *buf, const int64_t buf_len, int64_t &pos, const uint32_t &obj)
@@ -682,11 +687,7 @@ template<class T>
 int databuff_print_key_obj(char *buf, const int64_t buf_len, int64_t &pos, const char *key,
                            const bool with_comma, const T &obj, TrueType)
 {
-  if constexpr (std::is_unsigned_v<std::underlying_type_t<T>>) {
-    return databuff_printf(buf, buf_len, pos, WITH_COMMA("%s:%" PRIu64), key, static_cast<uint64_t>(obj));
-  } else {
-    return databuff_printf(buf, buf_len, pos, WITH_COMMA("%s:%" PRId64), key, static_cast<int64_t>(obj));
-  }
+  return databuff_printf(buf, buf_len, pos, WITH_COMMA("%s:%ld"), key, static_cast<int64_t>(obj));
 }
 /// print object with to_string members
 template<class T>
@@ -699,9 +700,9 @@ int databuff_print_key_obj(char *buf, const int64_t buf_len, int64_t &pos, const
     if constexpr (std::is_arithmetic_v<T>) {
       if constexpr (std::is_integral_v<T>) {
         if constexpr (std::is_unsigned_v<T>) {
-          ret = databuff_printf(buf, buf_len, pos, "%" PRIu64, static_cast<uint64_t>(obj));
+          ret = databuff_printf(buf, buf_len, pos, "%lu", static_cast<unsigned long>(obj));
         } else {
-          ret = databuff_printf(buf, buf_len, pos, "%" PRId64, static_cast<int64_t>(obj));
+          ret = databuff_printf(buf, buf_len, pos, "%ld", static_cast<long>(obj));
         }
       } else if constexpr (std::is_floating_point_v<T>) {
         ret = databuff_printf(buf, buf_len, pos, "%f", static_cast<double>(obj));
@@ -712,7 +713,7 @@ int databuff_print_key_obj(char *buf, const int64_t buf_len, int64_t &pos, const
       pos += obj.to_string(buf + pos, buf_len - pos);
     }
   }
-  return ret;
+  return OB_SUCCESS;
 }
 template<class T>
 int databuff_print_key_obj(char *buf, const int64_t buf_len, int64_t &pos, const char *key,
@@ -771,22 +772,38 @@ inline int databuff_print_key_obj(char *buf, const int64_t buf_len, int64_t &pos
 inline int databuff_print_key_obj(char *buf, const int64_t buf_len, int64_t &pos, const char *key,
                                   const bool with_comma, const volatile int64_t &obj)
 {
-  return databuff_printf(buf, buf_len, pos, WITH_COMMA("%s:%" PRId64), key, obj);
+#ifdef _WIN32
+  return databuff_printf(buf, buf_len, pos, WITH_COMMA("%s:%lld"), key, obj);
+#else
+  return databuff_printf(buf, buf_len, pos, WITH_COMMA("%s:%ld"), key, obj);
+#endif
 }
 template<>
 inline int databuff_print_key_obj(char *buf, const int64_t buf_len, int64_t &pos, const char *key, const bool with_comma, const uint64_t &obj)
 {
-  return databuff_printf(buf, buf_len, pos, WITH_COMMA("%s:%" PRIu64), key, obj);
+#ifdef _WIN32
+  return databuff_printf(buf, buf_len, pos, WITH_COMMA("%s:%llu"), key, obj);
+#else
+  return databuff_printf(buf, buf_len, pos, WITH_COMMA("%s:%lu"), key, obj);
+#endif
 }
 template<>
 inline int databuff_print_key_obj(char *buf, const int64_t buf_len, int64_t &pos, const char *key, const bool with_comma, const volatile uint64_t &obj)
 {
-  return databuff_printf(buf, buf_len, pos, WITH_COMMA("%s:%" PRIu64), key, obj);
+#ifdef _WIN32
+  return databuff_printf(buf, buf_len, pos, WITH_COMMA("%s:%llu"), key, obj);
+#else
+  return databuff_printf(buf, buf_len, pos, WITH_COMMA("%s:%lu"), key, obj);
+#endif
 }
 template<>
 inline int databuff_print_key_obj(char *buf, const int64_t buf_len, int64_t &pos, const char *key, const bool with_comma, const int64_t &obj)
 {
-  return databuff_printf(buf, buf_len, pos, WITH_COMMA("%s:%" PRId64), key, obj);
+#ifdef _WIN32
+  return databuff_printf(buf, buf_len, pos, WITH_COMMA("%s:%lld"), key, obj);
+#else
+  return databuff_printf(buf, buf_len, pos, WITH_COMMA("%s:%ld"), key, obj);
+#endif
 }
 template<>
 inline int databuff_print_key_obj(char *buf, const int64_t buf_len, int64_t &pos, const char *key, const bool with_comma, const uint32_t &obj)

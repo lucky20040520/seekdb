@@ -25,7 +25,8 @@ namespace oceanbase {
 namespace sql {
 class ObPhysicalPlan;
 class ObPlanCacheCtx;
-class TableAccessPlan;
+class ObTableLocation;
+class ObPhyTableLocation;
 
 class ObPlanMatchHelper
 {
@@ -34,38 +35,38 @@ public:
   int match_plan(const ObPlanCacheCtx &pc_ctx,
                  const ObPhysicalPlan *plan,
                  bool &is_matched,
-                 common::ObIArray<TableAccessTargets> &phy_tbl_infos,
-                 common::ObIArray<TableAccessPlan> &out_access_plans) const;
+                 common::ObIArray<ObCandiTableLoc> &phy_tbl_infos,
+                 common::ObIArray<ObTableLocation> &out_tbl_locations) const;
 
   /**
-   * @brief Get the table accesses of all relational tables involved in TableAccessConstraint
-   * from the table access cached by Physical Plan
+   * @brief Get the table locations of all relational tables involved in LocationConstraint
+   * from the table location cached by Physical Plan
    *
    */
-  int calculate_tablet_targets(
-      const ObIArray<TableAccessConstraint> &access_constraints,
-      const common::ObIArray<TableAccessPlan> &in_access_plans,
+  int calc_table_locations(
+      const ObIArray<LocationConstraint> &loc_cons,
+      const common::ObIArray<ObTableLocation> &in_tbl_locations,
       const ObPlanCacheCtx &pc_ctx,
-      common::ObIArray<TableAccessPlan> &out_access_plans,
-      common::ObIArray<TableAccessTargets> &phy_tbl_infos) const;
+      common::ObIArray<ObTableLocation> &out_tbl_locations,
+      common::ObIArray<ObCandiTableLoc> &phy_tbl_infos) const;
 
 private:
   /**
-   * @brief Get table access with table access key
+   * @brief Get table location with table location key
    *
    */
-  int find_access_plan(
-      const TableAccessKey key,
-      const ObIArray<TableAccessPlan> &table_access_plans,
-      const TableAccessPlan *&result_access_plan) const;
+  int get_tbl_loc_with_key(
+      const TableLocationKey key,
+      const ObIArray<ObTableLocation> &table_locations,
+      const ObTableLocation *&ret_loc_ptr) const;
   /**
-   * @brief Compare table access types
+   * @brief Compare table location types
    *
    */
   int cmp_table_types(
-      const ObIArray<TableAccessConstraint> &access_constraints,
-      const common::ObIArray<TableAccessPlan> &access_plans,
-      const common::ObIArray<TableAccessTargets> &phy_tbl_infos,
+      const ObIArray<LocationConstraint> &loc_cons,
+      const common::ObIArray<ObTableLocation> &tbl_locs,
+      const common::ObIArray<ObCandiTableLoc> &phy_tbl_infos,
       bool &is_same) const;
   /**
    * @brief Check only_one_first_part constraint and only_one_sub_part constraint
@@ -73,8 +74,8 @@ private:
    *
    */
   int check_partition_constraint(const ObPlanCacheCtx &pc_ctx,
-                                 const ObIArray<TableAccessConstraint> &access_constraints,
-                                 const common::ObIArray<TableAccessTargets> &phy_tbl_infos,
+                                 const ObIArray<LocationConstraint> &loc_cons,
+                                 const common::ObIArray<ObCandiTableLoc> &phy_tbl_infos,
                                  bool &is_match) const;
   /**
    * @brief Check that tables in strict pwj constraints and non-strict pwj constraints
@@ -84,7 +85,7 @@ private:
    */
   int check_inner_constraints(const common::ObIArray<ObPlanPwjConstraint>& strict_cons,
                               const common::ObIArray<ObPlanPwjConstraint>& non_strict_cons,
-                              const common::ObIArray<TableAccessTargets> &phy_tbl_infos,
+                              const common::ObIArray<ObCandiTableLoc> &phy_tbl_infos,
                               const ObPlanCacheCtx &pc_ctx,
                               PWJTabletIdMap &pwj_map,
                               bool &is_same) const;
@@ -94,14 +95,17 @@ private:
    */
   int check_strict_pwj_cons(const ObPlanCacheCtx &pc_ctx,
                             const ObPlanPwjConstraint &pwj_cons,
-                            const ObIArray<TableAccessTargets> &phy_tbl_infos,
+                            const ObIArray<ObCandiTableLoc> &phy_tbl_infos,
                             ObStrictPwjComparer &pwj_comparer,
                             PWJTabletIdMap &pwj_map,
                             bool &is_same) const;
-  // Check single-tablet co-access after local target validation.
-  int match_tablet_counts(const TableAccessTargets &left,
-                         const TableAccessTargets &right,
-                         bool &is_matched) const;
+  /**
+   * @brief Check table partition location
+   *
+   */
+  int match_tbl_partition_locs(const ObCandiTableLoc &left,
+                               const ObCandiTableLoc &right,
+                               bool &is_matched) const;
 };
 } // namespace sql
 } // namespace oceanbase

@@ -15,7 +15,7 @@
  */
 
 #define USING_LOG_PREFIX SQL
-#include "rust/config.h"
+#include "config_bridge.h"
 #include "ob_px_admission.h"
 #include "query/runtime/ob_query_runtime_environment.h"
 #include "ob_px_target_monitor.h"

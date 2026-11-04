@@ -16,6 +16,7 @@
 
 #include "ob_tablet_pointer_map.h"
 #include "share/rc/ob_server_runtime.h"
+#include "storage/meta_store/ob_storage_meta_io_util.h"
 #include "storage/ls/ob_ls.h"
 #include "storage/meta_store/ob_local_storage_meta_service.h"
 
@@ -388,8 +389,8 @@ int ObTabletPointerMap::load_meta_obj(
           STORAGE_LOG(INFO, "the tablet has been deleted", K(ret), K(key));
         }
       }
-      if (FAILEDx(read_from_disk(true/*is_full_load*/, load_addr, arena_allocator, buf, buf_len))) {
-        STORAGE_LOG(WARN, "fail to read from disk", K(ret), KPC(meta_pointer));
+      if (FAILEDx(read_from_disk(true/*is_full_load*/, meta_pointer->get_ls()->get_ls_epoch(), load_addr, arena_allocator, buf, buf_len))) {
+        STORAGE_LOG(WARN, "fail to read from disk", K(ret), KPC(meta_pointer), K(meta_pointer->get_ls()->get_ls_epoch()));
       } else if (OB_FAIL(t->assign_pointer_handle(tmp_ptr_hdl))) {
       } else {
         t->tablet_addr_ = load_addr;
@@ -406,6 +407,7 @@ int ObTabletPointerMap::load_meta_obj(
 
 int ObTabletPointerMap::read_from_disk(
     const bool is_full_load,
+    const int64_t ls_epoch,
     const ObMetaDiskAddr &load_addr,
     common::ObArenaAllocator &allocator,
     char *&r_buf,
@@ -422,7 +424,7 @@ int ObTabletPointerMap::read_from_disk(
   }
   if (OB_FAIL(::oceanbase::share::server_service<::oceanbase::storage::ObLocalStorageMetaService>()->read_from_disk(real_load_addr, allocator, r_buf, r_len))) {
     if (OB_SEARCH_NOT_FOUND != ret) {
-      STORAGE_LOG(WARN, "fail to read from addr", K(ret), K(real_load_addr));
+      STORAGE_LOG(WARN, "fail to read from addr", K(ret), K(real_load_addr), K(ls_epoch));
     }
   }
 
@@ -458,8 +460,8 @@ int ObTabletPointerMap::load_meta_obj(
           STORAGE_LOG(INFO, "the tablet has been deleted", K(ret), K(key));
         }
       }
-      if (FAILEDx(read_from_disk(false/*is_full_load*/, load_addr, arena_allocator, buf, buf_len))) {
-        STORAGE_LOG(WARN, "fail to read from disk", K(ret), KPC(meta_pointer));
+      if (FAILEDx(read_from_disk(false/*is_full_load*/, meta_pointer->get_ls()->get_ls_epoch(), load_addr, arena_allocator, buf, buf_len))) {
+        STORAGE_LOG(WARN, "fail to read from disk", K(ret), KPC(meta_pointer), K(meta_pointer->get_ls()->get_ls_epoch()));
       } else if (OB_FAIL(t->assign_pointer_handle(tmp_ptr_hdl))) {
       } else {
         t->tablet_addr_ = load_addr;

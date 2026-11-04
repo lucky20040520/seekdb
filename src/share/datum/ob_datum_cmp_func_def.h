@@ -380,13 +380,131 @@ struct ObDatumStrCmpImpl
     cmp_ret = cmp_ret > 0 ? 1 : (cmp_ret < 0 ? -1 : 0);
     return OB_SUCCESS;
   }
+
+  // The caller supplies at least three bytes. Reject non-canonical UTF-8;
+  // those inputs must retain the charset comparator's binary fallback.
+  static OB_INLINE bool first_three_byte_weight(const char *ptr, uint32_t &weight)
+  {
+    const unsigned char a = static_cast<unsigned char>(ptr[0]);
+    const unsigned char b = static_cast<unsigned char>(ptr[1]);
+    const unsigned char c = static_cast<unsigned char>(ptr[2]);
+    if (a < 0xe0 || a > 0xef || (b & 0xc0) != 0x80 || (c & 0xc0) != 0x80
+        || (a == 0xe0 && b < 0xa0) || (a == 0xed && b >= 0xa0)) {
+      return false;
+    }
+    const uint32_t wc = ((a & 0x0f) << 12) | ((b & 0x3f) << 6) | (c & 0x3f);
+    const ObUnicaseInfoChar *page = ob_unicase_default.page[wc >> 8];
+    weight = nullptr == page ? wc : page[wc & 0xff].sort;
+    return true;
+  }
+
+  template <typename Word>
+  static OB_INLINE bool equal_ends(const char *l, const char *r, const uint32_t len)
+  {
+    Word l_first, l_last, r_first, r_last;
+    MEMCPY(&l_first, l, sizeof(Word));
+    MEMCPY(&l_last, l + len - sizeof(Word), sizeof(Word));
+    MEMCPY(&r_first, r, sizeof(Word));
+    MEMCPY(&r_last, r + len - sizeof(Word), sizeof(Word));
+    return l_first == r_first && l_last == r_last;
+  }
+
+  static OB_INLINE bool equal_short_string(const char *l, const char *r, const uint32_t len)
+  {
+    // The overlapping first/last words cover every byte without reading past
+    // either payload. Use memcpy so unaligned string data remains supported.
+    if (len > 16) {
+      return 0 == MEMCMP(l, r, len);
+    } else if (len >= 8) {
+      return equal_ends<uint64_t>(l, r, len);
+    } else if (len >= 4) {
+      return equal_ends<uint32_t>(l, r, len);
+    } else if (len >= 2) {
+      return equal_ends<uint16_t>(l, r, len);
+    } else {
+      return 0 == len || l[0] == r[0];
+    }
+  }
 };
 
 template <ObCollationType CS_TYPE, bool WITH_END_SPACE>
 struct ObDatumStrCmp : public ObDefined<SupportedCollection<CS_TYPE>::defined_>
 {
-  inline static int cmp(const ObDatum &l, const ObDatum &r, int &cmp_ret)
+  static OB_INLINE int cmp(const ObDatum &l, const ObDatum &r, int &cmp_ret)
   {
+    // Binary collation treats every byte as significant, including trailing
+    // spaces, for both WITH_END_SPACE modes. Keep exceptional datums on the
+    // charset path so its argument handling remains unchanged.
+    if (CS_TYPE == CS_TYPE_BINARY
+        && !l.is_null() && !r.is_null()
+        && ObDatumDesc::NONE == l.flag_ && ObDatumDesc::NONE == r.flag_
+        && (0 == l.len_ || nullptr != l.ptr_)
+        && (0 == r.len_ || nullptr != r.ptr_)) {
+      // Keep the common fixed-width binary key comparison at a constant size
+      // so the compiler can compare its two words without a libc dispatch.
+      if (16 == l.len_ && 16 == r.len_) {
+        const int cmp = MEMCMP(l.ptr_, r.ptr_, 16);
+        cmp_ret = cmp > 0 ? 1 : (cmp < 0 ? -1 : 0);
+        return OB_SUCCESS;
+      }
+      const uint32_t common_len = l.len_ < r.len_ ? l.len_ : r.len_;
+      const int cmp = 0 == common_len ? 0 : MEMCMP(l.ptr_, r.ptr_, common_len);
+      cmp_ret = cmp > 0 ? 1 : (cmp < 0 ? -1
+          : (l.len_ > r.len_ ? 1 : (l.len_ < r.len_ ? -1 : 0)));
+      return OB_SUCCESS;
+    }
+    // GENERAL_CI returns at the first unequal character weight. ASCII bytes
+    // decode as themselves, so differing first weights need no charset dispatch
+    // or suffix decoding. Read the original weights rather than folding bits:
+    // punctuation and control bytes do not follow the letter case mapping.
+    if (CS_TYPE == CS_TYPE_UTF8MB4_GENERAL_CI
+        && !l.is_null() && !r.is_null()
+        && ObDatumDesc::NONE == l.flag_ && ObDatumDesc::NONE == r.flag_
+        && l.len_ > 0 && r.len_ > 0
+        && nullptr != l.ptr_ && nullptr != r.ptr_) {
+      const unsigned char l_first = static_cast<unsigned char>(l.ptr_[0]);
+      const unsigned char r_first = static_cast<unsigned char>(r.ptr_[0]);
+      if (l_first != r_first && (l_first | r_first) < 0x80) {
+        const ObUnicaseInfoChar *weights = ob_unicase_default.page[0];
+        const uint32_t l_weight = weights[l_first].sort;
+        const uint32_t r_weight = weights[r_first].sort;
+        if (l_weight != r_weight) {
+          cmp_ret = l_weight < r_weight ? -1 : 1;
+          return OB_SUCCESS;
+        }
+      }
+    }
+    // Repeated short keys need no Unicode decoding when their bytes agree.
+    // Only ordinary string payloads reach this comparator; LOB locators use
+    // ObDatumTextCmp instead. Keep remaining unequal strings on the collation path.
+    if (CS_TYPE == CS_TYPE_UTF8MB4_GENERAL_CI
+        && !l.is_null() && !r.is_null()
+        && l.len_ == r.len_ && l.len_ > 0 && l.len_ <= 64
+        && nullptr != l.ptr_ && nullptr != r.ptr_
+        && (l.ptr_ == r.ptr_ || ObDatumStrCmpImpl::equal_short_string(l.ptr_, r.ptr_, l.len_))) {
+      cmp_ret = 0;
+      return OB_SUCCESS;
+    }
+    // Unequal three-byte first characters can decide GENERAL_CI order without
+    // dispatching through the charset interface. Keep byte-equal short strings
+    // above this path, and preserve the original comparator when weights agree.
+    if (CS_TYPE == CS_TYPE_UTF8MB4_GENERAL_CI
+        && !l.is_null() && !r.is_null()
+        && ObDatumDesc::NONE == l.flag_ && ObDatumDesc::NONE == r.flag_
+        && l.len_ >= 3 && r.len_ >= 3
+        && nullptr != l.ptr_ && nullptr != r.ptr_
+        && static_cast<unsigned char>(l.ptr_[0]) >= 0xe0
+        && static_cast<unsigned char>(r.ptr_[0]) >= 0xe0
+        && 0 != MEMCMP(l.ptr_, r.ptr_, 3)) {
+      uint32_t l_weight = 0;
+      uint32_t r_weight = 0;
+      if (ObDatumStrCmpImpl::first_three_byte_weight(l.ptr_, l_weight)
+          && ObDatumStrCmpImpl::first_three_byte_weight(r.ptr_, r_weight)
+          && l_weight != r_weight) {
+        cmp_ret = l_weight < r_weight ? -1 : 1;
+        return OB_SUCCESS;
+      }
+    }
     return ObDatumStrCmpImpl::cmp(l, r, cmp_ret, CS_TYPE, WITH_END_SPACE);
   }
 };

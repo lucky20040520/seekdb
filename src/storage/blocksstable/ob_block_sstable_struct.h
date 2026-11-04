@@ -48,6 +48,7 @@ extern const char *BLOCK_SSTBALE_FILE_NAME;
 
 //block sstable header magic number;
 const int64_t MICRO_BLOCK_HEADER_MAGIC = 1005;
+const int64_t SERVER_SUPER_BLOCK_MAGIC = 1018;
 const int64_t LINKED_MACRO_BLOCK_HEADER_MAGIC = 1019;
 
 const int64_t MICRO_BLOCK_HEADER_VERSION = 3;
@@ -66,6 +67,25 @@ struct ObPosition
   TO_STRING_KV(K_(offset), K_(length));
 };
 
+
+struct ObCommitLogSpec
+{
+  const char *log_dir_;
+  int64_t max_log_file_size_;
+  int64_t log_sync_type_;
+  ObCommitLogSpec()
+  {
+    memset(this, 0, sizeof(*this));
+  }
+  bool is_valid() const
+  {
+    return NULL != log_dir_
+        && max_log_file_size_ > 0
+        && (log_sync_type_ == 0 || log_sync_type_ == 1);
+  }
+  TO_STRING_KV(K_(log_dir), K_(max_log_file_size), K_(log_sync_type));
+};
+
 struct ObStorageEnv
 {
   // for disk manager
@@ -77,8 +97,12 @@ struct ObStorageEnv
   int64_t log_disk_size_;
   int64_t log_disk_percentage_;
 
-  // for clog file handler
+  // for sstable log writer
+  ObCommitLogSpec log_spec_;
+
+  // for clog/slog file handler
   ObLogFileSpec clog_file_spec_;
+  ObLogFileSpec slog_file_spec_;
 
   // for clog writer
   const char *clog_dir_;
@@ -99,6 +123,7 @@ struct ObStorageEnv
                K_(data_disk_percentage),
                K_(log_disk_size),
                K_(log_disk_percentage),
+               K_(log_spec),
                K_(clog_dir),
                K_(bf_cache_miss_count_threshold),
                K_(ethernet_speed));

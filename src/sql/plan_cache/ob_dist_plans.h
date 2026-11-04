@@ -25,8 +25,8 @@ namespace oceanbase {
 namespace sql {
 struct ObPlanCacheCtx;
 class ObPhysicalPlan;
-class TableAccessPlan;
-class TableAccessTargets;
+class ObTableLocation;
+class ObCandiTableLoc;
 class ObSqlPlanSet;
 
 class ObDistPlans {

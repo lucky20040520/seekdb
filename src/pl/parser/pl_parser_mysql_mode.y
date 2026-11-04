@@ -15,20 +15,16 @@
  */ 
 
 //first: declare
-%expect 0
-%lex-param {void *YYLEX_PARAM}
 %define api.pure
 %parse-param {ObParseCtx *parse_ctx}
 %name-prefix "obpl_mysql_yy"
 %locations
 //%no-lines
+%verbose
 %error-verbose
 
 %{
 #include <stdint.h>
-#ifndef _WIN32
-#include <strings.h>
-#endif
 #define YYDEBUG 1
 %}
 
@@ -39,8 +35,6 @@
 }
 
 %code requires {
-#include <stdint.h>
-typedef struct _ObParseCtx ObParseCtx;
 #ifndef YYLTYPE_IS_DECLARED
 #define YYLTYPE_IS_DECLARED 1
 typedef struct YYLTYPE
@@ -56,7 +50,7 @@ typedef struct YYLTYPE
 
 # define YYLLOC_DEFAULT(Current, Rhs, N)                        \
   do                                                            \
-    if ((N)) {                                             \
+    if (YYID (N)) {                                             \
       (Current).first_line   = YYRHSLOC (Rhs, 1).first_line;    \
       (Current).first_column = YYRHSLOC (Rhs, 1).first_column;  \
       (Current).last_line    = YYRHSLOC (Rhs, N).last_line;     \
@@ -71,7 +65,7 @@ typedef struct YYLTYPE
       (Current).abs_first_column = (Current).abs_last_column =          \
         YYRHSLOC (Rhs, 0).abs_last_column;                              \
     }                                                           \
-  while (0)
+  while (YYID (0))
 }
 
 %{
@@ -1732,7 +1726,7 @@ label_ident:
 ;
 
 opt_sp_label:
-    /* Empty */ { $$ = NULL; }
+    /* Empty */ { $$ = NULL }
   | label_ident
     {
       $$ = $1;

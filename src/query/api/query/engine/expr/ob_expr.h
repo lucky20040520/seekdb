@@ -291,8 +291,7 @@ private:
 
 
 
-// Expression frames reserve a 16-byte header on every target, including wasm32.
-struct alignas(8) ObDynReserveBuf
+struct ObDynReserveBuf
 {
   static const uint32_t MAGIC_NUM = 0xD928e5bf;
   static bool supported(const common::ObObjType &type)

@@ -15,7 +15,7 @@
  */
 
 #define USING_LOG_PREFIX SQL_ENG
-#include "rust/config.h"
+#include "config_bridge.h"
 #include "ob_expr_json_func_helper.h"
 #include "share/ob_json_access_utils.h"
 #include "ob_expr_json_utils.h"

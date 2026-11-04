@@ -11,13 +11,7 @@
 
 EASY_CPP_START
 
-#if defined(__wasm__)
-#define easy_atomic_set(v,i) __atomic_store_n(&(v), (i), __ATOMIC_SEQ_CST)
-#define EASY_ATOMIC_LOAD(v) __atomic_load_n(&(v), __ATOMIC_ACQUIRE)
-#else
 #define easy_atomic_set(v,i)        ((v) = (i))
-#define EASY_ATOMIC_LOAD(v) (v)
-#endif
 typedef volatile int32_t            easy_atomic32_t;
 
 // 32bit
@@ -39,7 +33,7 @@ static __inline__ void easy_atomic32_dec(easy_atomic32_t *v)
 }
 
 // 64bit
-#if __WORDSIZE == 64 || defined(__wasm__)
+#if __WORDSIZE == 64
 typedef volatile int64_t easy_atomic_t;
 static __inline__ void easy_atomic_add(easy_atomic_t *v, int64_t i)
 {
@@ -73,7 +67,7 @@ static __inline__ int32_t easy_atomic_cmp_set(easy_atomic_t *lock, int32_t old, 
 }
 #endif
 
-#define easy_trylock(lock)  (EASY_ATOMIC_LOAD(*(lock)) == 0 && easy_atomic_cmp_set(lock, 0, 1))
+#define easy_trylock(lock)  (*(lock) == 0 && easy_atomic_cmp_set(lock, 0, 1))
 #define easy_unlock(lock)   __atomic_store_n(lock, 0, __ATOMIC_SEQ_CST)
 #define easy_spin_unlock easy_unlock
 #define easy_mfence() __atomic_thread_fence(__ATOMIC_SEQ_CST)
@@ -82,7 +76,7 @@ static __inline__ void easy_spin_lock(easy_atomic_t *lock)
     int                     i, n;
 
     for ( ; ; ) {
-        if (EASY_ATOMIC_LOAD(*lock) == 0 && easy_atomic_cmp_set(lock, 0, 1)) {
+        if (*lock == 0 && easy_atomic_cmp_set(lock, 0, 1)) {
             return;
         }
 
@@ -93,14 +87,12 @@ static __inline__ void easy_spin_lock(easy_atomic_t *lock)
                 __asm__ (".byte 0xf3, 0x90");
 #elif defined(__aarch64__)
                 __asm__ ("yield");  // for ARM
-#elif defined(__wasm__)
-                __asm__ __volatile__("" ::: "memory");
 #else
     #error arch unsupported
 #endif
             }
 
-            if (EASY_ATOMIC_LOAD(*lock) == 0 && easy_atomic_cmp_set(lock, 0, 1)) {
+            if (*lock == 0 && easy_atomic_cmp_set(lock, 0, 1)) {
                 return;
             }
         }
@@ -138,10 +130,10 @@ static __inline__ int easy_spinrwlock_rdlock(easy_spinrwlock_t *lock)
             int                     loop = 1;
 
             do {
-                easy_atomic_t           oldv = EASY_ATOMIC_LOAD(lock->ref_cnt);
+                easy_atomic_t           oldv = lock->ref_cnt;
 
                 if (0 <= oldv
-                        && 0 == EASY_ATOMIC_LOAD(lock->wait_write)) {
+                        && 0 == lock->wait_write) {
                     easy_atomic_t           newv = oldv + 1;
 
                     if (easy_atomic_cmp_set(&lock->ref_cnt, oldv, newv)) {
@@ -154,8 +146,6 @@ static __inline__ int easy_spinrwlock_rdlock(easy_spinrwlock_t *lock)
                 asm("pause");
 #elif defined(__aarch64__)
                 asm("yield");  // for ARM
-#elif defined(__wasm__)
-                __asm__ __volatile__("" ::: "memory");
 #else
     #error arch unsupported
 #endif
@@ -182,7 +172,7 @@ static __inline__ int easy_spinrwlock_wrlock(easy_spinrwlock_t *lock)
             int                     loop = 1;
 
             do {
-                easy_atomic_t           oldv = EASY_ATOMIC_LOAD(lock->ref_cnt);
+                easy_atomic_t           oldv = lock->ref_cnt;
 
                 if (0 == oldv) {
                     easy_atomic_t           newv = -1;
@@ -197,8 +187,6 @@ static __inline__ int easy_spinrwlock_wrlock(easy_spinrwlock_t *lock)
                 asm("pause");
 #elif defined(__aarch64__)
                 asm("yield");  // for ARM
-#elif defined(__wasm__)
-                __asm__ __volatile__("" ::: "memory");
 #else
     #error arch unsupported
 #endif
@@ -222,10 +210,10 @@ static __inline__ int easy_spinrwlock_try_rdlock(easy_spinrwlock_t *lock)
         ret = EASY_ERROR;
     } else {
         ret = EASY_AGAIN;
-        easy_atomic_t           oldv = EASY_ATOMIC_LOAD(lock->ref_cnt);
+        easy_atomic_t           oldv = lock->ref_cnt;
 
         if (0 <= oldv
-                && 0 == EASY_ATOMIC_LOAD(lock->wait_write)) {
+                && 0 == lock->wait_write) {
             easy_atomic_t           newv = oldv + 1;
 
             if (easy_atomic_cmp_set(&lock->ref_cnt, oldv, newv)) {
@@ -244,7 +232,7 @@ static __inline__ int easy_spinrwlock_try_wrlock(easy_spinrwlock_t *lock)
         ret = EASY_ERROR;
     } else {
         ret = EASY_AGAIN;
-        easy_atomic_t           oldv = EASY_ATOMIC_LOAD(lock->ref_cnt);
+        easy_atomic_t           oldv = lock->ref_cnt;
 
         if (0 == oldv) {
             easy_atomic_t           newv = -1;
@@ -265,7 +253,7 @@ static __inline__ int easy_spinrwlock_unlock(easy_spinrwlock_t *lock)
         ret = EASY_ERROR;
     } else {
         while (1) {
-            easy_atomic_t           oldv = EASY_ATOMIC_LOAD(lock->ref_cnt);
+            easy_atomic_t           oldv = lock->ref_cnt;
 
             if (-1 == oldv) {
                 easy_atomic_t           newv = 0;

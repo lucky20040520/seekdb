@@ -1,6 +1,0 @@
-exports_files([
-    "dependencies.json",
-    "rust.py",
-    "emscripten-version",
-    "rust-toolchain-version",
-])

@@ -22,7 +22,6 @@
 #include "lib/utility/ob_print_utils.h"
 #include "lib/charset/ob_ctype.h"
 #include "lib/charset/ob_template_helper.h"
-#include "lib/lock/ob_mutex.h"
 #include "lib/lock/ob_rwlock.h"
 
 namespace oceanbase

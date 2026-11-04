@@ -27,14 +27,14 @@ namespace sql
 {
 
 //not assign array member
-void DASTableAccessMeta::light_assign(const DASTableAccessMeta &other)
+void ObDASTableLocMeta::light_assign(const ObDASTableLocMeta &other)
 {
-  table_ref_id_ = other.table_ref_id_;
+  table_loc_id_ = other.table_loc_id_;
   ref_table_id_ = other.ref_table_id_;
   flags_ = other.flags_;
 }
 
-int DASTableAccessMeta::assign(const DASTableAccessMeta &other)
+int ObDASTableLocMeta::assign(const ObDASTableLocMeta &other)
 {
   int ret = OB_SUCCESS;
   light_assign(other);
@@ -42,8 +42,8 @@ int DASTableAccessMeta::assign(const DASTableAccessMeta &other)
   return ret;
 }
 
-int DASTableAccessMeta::init_related_meta(uint64_t related_table_id,
-                                         DASTableAccessMeta &related_meta) const
+int ObDASTableLocMeta::init_related_meta(uint64_t related_table_id,
+                                         ObDASTableLocMeta &related_meta) const
 {
   int ret = OB_SUCCESS;
   related_meta.light_assign(*this);
@@ -58,118 +58,119 @@ int DASTableAccessMeta::init_related_meta(uint64_t related_table_id,
   return ret;
 }
 
-OB_SERIALIZE_MEMBER(DASTableAccessMeta,
-                    table_ref_id_,
+OB_SERIALIZE_MEMBER(ObDASTableLocMeta,
+                    table_loc_id_,
                     ref_table_id_,
                     related_table_ids_,
                     flags_);
 
-OB_SERIALIZE_MEMBER(DASRuntimeTabletAccess,
+OB_SERIALIZE_MEMBER(ObDASTabletLoc,
                     tablet_id_,
+                    flags_,
                     partition_id_,
                     first_level_part_id_);
 
-OB_DEF_SERIALIZE(DASRuntimeTableAccess)
+OB_DEF_SERIALIZE(ObDASTableLoc)
 {
   int ret = OB_SUCCESS;
-  OB_UNIS_ENCODE(*access_meta_);
+  OB_UNIS_ENCODE(*loc_meta_);
   OB_UNIS_ENCODE(flags_);
-  OB_UNIS_ENCODE(tablet_accesses_.size());
-  FOREACH_X(tmp_node, tablet_accesses_, OB_SUCC(ret)) {
-    DASRuntimeTabletAccess *tablet_access = *tmp_node;
-    OB_UNIS_ENCODE(*tablet_access);
+  OB_UNIS_ENCODE(tablet_locs_.size());
+  FOREACH_X(tmp_node, tablet_locs_, OB_SUCC(ret)) {
+    ObDASTabletLoc *tablet_loc = *tmp_node;
+    OB_UNIS_ENCODE(*tablet_loc);
   }
   return ret;
 }
 
-OB_DEF_DESERIALIZE(DASRuntimeTableAccess)
+OB_DEF_DESERIALIZE(ObDASTableLoc)
 {
   int ret = OB_SUCCESS;
   int64_t size = 0;
-  void *meta_buf = allocator_.alloc(sizeof(DASTableAccessMeta));
-  DASTableAccessMeta *access_meta = nullptr;
+  void *meta_buf = allocator_.alloc(sizeof(ObDASTableLocMeta));
+  ObDASTableLocMeta *loc_meta = nullptr;
   if (OB_ISNULL(meta_buf)) {
     ret = OB_ALLOCATE_MEMORY_FAILED;
   } else {
-    access_meta = new(meta_buf) DASTableAccessMeta(allocator_);
-    access_meta_ = access_meta;
+    loc_meta = new(meta_buf) ObDASTableLocMeta(allocator_);
+    loc_meta_ = loc_meta;
   }
-  OB_UNIS_DECODE(*access_meta);
+  OB_UNIS_DECODE(*loc_meta);
   OB_UNIS_DECODE(flags_);
   OB_UNIS_DECODE(size);
   for (int64_t i = 0; OB_SUCC(ret) && i < size; ++i) {
-    DASRuntimeTabletAccess *tablet_access = nullptr;
-    void *tablet_buf = allocator_.alloc(sizeof(DASRuntimeTabletAccess));
+    ObDASTabletLoc *tablet_loc = nullptr;
+    void *tablet_buf = allocator_.alloc(sizeof(ObDASTabletLoc));
     if (OB_ISNULL(tablet_buf)) {
       ret = OB_ALLOCATE_MEMORY_FAILED;
     } else {
-      tablet_access = new(tablet_buf) DASRuntimeTabletAccess();
-      tablet_access->access_meta_ = access_meta_;
-      if (OB_FAIL(tablet_accesses_.push_back(tablet_access))) {
+      tablet_loc = new(tablet_buf) ObDASTabletLoc();
+      tablet_loc->loc_meta_ = loc_meta_;
+      if (OB_FAIL(tablet_locs_.push_back(tablet_loc))) {
       }
     }
-    OB_UNIS_DECODE(*tablet_access);
+    OB_UNIS_DECODE(*tablet_loc);
   }
   return ret;
 }
 
-OB_DEF_SERIALIZE_SIZE(DASRuntimeTableAccess)
+OB_DEF_SERIALIZE_SIZE(ObDASTableLoc)
 {
   int64_t len = 0;
-  OB_UNIS_ADD_LEN(*access_meta_);
+  OB_UNIS_ADD_LEN(*loc_meta_);
   OB_UNIS_ADD_LEN(flags_);
-  OB_UNIS_ADD_LEN(tablet_accesses_.size());
-  FOREACH(tmp_node, tablet_accesses_) {
-    DASRuntimeTabletAccess *tablet_access = *tmp_node;
-    OB_UNIS_ADD_LEN(*tablet_access);
+  OB_UNIS_ADD_LEN(tablet_locs_.size());
+  FOREACH(tmp_node, tablet_locs_) {
+    ObDASTabletLoc *tablet_loc = *tmp_node;
+    OB_UNIS_ADD_LEN(*tablet_loc);
   }
   return len;
 }
 
 
-int DASRuntimeTableAccess::find_tablet_access(const ObTabletID &tablet_id,
-                                        DASRuntimeTabletAccess *&tablet_access)
+int ObDASTableLoc::get_tablet_loc_by_id(const ObTabletID &tablet_id,
+                                        ObDASTabletLoc *&tablet_loc)
 {
   int ret = OB_SUCCESS;
-  tablet_access = NULL;
+  tablet_loc = NULL;
   lookup_cnt_++;
-  if (tablet_accesses_map_.created()) {
-    if (OB_FAIL(tablet_accesses_map_.get(tablet_id, tablet_access))) {
+  if (tablet_locs_map_.created()) {
+    if (OB_FAIL(tablet_locs_map_.get(tablet_id, tablet_loc))) {
       if (OB_HASH_NOT_EXIST != ret) {
       }
     }
   }
-  if (OB_SUCC(ret) && NULL != tablet_access) {
+  if (OB_SUCC(ret) && NULL != tablet_loc) {
     // found in hash map
   } else if (OB_HASH_NOT_EXIST == ret) {
     // key not found
     ret = OB_SUCCESS;
   } else {
-    FOREACH(tmp_node, tablet_accesses_) {
-      DASRuntimeTabletAccess *tmp_tablet_access = *tmp_node;
-      if (tmp_tablet_access->tablet_id_ == tablet_id) {
-        tablet_access = tmp_tablet_access;
+    FOREACH(tmp_node, tablet_locs_) {
+      ObDASTabletLoc *tmp_tablet_loc = *tmp_node;
+      if (tmp_tablet_loc->tablet_id_ == tablet_id) {
+        tablet_loc = tmp_tablet_loc;
         break;
       }
     }
   }
-  if (OB_FAIL(ret) || tablet_accesses_map_.created()) {
+  if (OB_FAIL(ret) || tablet_locs_map_.created()) {
     // do nothing
-  } else if (lookup_cnt_ > DAS_TABLET_ACCESS_LOOKUP_THRESHOLD
-             && tablet_accesses_.size() > DAS_TABLET_ACCESS_SIZE_THRESHOLD
-             && OB_FAIL(create_tablet_accesses_map())) {
+  } else if (lookup_cnt_ > DAS_TABLET_LOC_LOOKUP_THRESHOLD
+             && tablet_locs_.size() > DAS_TABLET_LOC_SIZE_THRESHOLD
+             && OB_FAIL(create_tablet_locs_map())) {
   }
   return ret;
 }
 
-int DASRuntimeTableAccess::add_tablet_access(DASRuntimeTabletAccess *tablet_access)
+int ObDASTableLoc::add_tablet_loc(ObDASTabletLoc *tablet_loc)
 {
   int ret = OB_SUCCESS;
-  if (OB_ISNULL(tablet_access)) {
+  if (OB_ISNULL(tablet_loc)) {
     ret = OB_ERR_UNEXPECTED;
-  } else if (OB_FAIL(tablet_accesses_.push_back(tablet_access))) {
-  } else if (tablet_accesses_map_.created()) {
-    if (OB_FAIL(tablet_accesses_map_.set(tablet_access->tablet_id_, tablet_access))) {
+  } else if (OB_FAIL(tablet_locs_.push_back(tablet_loc))) {
+  } else if (tablet_locs_map_.created()) {
+    if (OB_FAIL(tablet_locs_map_.set(tablet_loc->tablet_id_, tablet_loc))) {
     }
   }
   return ret;
@@ -217,7 +218,7 @@ int TabletHashMap::find_node(const ObTabletID key,
   return ret;
 }
 
-int TabletHashMap::set(const ObTabletID key, DASRuntimeTabletAccess *value)
+int TabletHashMap::set(const ObTabletID key, ObDASTabletLoc *value)
 {
   int ret = OB_SUCCESS;
   uint64_t hash_val = 0;
@@ -246,7 +247,7 @@ int TabletHashMap::set(const ObTabletID key, DASRuntimeTabletAccess *value)
   return ret;
 }
 
-int TabletHashMap::get(const ObTabletID key, DASRuntimeTabletAccess *&value)
+int TabletHashMap::get(const ObTabletID key, ObDASTabletLoc *&value)
 {
   int ret = OB_SUCCESS;
   uint64_t hash_val = 0;
@@ -266,17 +267,17 @@ int TabletHashMap::get(const ObTabletID key, DASRuntimeTabletAccess *&value)
   return ret;
 }
 
-int DASRuntimeTableAccess::create_tablet_accesses_map()
+int ObDASTableLoc::create_tablet_locs_map()
 {
   int ret = OB_SUCCESS;
-  if (OB_UNLIKELY(tablet_accesses_map_.created())) {
+  if (OB_UNLIKELY(tablet_locs_map_.created())) {
     ret = OB_ERR_UNEXPECTED;
-  } else if (OB_FAIL(tablet_accesses_map_.create(DAS_TABLET_ACCESS_MAP_BUCKET_SIZE))) {
+  } else if (OB_FAIL(tablet_locs_map_.create(DAS_TABLET_LOC_MAP_BUCKET_SIZE))) {
   } else {
-    for (DASRuntimeTabletListIter tablet_node = tablet_accesses_begin();
-         OB_SUCC(ret) && tablet_node != tablet_accesses_end(); ++tablet_node) {
-      DASRuntimeTabletAccess *tablet_access = *tablet_node;
-      if (OB_FAIL(tablet_accesses_map_.set(tablet_access->tablet_id_, tablet_access))) {
+    for (DASTabletLocListIter tablet_node = tablet_locs_begin();
+         OB_SUCC(ret) && tablet_node != tablet_locs_end(); ++tablet_node) {
+      ObDASTabletLoc *tablet_loc = *tablet_node;
+      if (OB_FAIL(tablet_locs_map_.set(tablet_loc->tablet_id_, tablet_loc))) {
       }
     }
   }

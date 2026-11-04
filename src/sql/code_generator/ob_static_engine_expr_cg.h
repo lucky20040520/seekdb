@@ -467,7 +467,7 @@ private:
 
   // evaluate question mark expression at run time, used in PL which has no param frames.
   bool rt_question_mark_eval_;
-  //is code generate temp expr witch used in table access
+  //is code generate temp expr witch used in table location
   bool need_flatten_gen_col_;
   common::ObFixedArray<ObRawExpr *, common::ObIAllocator> gen_questionmarks_;
   bool contain_dynamic_eval_rt_qm_;

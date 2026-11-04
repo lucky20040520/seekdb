@@ -16,8 +16,6 @@
 
 #ifndef COND_H
 #define COND_H
-#include <pthread.h>
-#include <time.h>
 #include "lib/time/Time.h"
 #include "lib/ob_define.h"
 #include "lib/oblog/ob_log.h"

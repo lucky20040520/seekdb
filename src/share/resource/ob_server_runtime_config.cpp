@@ -24,32 +24,56 @@ namespace share
 {
 
 OB_SERIALIZE_MEMBER(ObServerRuntimeConfig,
-                    resource_config_);
+                    resource_config_,
+                    mode_,
+                    has_memstore_);
 
 ObServerRuntimeConfig::ObServerRuntimeConfig()
-  : resource_config_()
+  : resource_config_(),
+    mode_(lib::Worker::CompatMode::INVALID),
+    has_memstore_(true)
 {
 }
 
 int ObServerRuntimeConfig::init(
-    const ObServerResourceConfig &resource_config)
+    const ObServerResourceConfig &resource_config,
+    lib::Worker::CompatMode compat_mode,
+    const bool has_memstore)
 {
-  return resource_config_.assign(resource_config);
+  int ret = OB_SUCCESS;
+  if (OB_FAIL(resource_config_.assign(resource_config))) {
+  } else {
+    mode_ = compat_mode;
+    has_memstore_ = has_memstore;
+  }
+  return ret;
 }
 
 void ObServerRuntimeConfig::reset()
 {
   resource_config_.reset();
+  mode_ = lib::Worker::CompatMode::INVALID;
+  has_memstore_ = true;
 }
 
 bool ObServerRuntimeConfig::operator==(const ObServerRuntimeConfig &other) const
 {
-  return resource_config_ == other.resource_config_;
+  return resource_config_ == other.resource_config_
+      && mode_ == other.mode_
+      && has_memstore_ == other.has_memstore_;
 }
 
 int ObServerRuntimeConfig::assign(const ObServerRuntimeConfig &other)
 {
-  return this == &other ? OB_SUCCESS : resource_config_.assign(other.resource_config_);
+  int ret = OB_SUCCESS;
+  if (this != &other) {
+    if (OB_FAIL(resource_config_.assign(other.resource_config_))) {
+    } else {
+      mode_ = other.mode_;
+      has_memstore_ = other.has_memstore_;
+    }
+  }
+  return ret;
 }
 
 } // namespace share

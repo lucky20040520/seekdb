@@ -1,8 +1,0 @@
-ignore_directories([
-    "build",
-    "build_*",
-    "deps/3rd",
-    "deps/android",
-    "deps/ios",
-    "deps/wasm",
-])

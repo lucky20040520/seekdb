@@ -16,7 +16,7 @@
 
 #define USING_LOG_PREFIX SQL_CG
 
-#include "rust/config.h"
+#include "config_bridge.h"
 #include "sql/code_generator/ob_code_generator.h"
 #include "sql/code_generator/ob_static_engine_cg.h"
 #include "sql/engine/ob_physical_plan.h"

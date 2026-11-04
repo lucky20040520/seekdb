@@ -18,6 +18,7 @@
 #define OCEANBASE_STORAGE_META_STORE_OB_SERVER_RUNTIME_META_H_
 
 #include "share/resource/ob_server_runtime_config.h"
+#include "storage/ob_super_block_struct.h"
 
 namespace oceanbase
 {
@@ -27,9 +28,12 @@ namespace omt
 struct ObServerRuntimeMeta final
 {
 public:
+  static constexpr int32_t LEGACY_CREATE_STATUS_CREATED = 1;
+
   ObServerRuntimeMeta()
     : runtime_config_(),
-      is_hidden_(false) {}
+      super_block_(),
+      legacy_create_status_(LEGACY_CREATE_STATUS_CREATED) {}
   ObServerRuntimeMeta(const ObServerRuntimeMeta &) = default;
   ObServerRuntimeMeta &operator=(const ObServerRuntimeMeta &) = default;
 
@@ -37,17 +41,24 @@ public:
 
   bool is_valid() const
   {
-    return runtime_config_.is_valid();
+    return runtime_config_.is_valid()
+        && super_block_.is_valid()
+        && LEGACY_CREATE_STATUS_CREATED == legacy_create_status_;
   }
 
   int build(const share::ObServerRuntimeConfig &runtime_config,
-            bool is_hidden);
+            const storage::ObServerRuntimeSuperBlock &super_block);
 
-  TO_STRING_KV(K_(runtime_config), K_(is_hidden));
+  TO_STRING_KV(K_(runtime_config), K_(super_block), K_(legacy_create_status));
+
+  OB_UNIS_VERSION_V(1);
 
 public:
   share::ObServerRuntimeConfig runtime_config_;
-  bool is_hidden_;
+  storage::ObServerRuntimeSuperBlock super_block_;
+  // Serialized only to preserve the V1 checkpoint wire format. Runtime
+  // lifecycle recovery no longer uses this field.
+  int32_t legacy_create_status_;
 };
 
 }  // end namespace omt

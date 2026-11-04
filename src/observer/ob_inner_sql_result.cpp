@@ -76,7 +76,8 @@ int ObInnerSQLResult::init()
   param.set_mem_attr(ObModIds::OB_RESULT_SET,
                      ObCtxIds::DEFAULT_CTX_ID)
     .set_properties(lib::USE_TL_PAGE_OPTIONAL)
-    .set_page_size(OB_MALLOC_MIDDLE_BLOCK_SIZE);
+    .set_page_size(OB_MALLOC_MIDDLE_BLOCK_SIZE)
+    .set_ablock_size(lib::INTACT_MIDDLE_AOBJECT_SIZE);
   if (OB_FAIL(CURRENT_CONTEXT->CREATE_CONTEXT(mem_context_, param))) {
   } else if (OB_FAIL(::oceanbase::share::server_service<::oceanbase::omt::ObServerRuntimeController>()->lock_runtime(runtime_))) {
     if (OB_IN_STOP_STATE == ret) {
@@ -128,7 +129,7 @@ int ObInnerSQLResult::open()
       if (opened_) {
         ret = OB_INIT_TWICE;
       } else if (OB_FAIL(result_set_->open())) {
-        result_set_->get_exec_context().get_das_ctx().record_access_error(ret);
+        result_set_->refresh_location_cache_by_errno(true, ret);
         // move after precess_retry().
 //        result_set_->close();
       } else if (is_read_&& is_select) {
@@ -139,7 +140,7 @@ int ObInnerSQLResult::open()
             iter_end_ = true;
             ret = OB_SUCCESS;
           } else {
-            result_set_->get_exec_context().get_das_ctx().record_access_error(ret);
+            result_set_->refresh_location_cache_by_errno(true, ret);
           }
         } else {
           store_first_row_ = true;
@@ -187,7 +188,7 @@ int ObInnerSQLResult::inner_close()
 
   WITH_CONTEXT(mem_context_) {
     if (OB_FAIL(result_set_->close())) {
-      result_set_->get_exec_context().get_das_ctx().record_access_error(ret);
+      result_set_->refresh_location_cache_by_errno(true, ret);
     }
   }
   opened_ = false;
@@ -214,7 +215,7 @@ int ObInnerSQLResult::next()
     WITH_CONTEXT(mem_context_) {
       if (OB_FAIL(result_set_->get_next_row(row_))) {
         if (OB_ITER_END != ret) {
-          result_set_->get_exec_context().get_das_ctx().record_access_error(ret);
+          result_set_->refresh_location_cache_by_errno(true, ret);
         }
       }
 

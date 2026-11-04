@@ -16,7 +16,6 @@
 
 #define USING_LOG_PREFIX SERVER
 #include "ob_request_base.h"
-#include "lib/utility/utility.h"
 #define IS_LOGICAL_OPERATOR(type) ((type) == T_OP_AND || (type) == T_OP_OR || (type) == T_OP_XOR)
 #define IS_SIMPLIFIABLE_OPERATOR(type) (IS_LOGICAL_OPERATOR(type) || \
                                         (type) == T_OP_ADD || \
@@ -340,14 +339,9 @@ int ObReqConstExpr::translate_expr(ObObjPrintParams &print_params_, char *buf_, 
   } else if (var_type_ == ObNullType) {
     PRINT_IDENT("NULL");
   } else {
-    // JSON strings are UTF-8 text. Keep a character literal (including JSON
-    // object keys), with normal literal coercibility, while hex encoding makes
-    // quotes, backslashes and NUL independent of NO_BACKSLASH_ESCAPES.
-    ObSqlString literal;
-    if (OB_FAIL(sql_append_hex_escape_str(expr_name, literal))) {
-    } else {
-      DATA_PRINTF("_utf8mb4 %.*s", literal.string().length(), literal.string().ptr());
-    }
+    DATA_PRINTF("'");
+    PRINT_IDENT(expr_name);
+    DATA_PRINTF("'");
   }
   if (OB_SUCC(ret) && need_alias && translate_alias(print_params_, buf_, buf_len_, pos_)) {
   }

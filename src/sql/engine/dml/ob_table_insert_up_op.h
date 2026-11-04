@@ -142,7 +142,7 @@ protected:
 
   int lock_one_row_to_das(const ObUpdCtDef &upd_ctdef,
                           ObUpdRtDef &upd_rtdef,
-                          const DASRuntimeTabletAccess *tablet_access);
+                          const ObDASTabletLoc *tablet_loc);
 
   int insert_row_to_das();
 
@@ -152,41 +152,41 @@ protected:
 
   int delete_one_upd_old_row_das(const ObUpdCtDef &upd_ctdef,
                                  ObUpdRtDef &upd_rtdef,
-                                 const DASRuntimeTabletAccess *tablet_access);
+                                 const ObDASTabletLoc *tablet_loc);
 
   int insert_one_upd_new_row_das(const ObUpdCtDef &upd_ctdef,
                                  ObUpdRtDef &upd_rtdef,
-                                 const DASRuntimeTabletAccess *tablet_access);
+                                 const ObDASTabletLoc *tablet_loc);
 
   int insert_row_to_das(const ObInsCtDef &ins_ctdef,
                         ObInsRtDef &ins_rtdef,
-                        const DASRuntimeTabletAccess *tablet_access);
+                        const ObDASTabletLoc *tablet_loc);
 
   int insert_row_to_das(const ObInsCtDef &ins_ctdef,
                                          ObInsRtDef &ins_rtdef,
-                                         const DASRuntimeTabletAccess *tablet_access,
+                                         const ObDASTabletLoc *tablet_loc,
                                          ObDMLModifyRowNode &modify_row);
 
-  int resolve_update_tablet_access(const ObUpdCtDef &upd_ctdef,
+  int calc_update_tablet_loc(const ObUpdCtDef &upd_ctdef,
                              ObUpdRtDef &upd_rtdef,
-                             DASRuntimeTabletAccess *&old_tablet_access,
-                             DASRuntimeTabletAccess *&new_tablet_access);
+                             ObDASTabletLoc *&old_tablet_loc,
+                             ObDASTabletLoc *&new_tablet_loc);
 
   int calc_update_multi_tablet_id(const ObUpdCtDef &upd_ctdef,
                                   ObExpr &part_id_expr,
                                   common::ObTabletID &tablet_id);
   // Actually here it is calculating the old_row's pkey of update
-  int resolve_upd_old_row_tablet_access(const ObUpdCtDef &upd_ctdef,
+  int calc_upd_old_row_tablet_loc(const ObUpdCtDef &upd_ctdef,
                                   ObUpdRtDef &upd_rtdef,
-                                  DASRuntimeTabletAccess *&tablet_access);
+                                  ObDASTabletLoc *&tablet_loc);
 
-  int resolve_upd_new_row_tablet_access(const ObUpdCtDef &upd_ctdef,
+  int calc_upd_new_row_tablet_loc(const ObUpdCtDef &upd_ctdef,
                                   ObUpdRtDef &upd_rtdef,
-                                  DASRuntimeTabletAccess *&tablet_access);
+                                  ObDASTabletLoc *&tablet_loc);
   // TODO @kaizhan.dkz This function will be deleted later
-  int resolve_insert_tablet_access(const ObInsCtDef &ins_ctdef,
+  int calc_insert_tablet_loc(const ObInsCtDef &ins_ctdef,
                              ObInsRtDef &ins_rtdef,
-                             DASRuntimeTabletAccess *&tablet_access);
+                             ObDASTabletLoc *&tablet_loc);
 
   int do_update(const ObConflictValue &constraint_value);
 

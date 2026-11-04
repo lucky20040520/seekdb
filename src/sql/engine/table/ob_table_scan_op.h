@@ -133,7 +133,7 @@ public:
       scan_flags_(),
       scan_ctdef_(allocator),
       lookup_ctdef_(nullptr),
-      lookup_access_meta_(nullptr),
+      lookup_loc_meta_(nullptr),
       das_dppr_tbl_(nullptr),
       allocator_(allocator),
       calc_part_id_expr_(NULL),
@@ -158,7 +158,7 @@ public:
   {
     return static_cast<const ObQueryRangeProvider&>(pre_range_graph_);
   }
-  int allocate_dppr_access_plan();
+  int allocate_dppr_table_loc();
   ObDASScanCtDef *get_lookup_ctdef();
   const ObDASScanCtDef *get_lookup_ctdef() const;
   TO_STRING_KV(K_(snapshot_item),
@@ -166,7 +166,7 @@ public:
                K_(scan_flags),
                K_(scan_ctdef),
                KPC_(lookup_ctdef),
-               KPC_(lookup_access_meta),
+               KPC_(lookup_loc_meta),
                KPC_(das_dppr_tbl),
                KPC_(calc_part_id_expr),
                K_(global_index_rowkey_exprs),
@@ -188,11 +188,11 @@ public:
   //which is used only when accessing index table and lookup the main table,
   //it means to the lookup parameter required by the main table
   ObDASScanCtDef *lookup_ctdef_;
-  //lookup_access_meta_ used to calc the main table tablet access
+  //lookup_loc_meta_ used to calc the main table tablet location
   //when query access the global index and lookup the main table
-  DASTableAccessMeta *lookup_access_meta_;
+  ObDASTableLocMeta *lookup_loc_meta_;
   //used for dynamic partition pruning
-  TableAccessPlan *das_dppr_tbl_;
+  ObTableLocation *das_dppr_tbl_;
   common::ObIAllocator &allocator_;
   // Begin for Global Index Lookup
   ObExpr *calc_part_id_expr_;
@@ -265,7 +265,7 @@ public:
     return key_ranges_.assign(range);
   }
 protected:
-  DASRuntimeTabletAccess *tablet_access_;
+  ObDASTabletLoc *tablet_loc_;
   common::ObSEArray<common::ObNewRange, 1> key_ranges_;
   common::ObSEArray<common::ObSpatialMBR, 1> mbr_filters_;
   common::ObPosArray range_array_pos_;
@@ -281,7 +281,8 @@ class ObTableScanSpec : public ObOpSpec
 public:
   ObTableScanSpec(common::ObIAllocator &alloc, const ObPhyOperatorType type);
 
-  uint64_t get_scan_source_table_id() const { return tsc_ctdef_.scan_ctdef_.ref_table_id_; }
+  common::ObTableID get_table_loc_id() { return table_loc_id_; }
+  uint64_t get_loc_ref_table_id() const { return tsc_ctdef_.scan_ctdef_.ref_table_id_; }
   common::ObTableID get_ref_table_id() const { return ref_table_id_; }
   bool should_scan_index() const { return tsc_ctdef_.scan_ctdef_.ref_table_id_ != ref_table_id_; }
   bool is_index_back() const { return tsc_ctdef_.lookup_ctdef_ != nullptr; }
@@ -308,7 +309,7 @@ public:
 
   virtual bool is_table_scan() const override { return true; }
   inline const ObQueryRangeProvider &get_query_range_provider() const { return tsc_ctdef_.get_query_range_provider(); }
-  inline uint64_t get_table_ref_id() const { return table_ref_id_; }
+  inline uint64_t get_table_loc_id() const { return table_loc_id_; }
   bool use_dist_das() const { return use_dist_das_; }
   int64_t get_rowkey_cnt() const {
     return tsc_ctdef_.scan_ctdef_.table_param_.get_read_info().get_schema_rowkey_count(); }
@@ -338,7 +339,7 @@ public:
   // and serialized plans do not use those fields. Therefore, those fields need not be serialized.
   common::ObString table_name_; // table name of the table to scan
   common::ObString index_name_; // name of the index to be used
-  common::ObTableID table_ref_id_; //table access id
+  common::ObTableID table_loc_id_; //table location id
   common::ObTableID ref_table_id_; //main table ref table id
   ObExpr *limit_;
   ObExpr *offset_;
@@ -495,9 +496,9 @@ public:
   int do_diagnosis(ObExecContext &exec_ctx, ObBitVector &skip) override;
 
 protected:
-  // Get GI task then update tablet_access_idx and $cur_access_tablet_
+  // Get GI task then update location_idx and $cur_access_tablet_
   // NOTE: set $iter_end_ if no task found.
-  int get_access_tablet_access(ObGranuleTaskInfo &info);
+  int get_access_tablet_loc(ObGranuleTaskInfo &info);
   // Assign GI task ranges to INPUT
   int reassign_task_ranges(ObGranuleTaskInfo &info);
 
@@ -509,7 +510,7 @@ protected:
   int init_table_scan_rtdef();
   int init_das_scan_rtdef(const ObDASScanCtDef &das_ctdef,
                           ObDASScanRtDef &das_rtdef,
-                          const DASTableAccessMeta *access_meta);
+                          const ObDASTableLocMeta *loc_meta);
   int init_attach_scan_rtdef(const ObDASBaseCtDef *attach_ctdef, ObDASBaseRtDef *&attach_rtdef);
   int prepare_scan_range();
   int prepare_batch_scan_range();
@@ -599,8 +600,8 @@ protected:
   int prepare_das_task();
   int prepare_all_das_tasks();
   int prepare_pushdown_limit_param();
-  bool has_das_scan_op(const DASRuntimeTabletAccess *tablet_access, ObDASScanOp *&das_op);
-  int create_one_das_task(DASRuntimeTabletAccess *tablet_access);
+  bool has_das_scan_op(const ObDASTabletLoc *tablet_loc, ObDASScanOp *&das_op);
+  int create_one_das_task(ObDASTabletLoc *tablet_loc);
   int pushdown_normal_lookup_to_das(ObDASScanOp &target_op);
   int pushdown_attach_task_to_das(ObDASScanOp &target_op);
   int attach_related_taskinfo(ObDASScanOp &target_op, ObDASBaseRtDef *attach_rtdef);
@@ -626,12 +627,12 @@ protected:
 
 
       int64_t stmt_used = tsc_rtdef_.scan_rtdef_.stmt_allocator_.get_alloc()->used();
-      if (stmt_used > 2LL*1024*1024*1024) {
+      if (stmt_used > 2L*1024*1024*1024) {
         SQL_LOG_RET(WARN,OB_ERR_UNEXPECTED,"stmt memory used over the threshold",K(stmt_used));
       }
 
       int64_t scan_used = tsc_rtdef_.scan_rtdef_.scan_allocator_.get_alloc()->used();
-      if (scan_used > 2LL*1024*1024*1024) {
+      if (scan_used > 2L*1024*1024*1024) {
         SQL_LOG_RET(WARN,OB_ERR_UNEXPECTED,"scan memory used over the threshold",K(scan_used));
       }
     }
@@ -701,6 +702,7 @@ private:
   int inner_rescan_for_tsc();
 
   int inner_get_next_fts_index_row();
+  int inner_get_next_fts_index_batch(const int64_t max_row_cnt);
   int fetch_next_fts_index_rows();
   int fill_generated_fts_cols(blocksstable::ObDatumRow *row);
   int get_output_fts_col_expr_by_type(const ObExprOperatorType &type, ObExpr *&expr);
@@ -734,6 +736,8 @@ protected:
   bool in_rescan_;
   ObDomainIndexCache domain_index_;
   ObFTIndexRowCache fts_index_;
+  // WORD_SEGMENT, DOC_ID, WORD_COUNT, DOC_LENGTH from the immutable scan spec.
+  ObExpr *fts_output_exprs_[4];
 
   // output_ is used to output data, TSC operator directly invokes output_::get_next_row(s),
   // it points to fold_iter_ in group rescan and iter_tree_ in normal scan.

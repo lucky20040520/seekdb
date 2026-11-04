@@ -16,7 +16,7 @@
 
 #define USING_LOG_PREFIX RS
 
-#include "rust/config.h"
+#include "config_bridge.h"
 #include "ob_load_inner_table_schema_executor.h"
 
 #include "share/inner_table/ob_load_inner_table_schema.h"

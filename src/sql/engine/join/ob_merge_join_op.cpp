@@ -16,7 +16,7 @@
 
 #define USING_LOG_PREFIX SQL_ENG
 
-#include "rust/config.h"
+#include "config_bridge.h"
 #include "sql/engine/join/ob_merge_join_op.h"
 
 namespace oceanbase

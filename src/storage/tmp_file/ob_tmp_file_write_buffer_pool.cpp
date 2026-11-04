@@ -16,9 +16,8 @@
 
 #define USING_LOG_PREFIX STORAGE
 
-#include "rust/config.h"
+#include "config_bridge.h"
 #include "share/ob_server_struct.h"
-#include "lib/alloc/alloc_func.h"
 #include "storage/tmp_file/ob_tmp_file_write_buffer_pool.h"
 
 namespace oceanbase

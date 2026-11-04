@@ -22,18 +22,27 @@
 #include "lib/container/ob_iarray.h"
 #include "lib/container/ob_fixed_array.h"
 #include "lib/utility/ob_print_utils.h"
-#include "lib/utility/ob_platform_utils.h"
 
 namespace oceanbase
 {
 namespace common
 {
 class ObIODevice;
-// A descriptor represents a normal file or a data block.
+/**
+ * ObIOFd may represent super block, normal file or block id.
+ *
+ * Super block is maintained in ObIODevice, it can't be directly open or alloc from outside.
+ * But it can be read/write directly after ObIODevice ready.
+ * When the value of first_id_ and second_id_ are both 0, it represents super block.
+ * When the value of first_id_ equals NORMAL_FILE_ID, it represents a normal file.
+ * Otherwise, it represents a block.
+ */
 struct ObIOFd
 {
   ObIOFd(ObIODevice *device_handle = nullptr, const int64_t first_id = -1,
       const int64_t second_id = -1, const int64_t third_id = -1);
+  bool is_super_block() const { return 0 == first_id_ && 0 == second_id_; }
+  bool is_tiered_super_block() const { return 0 == first_id_ && 2 == second_id_; }
   bool is_normal_file() const { return NORMAL_FILE_ID == first_id_ && second_id_ > 0; }
   bool is_block_file() const { return first_id_ != NORMAL_FILE_ID; }
   void reset();
@@ -239,6 +248,14 @@ struct ObIODFileStat
     K_(size), K_(block_cnt), K_(block_size), K_(atime_s), K_(mtime_s), K_(ctime_s), K_(btime_s));
 };
 
+class ObIODPreadChecker
+{
+public:
+  ObIODPreadChecker() = default;
+  virtual ~ObIODPreadChecker() = default;
+  virtual int do_check(void *read_buf, const int64_t read_size) = 0;
+};
+
 struct ObIODirentEntry {
   ObIODirentEntry() : type_(0) {}
   ObIODirentEntry(const char *name, const int type) : type_(type) {
@@ -290,6 +307,7 @@ class ObIODevice
 public:
   ObIODevice() : device_type_(OB_STORAGE_MAX_TYPE), media_id_(0), ref_cnt_(0) {}
   virtual ~ObIODevice() {}
+  virtual int init(const ObIODOpts &opts) = 0;
   virtual int reconfig(const ObIODOpts &opts) = 0;
   virtual int get_config(ObIODOpts &opts) = 0;
   int get_device_name(char *buf, int32_t len);
@@ -334,7 +352,8 @@ public:
     const int64_t offset,
     const int64_t size,
     void *buf,
-    int64_t &read_size) = 0;
+    int64_t &read_size,
+    ObIODPreadChecker *checker = nullptr) = 0;
   virtual int pwrite(
     const ObIOFd &fd,
     const int64_t offset,
@@ -352,42 +371,40 @@ public:
     const int64_t size,
     int64_t &write_size) = 0;
 
-  virtual bool supports_native_aio() const { return false; }
-
   //async io interfaces
   virtual int io_setup(
     uint32_t max_events,
-    ObIOContext *&io_context) { return OB_NOT_SUPPORTED; }
-  virtual int io_destroy(ObIOContext *io_context) { return OB_NOT_SUPPORTED; }
+    ObIOContext *&io_context) = 0;
+  virtual int io_destroy(ObIOContext *io_context) = 0;
   virtual int io_prepare_pwrite(
     const ObIOFd &fd,
     void *buf,
     size_t count,
     int64_t offset,
     ObIOCB *iocb,
-    void *callback) { return OB_NOT_SUPPORTED; }
+    void *callback) = 0;
   virtual int io_prepare_pread(
     const ObIOFd &fd,
     void *buf,
     size_t count,
     int64_t offset,
     ObIOCB *iocb,
-    void *callback) { return OB_NOT_SUPPORTED; }
+    void *callback) = 0;
   virtual int io_submit(
     ObIOContext *io_context,
-    ObIOCB *iocb) { return OB_NOT_SUPPORTED; }
+    ObIOCB *iocb) = 0;
   virtual int io_cancel(
     ObIOContext *io_context,
-    ObIOCB *iocb) { return OB_NOT_SUPPORTED; }
+    ObIOCB *iocb) = 0;
   virtual int io_getevents(
     ObIOContext *io_context,
     int64_t min_nr,
     ObIOEvents *events,
-    struct timespec *timeout) { return OB_NOT_SUPPORTED; }
-  virtual ObIOCB *alloc_iocb() { return nullptr; }
-  virtual ObIOEvents *alloc_io_events(const uint32_t max_events) { return nullptr; }
-  virtual void free_iocb(ObIOCB *iocb) {}
-  virtual void free_io_events(ObIOEvents *io_event) {}
+    struct timespec *timeout) = 0;
+  virtual ObIOCB *alloc_iocb() = 0;
+  virtual ObIOEvents *alloc_io_events(const uint32_t max_events) = 0;
+  virtual void free_iocb(ObIOCB *iocb) = 0;
+  virtual void free_io_events(ObIOEvents *io_event) = 0;
 
   // space management interface
   virtual int64_t get_total_block_size() const = 0;

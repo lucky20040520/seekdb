@@ -20,9 +20,12 @@
 #include <string>
 #include <vector>
 #include <stdint.h>
-#include <sys/types.h>
 #ifdef _WIN32
-#include "lib/utility/ob_platform_utils.h"
+#include <sys/types.h>
+#ifndef _MODE_T_DEFINED
+typedef int mode_t;
+#define _MODE_T_DEFINED
+#endif
 #endif
 
 namespace oceanbase

@@ -19,7 +19,7 @@
 
 #define USING_LOG_PREFIX SQL_ENG
 
-#include "rust/config.h"
+#include "config_bridge.h"
 #include "sql/engine/basic/ob_chunk_row_store.h"
 
 

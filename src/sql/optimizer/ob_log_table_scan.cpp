@@ -704,7 +704,7 @@ int ObLogTableScan::extract_pushdown_filters(ObIArray<ObRawExpr*> &nonpushdown_f
         } else if (is_vec_adaptive_scan()) {
           add_to_scan_filter = true;
         }
-      } else if (is_text_retrieval_scan() && need_text_retrieval_calc_relevance()) {
+      } else if (is_text_retrieval_scan()) {
         if (OB_FAIL(nonpushdown_filters.push_back(filters.at(i)))) {
         } else if (is_vec_adaptive_scan()) {
           add_to_scan_filter = true;
@@ -2167,7 +2167,7 @@ int ObLogTableScan::allocate_granule_post(AllocGIContext &ctx)
   } else if (is_distributed()) {
     gi_charged_ = true;
     ctx.alloc_gi_ = true;
-    ctx.partition_count_ = table_partition_info_->get_access_targets().get_tablets().count();
+    ctx.partition_count_ = table_partition_info_->get_phy_tbl_location_info().get_phy_part_loc_info_list().count();
     ctx.hash_part_ = table_schema->is_hash_part() || table_schema->is_hash_subpart()
                      || table_schema->is_key_part() || table_schema->is_key_subpart();
     //Before GI is adapted to the real agent table, block gi cannot be assigned to it
@@ -2219,7 +2219,7 @@ bool ObLogTableScan::is_need_feedback() const
   return ret;
 }
 
-int ObLogTableScan::get_physical_access_shape(TableAccessShape &access_shape)
+int ObLogTableScan::get_phy_location_type(ObTableLocationType &location_type)
 {
   int ret = OB_SUCCESS;
   ObShardingInfo *sharding = get_sharding();
@@ -2227,9 +2227,9 @@ int ObLogTableScan::get_physical_access_shape(TableAccessShape &access_shape)
     ret = OB_ERR_UNEXPECTED;
   } else if (NULL == table_partition_info_) {
     // fake_cte_table, function_table, ...
-    access_shape = sharding->get_access_shape();
+    location_type = sharding->get_location_type();
   } else {
-    access_shape = table_partition_info_->get_access_shape();
+    location_type = table_partition_info_->get_location_type();
   }
   return ret;
 }

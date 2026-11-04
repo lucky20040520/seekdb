@@ -63,10 +63,12 @@ int LogWritingThrottle::update_throttling_options(IPalfEnvImpl *palf_env_impl)
 }
 
 int LogWritingThrottle::throttling(const int64_t throttling_size,
+                                   const NeedPurgingThrottlingFunc &need_purging_throttling_func,
                                    IPalfEnvImpl *palf_env_impl)
 {
   int ret = OB_SUCCESS;
-  if (OB_ISNULL(palf_env_impl)) {
+  if (!need_purging_throttling_func.is_valid()
+      || OB_ISNULL(palf_env_impl)) {
     ret = OB_INVALID_ARGUMENT;
   } else if (throttling_size < 0) {
     ret = OB_ERR_UNEXPECTED;
@@ -76,7 +78,7 @@ int LogWritingThrottle::throttling(const int64_t throttling_size,
   } else {
     // hold lock firstly.
     lock_.lock();
-    if (need_throttling_with_options_not_guarded_by_lock_()) {
+    if (need_throttling_not_guarded_by_lock_(need_purging_throttling_func)) {
       const int64_t cur_unrecyclable_size = throttling_options_.unrecyclable_disk_space_ + appended_log_size_cur_round_;
       const int64_t trigger_base_log_disk_size = throttling_options_.total_disk_space_ * throttling_options_.trigger_percentage_ /  100;
       int64_t time_interval = 0;
@@ -95,7 +97,7 @@ int LogWritingThrottle::throttling(const int64_t throttling_size,
         if (remain_interval_us <= 0) {
           //do nothing
         } else if (OB_FAIL(update_throtting_options_guarded_by_lock_(palf_env_impl, has_freed_up_space))) {
-        } else if (!need_throttling_with_options_not_guarded_by_lock_()
+        } else if (!need_throttling_not_guarded_by_lock_(need_purging_throttling_func)
                    || has_freed_up_space) {
           break;
         }
@@ -103,6 +105,8 @@ int LogWritingThrottle::throttling(const int64_t throttling_size,
       // hold lock_ after ulseep, therefore, accessing shared members in LogWritingThrottle no need be guarded by lock.
       lock_.lock();
       stat_.after_throttling(time_interval - remain_interval_us, throttling_size);
+    } else if (need_throttling_with_options_not_guarded_by_lock_()) {
+      stat_.after_throttling(0, throttling_size);
     }
 
     if (stat_.has_ever_throttled()) {
@@ -200,7 +204,7 @@ int LogWritingThrottle::update_throtting_options_guarded_by_lock_(IPalfEnvImpl *
 
 void LogWritingThrottle::clean_up_not_guarded_by_lock_()
 {
-  // Keep last_update_ts_ and stat_.
+  //do not reset submitted_seq_  && handled_seq_ && last_update_ts_ && stat_
   appended_log_size_cur_round_ = 0;
   decay_factor_ = 0;
   throttling_options_.reset();

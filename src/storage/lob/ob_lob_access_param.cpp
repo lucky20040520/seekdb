@@ -15,7 +15,7 @@
  */
 
 #define USING_LOG_PREFIX STORAGE
-#include "rust/config.h"
+#include "config_bridge.h"
 #include "ob_lob_access_param.h"
 #include "storage/tx_storage/ob_access_service.h"
 #include "share/ob_server_struct.h"
@@ -433,8 +433,12 @@ int ObLobAccessParam::get_tx_read_snapshot(ObLobLocatorV2 &locator, transaction:
     }
   }
 
-  if (OB_SUCC(ret) && extern_header->flags_.read_latest_) {
-    this->read_latest_ = true;
+  if (OB_SUCC(ret) && extern_header->flags_.has_retry_info_) {
+    ObMemLobRetryInfo *retry_info = nullptr;
+    if (OB_FAIL(locator.get_retry_info(retry_info))) {
+    } else if (retry_info->read_latest_) {
+      this->read_latest_ = retry_info->read_latest_;
+    }
   }
   return ret;
 }

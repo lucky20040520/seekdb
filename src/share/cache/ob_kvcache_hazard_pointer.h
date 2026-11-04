@@ -18,7 +18,6 @@
 #define OCEANBASE_CACHE_OB_KVCACHE_HAZARD_POINTER_H_
 
 #include "lib/alloc/alloc_struct.h"
-#include "lib/queue/ob_link.h"
 #include "share/ob_define.h"
 
 namespace oceanbase {
@@ -201,7 +200,7 @@ public:
   }
   Node* get_head_locked() const
   {
-    return reinterpret_cast<Node*>(clear_last_bit(reinterpret_cast<uintptr_t>(ATOMIC_LOAD_RLX(&head_))));
+    return (Node* const)clear_last_bit(*(uintptr_t*)&head_);
   }
   Node* const& get_tail() const
   {
@@ -340,7 +339,7 @@ bool SList<Node>::lock_unless_empty()
   bool b_ret = true;
   uintptr_t head;
   do {
-    head = set_last_bit(reinterpret_cast<uintptr_t*>(&head_));
+    head = set_last_bit(reinterpret_cast<uint64_t*>(&head_));
     if (head == 1) {
       b_ret = false;
       break;

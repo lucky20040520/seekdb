@@ -109,7 +109,6 @@ int SharedHazptr::make(HazardPointer& hazptr, SharedHazptr& shared_hazptr)
 }
 
 SharedHazptr::SharedHazptr(const SharedHazptr& other)
-  : ctrl_ptr_(nullptr)
 {
   *this = other;
 }
@@ -121,13 +120,9 @@ SharedHazptr::~SharedHazptr()
 
 SharedHazptr& SharedHazptr::operator=(const SharedHazptr& other)
 {
-  if (this != &other) {
-    reset();
-    ctrl_ptr_ = other.ctrl_ptr_;
-    if (nullptr != ctrl_ptr_) {
-      ATOMIC_INC(&ctrl_ptr_->refcnt_);
-    }
-  }
+  reset();
+  ctrl_ptr_ = other.ctrl_ptr_;
+  ATOMIC_INC(&ctrl_ptr_->refcnt_);
   return *this;
 }
 

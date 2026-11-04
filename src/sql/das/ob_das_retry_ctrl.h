@@ -26,7 +26,7 @@ public:
   /**
    * retry_func: is to determine whether tablet-level retry is necessary based on the status of the task
    *             and maybe change some status of the das task in this function,
-   *             such as detecting a tablet removed by DDL,
+   *             such as refresh_partition_location_cache,
    *             DAS retry only can be attempted within the current thread
    * [param in]: ObDASRef &: the das context reference
    * [param in/out] ObIDASTaskOp &: which das task need to retry
@@ -34,7 +34,7 @@ public:
    * */
   typedef void (*retry_func)(ObDASRef &, ObIDASTaskOp &, bool &);
 
-  static void tablet_access_retry_proc(ObDASRef &, ObIDASTaskOp &, bool &);
+  static void tablet_location_retry_proc(ObDASRef &, ObIDASTaskOp &, bool &);
   static void tablet_nothing_readable_proc(ObDASRef &, ObIDASTaskOp &, bool &);
 };
 

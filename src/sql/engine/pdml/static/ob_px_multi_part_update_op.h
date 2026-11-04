@@ -83,7 +83,7 @@ public:
                bool &is_skipped) override;
 
   int write_rows(ObExecContext &ctx,
-                 const DASRuntimeTabletAccess *tablet_access,
+                 const ObDASTabletLoc *tablet_loc,
                  ObPDMLOpRowIterator &iterator) override;
 
   virtual int inner_get_next_row();
@@ -96,7 +96,7 @@ public:
     ObTableModifyOp::destroy();
   }
 private:
-  int update_row_to_das(const DASRuntimeTabletAccess *tablet_access);
+  int update_row_to_das(const ObDASTabletLoc *tablet_loc);
 private:
   ObPDMLOpDataDriver data_driver_;
   ObUpdRtDef upd_rtdef_;

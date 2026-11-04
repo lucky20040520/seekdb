@@ -1,0 +1,2 @@
+config:
+  production_mode: false

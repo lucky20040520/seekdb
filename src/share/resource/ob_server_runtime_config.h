@@ -18,6 +18,7 @@
 #define OCEANBASE_SHARE_RESOURCE_OB_SERVER_RUNTIME_CONFIG_H_
 
 #include "lib/utility/ob_unify_serialize.h"
+#include "lib/worker.h"
 #include "share/resource/ob_server_resource_config.h"
 
 namespace oceanbase
@@ -36,20 +37,25 @@ public:
   ObServerRuntimeConfig &operator=(const ObServerRuntimeConfig &) = default;
   ~ObServerRuntimeConfig() {}
 
-  int init(const ObServerResourceConfig &resource_config);
+  int init(const ObServerResourceConfig &resource_config,
+           lib::Worker::CompatMode compat_mode,
+           const bool has_memstore);
 
   void reset();
   bool is_valid() const
   {
-    return resource_config_.is_valid();
+    return resource_config_.is_valid()
+        && mode_ != lib::Worker::CompatMode::INVALID;
   }
   bool operator==(const ObServerRuntimeConfig &other) const;
   int assign(const ObServerRuntimeConfig &other);
 
-  TO_STRING_KV(K_(resource_config));
+  TO_STRING_KV(K_(resource_config), K_(mode), K_(has_memstore));
 
   // Keep this order in sync with the persisted representation.
   ObServerResourceConfig resource_config_;
+  lib::Worker::CompatMode mode_;
+  bool has_memstore_;
 };
 
 } // namespace share

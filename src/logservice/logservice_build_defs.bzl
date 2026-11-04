@@ -11,6 +11,8 @@ LOGSERVICE_UNITY_GROUPS = [
             "src/logservice/ob_server_log_block_mgr.cpp",
             "src/logservice/ob_log_monitor.cpp",
         ],
+        generated_srcs = [],
+        external_srcs = [],
     ),
     struct(
         name = "ob_logservice_common_mixed_0",
@@ -22,6 +24,8 @@ LOGSERVICE_UNITY_GROUPS = [
             "src/logservice/replayservice/ob_replay_handler.cpp",
             "src/logservice/replayservice/ob_replay_status.cpp",
         ],
+        generated_srcs = [],
+        external_srcs = [],
     ),
     struct(
         name = "ob_logservice_common_util_0",
@@ -31,6 +35,8 @@ LOGSERVICE_UNITY_GROUPS = [
             "src/logservice/ob_log_allocator.cpp",
             "src/logservice/ob_log_allocator_mgr.cpp",
         ],
+        generated_srcs = [],
+        external_srcs = [],
     ),
     struct(
         name = "ob_logservice_palf_0",
@@ -56,9 +62,13 @@ LOGSERVICE_UNITY_GROUPS = [
             "src/logservice/palf/log_iterator_storage.cpp",
             "src/logservice/palf/log_loop_thread.cpp",
             "src/logservice/palf/log_meta.cpp",
+            "src/logservice/palf/log_meta_entry.cpp",
+            "src/logservice/palf/log_meta_entry_header.cpp",
             "src/logservice/palf/log_meta_info.cpp",
             "src/logservice/palf/log_reader.cpp",
         ],
+        generated_srcs = [],
+        external_srcs = [],
     ),
     struct(
         name = "ob_logservice_palf_1",
@@ -86,5 +96,7 @@ LOGSERVICE_UNITY_GROUPS = [
             "src/logservice/palf/log_io_context.cpp",
             "src/logservice/palf/log_io_adapter.cpp",
         ],
+        generated_srcs = [],
+        external_srcs = [],
     ),
 ]

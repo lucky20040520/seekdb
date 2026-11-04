@@ -5,31 +5,25 @@ Cross-compile seekdb for Android arm64-v8a on macOS, then deploy it to an emulat
 ## Prerequisites
 
 - macOS host
-- Android NDK 27.x, with `ANDROID_NDK_HOME` set to its installation directory
+- Android NDK 27.x, with `ANDROID_NDK_HOME` set when it is not installed at the default SDK path
 - An arm64-v8a device or emulator running API 28 or later
 - `adb` and a MySQL-compatible client on `PATH`
 
 ## Build
 
-Set the installed NDK path, initialize Android dependencies, then build with Bazel:
+Use the supported Android entry point. It initializes Android dependencies, configures the build, and builds seekdb:
 
 ```bash
-export ANDROID_NDK_HOME="$HOME/Library/Android/sdk/ndk/27.3.13750724"
-python3 build.py init --android
-python3 build.py build --config=android seekdb
+./build.sh release --android --init --make -j16
 ```
-
-`init --android` prepares host tools in `deps/3rd` and Android dependencies in
-`deps/android`, and installs the Android target for the pinned Rust toolchain.
-Native and Android builds can share one checkout.
 
 The binary is generated at:
 
 ```text
-build/bin/src/observer/seekdb
+build_android_release/src/observer/seekdb
 ```
 
-This configuration produces an API 28 ARM64 PIE with 16 KiB page alignment and a statically linked C++ runtime. Validate affected unit tests on a supported Linux host by following [Write and run unit tests](unittest.md).
+The Android CMake build does not provide an `all_tests` target. Validate affected unit tests on a supported Linux host by following [Write and run unit tests](unittest.md).
 
 ## Strip and deploy
 
@@ -37,7 +31,7 @@ Use the NDK strip tool because the macOS `strip` command cannot process Android 
 
 ```bash
 NDK_STRIP="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-strip"
-"$NDK_STRIP" -o /tmp/seekdb build/bin/src/observer/seekdb
+"$NDK_STRIP" -o /tmp/seekdb build_android_release/src/observer/seekdb
 adb push /tmp/seekdb /data/local/tmp/seekdb
 adb shell chmod +x /data/local/tmp/seekdb
 ```

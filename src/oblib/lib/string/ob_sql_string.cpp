@@ -17,7 +17,6 @@
 #define USING_LOG_PREFIX LIB
 
 #include "lib/string/ob_sql_string.h"
-#include "lib/utility/ob_printf.h"
 namespace oceanbase
 {
 namespace common
@@ -237,7 +236,7 @@ int ObSqlString::vappend(const char *fmt, va_list ap)
     }
     int64_t n = vsnprintf(data_ + len_, data_size_ - len_, actual_fmt, ap);
 #else
-    int64_t n = ob_vsnprintf(data_ + len_, data_size_ - len_, fmt, ap);
+    int64_t n = vsnprintf(data_ + len_, data_size_ - len_, fmt, ap);
 #endif
     if (n < 0) {
       ret = OB_ERR_SYS;
@@ -247,7 +246,7 @@ int ObSqlString::vappend(const char *fmt, va_list ap)
 #ifdef _WIN32
         n = vsnprintf(data_ + len_, data_size_ - len_, actual_fmt, ap2);
 #else
-        n = ob_vsnprintf(data_ + len_, data_size_ - len_, fmt, ap2);
+        n = vsnprintf(data_ + len_, data_size_ - len_, fmt, ap2);
 #endif
         if (n < 0) {
           ret = OB_ERR_SYS;

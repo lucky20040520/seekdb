@@ -29,8 +29,9 @@ class ObNewRow;
 }  // namespace common
 namespace sql
 {
-struct DASTableAccessMeta;
-struct DASRuntimeTabletAccess;
+enum ObRoutePolicyType : int;
+struct ObDASTableLocMeta;
+struct ObDASTabletLoc;
 class ObDASCtx;
 struct ValueItemExpr;
 typedef common::hash::ObHashMap<common::ObObjectID, common::ObObjectID, common::hash::NoPthreadDefendMode> ObPartitionIdMap;
