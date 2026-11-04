@@ -135,9 +135,9 @@ class AiColumnIntegration(unittest.TestCase):
         self.q.execute("INSERT INTO null_input(id,content) VALUES(1,NULL)")
         for _ in range(100):
             self.q.execute("SELECT COUNT(*) FROM oceanbase.__all_ai_column_task task"
-                           " JOIN oceanbase.__all_ai_column col ON task.table_id=col.table_id"
-                           " AND task.column_id=col.column_id WHERE col.database_name=%s"
-                           " AND col.table_name='null_input'", (self.name,))
+                           " JOIN oceanbase.__all_table t ON task.table_id=t.table_id"
+                           " JOIN oceanbase.__all_database d ON t.database_id=d.database_id"
+                           " WHERE d.database_name=%s AND t.table_name='null_input'", (self.name,))
             if self.q.fetchone()[0] == 0:
                 break
             time.sleep(.1)
@@ -153,8 +153,8 @@ class AiColumnIntegration(unittest.TestCase):
         for i in range(50):
             self.q.execute("START TRANSACTION")
             self.q.execute("INSERT INTO immediate_task(id,content) VALUES(%s,'eligible')", (i,))
-            self.q.execute("SELECT COUNT(*), MAX(task.eligible_ts <= NOW(6)),"
-                           " MAX(task.eligible_ts), NOW(6) FROM oceanbase.__all_ai_column_task task"
+            self.q.execute("SELECT COUNT(*), MAX(task.eligible_ts <= SYSDATE(6)),"
+                           " MAX(task.eligible_ts), SYSDATE(6) FROM oceanbase.__all_ai_column_task task"
                            " JOIN oceanbase.__all_table t ON t.table_id=task.table_id"
                            " JOIN oceanbase.__all_database d ON d.database_id=t.database_id"
                            " WHERE d.database_name=%s AND t.table_name='immediate_task'", (self.name,))
@@ -171,13 +171,17 @@ class AiColumnIntegration(unittest.TestCase):
 
     @unittest.skipUnless(os.environ.get("SEEKDB_TEST_INSTANCE"), "restart requires dedicated instance base-dir")
     def test_restart_recovers_persisted_claim_after_lease_expiry(self):
-        self.create("recovery")
+        self.q.execute("CREATE TABLE recovery (id BIGINT PRIMARY KEY, content VARCHAR(100),"
+                       " result JSON AI COLUMN(AI_COMPLETE(%s,content)) WITH(max_retries=1))", (self.model,))
         self.q.execute("START TRANSACTION")
         self.q.execute("INSERT INTO recovery(id,content) VALUES(1,'recover-after-restart')")
-        self.q.execute("UPDATE oceanbase.__all_ai_column_task task JOIN oceanbase.__all_ai_column col"
-                       " ON task.table_id=col.table_id AND task.column_id=col.column_id"
-                       " SET task.owner='interrupted-regression',task.lease_until=DATE_ADD(NOW(6),INTERVAL 1 HOUR)"
-                       " WHERE col.database_name=%s AND col.table_name='recovery'", (self.name,))
+        owner = "0123456789abcdef0123456789abcdef"
+        self.q.execute("UPDATE oceanbase.__all_ai_column_task task JOIN oceanbase.__all_table t"
+                       " ON task.table_id=t.table_id JOIN oceanbase.__all_database d ON t.database_id=d.database_id"
+                       " SET task.state=1,task.lease_owner=%s,task.claim_epoch=1,task.attempt_count=1,"
+                       " task.lease_deadline=DATE_ADD(SYSDATE(6),INTERVAL 1 HOUR)"
+                       " WHERE d.database_name=%s AND t.table_name='recovery'", (owner, self.name))
+        self.assertEqual(1, self.q.rowcount)
         self.q.execute("COMMIT")
         instance = str(Path(os.environ["SEEKDB_TEST_INSTANCE"]).resolve())
         matches = []
@@ -215,12 +219,12 @@ class AiColumnIntegration(unittest.TestCase):
         self.q = self.db.cursor()
         self.q.execute("USE `" + self.name + "`")
         self.q.execute("SELECT COUNT(*) FROM oceanbase.__all_ai_column_task task"
-                       " JOIN oceanbase.__all_ai_column col ON task.table_id=col.table_id"
-                       " AND task.column_id=col.column_id WHERE col.database_name=%s"
-                       " AND col.table_name='recovery' AND task.owner='interrupted-regression'", (self.name,))
+                       " JOIN oceanbase.__all_table t ON task.table_id=t.table_id"
+                       " JOIN oceanbase.__all_database d ON t.database_id=d.database_id"
+                       " WHERE d.database_name=%s AND t.table_name='recovery' AND task.lease_owner=%s", (self.name, owner))
         self.assertEqual((1,), self.q.fetchone())
-        self.q.execute("UPDATE oceanbase.__all_ai_column_task SET lease_until=DATE_SUB(NOW(6),INTERVAL 1 SECOND)"
-                       " WHERE owner='interrupted-regression'")
+        self.q.execute("UPDATE oceanbase.__all_ai_column_task SET lease_deadline=DATE_SUB(SYSDATE(6),INTERVAL 1 SECOND)"
+                       " WHERE lease_owner=%s", (owner,))
         self.ready("recovery")
         self.q.execute("SELECT result FROM recovery")
         self.assertEqual("recover-after-restart", json.loads(self.q.fetchone()[0])["input"])

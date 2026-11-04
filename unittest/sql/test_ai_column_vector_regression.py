@@ -195,8 +195,9 @@ class AiColumnVectorRegression(unittest.TestCase):
         self.q.execute("SELECT COUNT(*) FROM docs")
         self.assertEqual((0,), self.q.fetchone())
         self.q.execute("SELECT COUNT(*) FROM oceanbase.__all_ai_column_task task"
-                       " JOIN oceanbase.__all_ai_column col ON task.table_id=col.table_id"
-                       " AND task.column_id=col.column_id WHERE col.database_name=%s", (self.name,))
+                       " JOIN oceanbase.__all_table t ON task.table_id=t.table_id"
+                       " JOIN oceanbase.__all_database d ON t.database_id=d.database_id"
+                       " WHERE d.database_name=%s", (self.name,))
         self.assertEqual((0,), self.q.fetchone())
 
 

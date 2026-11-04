@@ -77,8 +77,10 @@ class AiColumnConsistencyStress(unittest.TestCase):
                             q.execute("CREATE TABLE `" + table + "` (id BIGINT PRIMARY KEY,"
                                       " content VARCHAR(100), result VARCHAR(200)"
                                       " AI COLUMN(AI_COMPLETE(%s,content)))", (self.model,))
-                            q.execute("SELECT COUNT(*) FROM oceanbase.__all_ai_column "
-                                      "WHERE database_name=%s AND table_name=%s", (self.name, table))
+                            q.execute("SELECT COUNT(*) FROM oceanbase.__all_ai_column col "
+                                      "JOIN oceanbase.__all_table t ON col.table_id=t.table_id "
+                                      "JOIN oceanbase.__all_database d ON t.database_id=d.database_id "
+                                      "WHERE d.database_name=%s AND t.table_name=%s", (self.name, table))
                             if q.fetchone()[0] != 1:
                                 raise AssertionError("successful CREATE did not install metadata: " + table)
                         else:
@@ -105,20 +107,21 @@ class AiColumnConsistencyStress(unittest.TestCase):
         self.assertEqual([], errors)
         self.assertEqual(iterations * 2, len(results))
 
-    def test_failed_add_preserves_existing_hidden_named_column(self):
+    def test_add_preserves_existing_legacy_hidden_named_column(self):
         self.q.execute("CREATE TABLE collision (id BIGINT PRIMARY KEY, content VARCHAR(100),"
                        " `__ai_state_result` VARCHAR(20))")
         self.q.execute("INSERT INTO collision VALUES (1,'input','keep')")
-        with self.assertRaises(pymysql.MySQLError):
-            self.q.execute("ALTER TABLE collision ADD COLUMN result VARCHAR(200)"
-                           " AI COLUMN(AI_COMPLETE(%s,content))", (self.model,))
+        self.q.execute("ALTER TABLE collision ADD COLUMN result VARCHAR(200)"
+                       " AI COLUMN(AI_COMPLETE(%s,content))", (self.model,))
         self.q.execute("SELECT content,`__ai_state_result` FROM collision WHERE id=1")
         self.assertEqual(("input", "keep"), self.q.fetchone())
         self.q.execute("SHOW COLUMNS FROM collision LIKE 'result'")
-        self.assertIsNone(self.q.fetchone())
-        self.q.execute("SELECT COUNT(*) FROM oceanbase.__all_ai_column "
-                       "WHERE database_name=%s AND table_name='collision'", (self.name,))
-        self.assertEqual(0, self.q.fetchone()[0])
+        self.assertIsNotNone(self.q.fetchone())
+        self.q.execute("SELECT COUNT(*) FROM oceanbase.__all_ai_column col "
+                       "JOIN oceanbase.__all_table t ON col.table_id=t.table_id "
+                       "JOIN oceanbase.__all_database d ON t.database_id=d.database_id "
+                       "WHERE d.database_name=%s AND t.table_name='collision'", (self.name,))
+        self.assertEqual(1, self.q.fetchone()[0])
 
     def test_create_if_not_exists_keeps_existing_table(self):
         self.q.execute("CREATE TABLE already_exists (id BIGINT PRIMARY KEY, content VARCHAR(100))")
@@ -139,9 +142,9 @@ class AiColumnConsistencyStress(unittest.TestCase):
             self.q.execute("START TRANSACTION")
             try:
                 self.q.execute("INSERT INTO task_rows(id,content) VALUES(%s,'probe')", (i,))
-                self.q.execute("SELECT COUNT(*),MAX(task.eligible_ts <= NOW(6)),"
-                               "MIN(task.eligible_ts),MAX(task.eligible_ts),NOW(6),"
-                               "TIMESTAMPDIFF(MICROSECOND,MAX(task.eligible_ts),NOW(6))"
+                self.q.execute("SELECT COUNT(*),MAX(task.eligible_ts <= SYSDATE(6)),"
+                               "MIN(task.eligible_ts),MAX(task.eligible_ts),SYSDATE(6),"
+                               "TIMESTAMPDIFF(MICROSECOND,MAX(task.eligible_ts),SYSDATE(6))"
                                " FROM oceanbase.__all_ai_column_task task"
                                " JOIN oceanbase.__all_table t ON t.table_id=task.table_id"
                                " JOIN oceanbase.__all_database d ON d.database_id=t.database_id"

@@ -475,6 +475,7 @@ int ObSysVarFactory::try_init_store_mem()
     void *store_ptr = NULL;
     if (OB_ISNULL(store_ptr = allocator_.alloc(sizeof(ObBasicSysVar *) * share::ObSysVarMeta::ALL_SYS_VARS_COUNT))) {
       ret = OB_ALLOCATE_MEMORY_FAILED;
+      LOG_WARN("fail to alloc store_.", K(ret));
     } else {
       store_ = static_cast<ObBasicSysVar **>(store_ptr);
       MEMSET(store_, 0, sizeof(ObBasicSysVar *) * share::ObSysVarMeta::ALL_SYS_VARS_COUNT);
@@ -484,6 +485,7 @@ int ObSysVarFactory::try_init_store_mem()
     void *store_buf_ptr = NULL;
     if (OB_ISNULL(store_buf_ptr = allocator_.alloc(sizeof(ObBasicSysVar *) * share::ObSysVarMeta::ALL_SYS_VARS_COUNT))) {
       ret = OB_ALLOCATE_MEMORY_FAILED;
+      LOG_WARN("fail to alloc store_buf_.", K(ret));
     } else {
       store_buf_ = static_cast<ObBasicSysVar **>(store_buf_ptr);
       MEMSET(store_buf_, 0, sizeof(ObBasicSysVar *) * share::ObSysVarMeta::ALL_SYS_VARS_COUNT);
@@ -550,6 +552,7 @@ int ObSysVarFactory::create_all_sys_vars_()
 {
   int ret = OB_SUCCESS;
   if (OB_FAIL(try_init_store_mem())) {
+    LOG_WARN("Fail to init", K(ret));
   } else if (!all_sys_vars_created_) {
     int64_t store_idx = -1;
     ObBasicSysVar *sys_var_ptr = NULL;
@@ -10690,11 +10693,15 @@ int ObSysVarFactory::create_sys_var(share::ObSysVarClassType sys_var_id, ObBasic
   int ret = OB_SUCCESS;
   ObBasicSysVar *sys_var_ptr = NULL;
   if (OB_FAIL(try_init_store_mem())) {
+    LOG_WARN("fail to init", K(ret));
   } else if (-1 == store_idx && OB_FAIL(share::ObSysVarMeta::calc_sys_var_store_idx(sys_var_id, store_idx))) {
+    LOG_WARN("fail to calc sys var store idx", K(ret), K(sys_var_id));
   } else if (store_idx < 0 || store_idx >= share::ObSysVarMeta::ALL_SYS_VARS_COUNT) {
     ret = OB_ERR_UNEXPECTED;
+    LOG_WARN("unexpected store idx", K(ret), K(store_idx), K(sys_var_id));
   } else if (OB_NOT_NULL(store_[store_idx])) {
     ret = OB_ERR_UNEXPECTED;
+    LOG_WARN("store ptr shoule be null", K(ret), K(store_idx), K(sys_var_id));
   } else {
     if (OB_NOT_NULL(store_buf_[store_idx])) {
       sys_var_ptr = store_buf_[store_idx];
@@ -10703,6 +10710,7 @@ int ObSysVarFactory::create_sys_var(share::ObSysVarClassType sys_var_id, ObBasic
   }
   if (OB_SUCC(ret) && OB_ISNULL(sys_var_ptr)) {
     if (OB_FAIL(create_sys_var(allocator_, sys_var_id, sys_var_ptr))) {
+      LOG_WARN("fail to calc sys var", K(ret), K(sys_var_id));
     }
   }
   if (OB_SUCC(ret)) {
@@ -10711,6 +10719,7 @@ int ObSysVarFactory::create_sys_var(share::ObSysVarClassType sys_var_id, ObBasic
       LOG_ERROR("ret is OB_SUCCESS, but sys_var_ptr is NULL", K(ret), K(sys_var_id));
     } else if (OB_NOT_NULL(store_[store_idx])) {
       ret = OB_ERR_UNEXPECTED;
+      LOG_WARN("store_[store_idx] should be NULL", K(ret), K(sys_var_id));
     } else {
       store_[store_idx] = sys_var_ptr;
       sys_var = sys_var_ptr;

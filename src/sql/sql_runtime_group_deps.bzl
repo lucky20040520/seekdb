@@ -332,6 +332,7 @@ _SQL_RUNTIME_EXTRA_DEP_CONSUMERS = {
         'ob_sql_resolver_dml_0',
     ],
     '//src/share:json_access': [
+        'ob_sql_resolver_ddl_1',
         'ob_sql_engine_expr_10',
         'ob_sql_engine_expr_13',
         'ob_sql_engine_expr_15',
@@ -501,6 +502,7 @@ _SQL_RUNTIME_EXTRA_DEP_CONSUMERS = {
     '//src/share:schema_persistence': [
         'ob_sql_resolver_ddl_0',
         'ob_sql_resolver_ddl_1',
+        'ob_sql_resolver_dml_0',
     ],
     '//src/share:sequence_option': [
         'ob_sql_common_mixed_0',

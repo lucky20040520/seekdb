@@ -163,6 +163,7 @@ _OBSERVER_NATIVE_DEPS = [
     "//src/share:module_data_protocol",
     "//src/share:io",
     "//src/share:io_device_interface",
+    "//src/share:json_access",
     "//src/share:lob_diff_interface",
     "//src/share:lob_read_service",
     "//src/share:lob_runtime",
