@@ -8,6 +8,7 @@ cc_library(
     srcs = [
         "test_fts_daat.cpp",
         "test_fts_dictionary_cache.cpp",
+        "test_fts_english_normalizer.cpp",
         "test_fts_parser.cpp",
     ],
     alwayslink = True,

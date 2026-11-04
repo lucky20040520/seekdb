@@ -19,6 +19,11 @@
 #include "data_plane/fts/ob_fts_parser_helper.h"
 #include "storage/fts/ik/ob_ik_char_util.h"
 #include "storage/fts/ob_fts_parser_property.h"
+#include "storage/fts/ob_fts_stop_word.h"
+#include "storage/fts/ik/ob_ik_arbitrator.h"
+#include "storage/fts/ik/ob_ik_processor.h"
+#include <string>
+#include <vector>
 
 namespace oceanbase
 {
@@ -254,6 +259,117 @@ TEST_F(TestFtsParserProperty, ik_max_word_mode)
   ObString props("{\"ik_mode\":\"MAX_WORD\"}");
   ASSERT_EQ(OB_SUCCESS, property.parse_for_parser_helper(parser, props));
   EXPECT_FALSE(property.ik_mode_smart_);
+}
+
+TEST(TestFtsIkArbitrator, document_local_chains_preserve_tokens_and_reset)
+{
+  ObArenaAllocator allocator;
+  ObIKArbitrator arbitrator;
+  const char *text = "abc def";
+  for (bool smart : {false, true}) {
+    TokenizeContext ctx(CS_TYPE_UTF8MB4_BIN, allocator, text, 7, smart);
+    ASSERT_EQ(OB_SUCCESS, ctx.init());
+    ObIKToken first{text, 0, 3, 3, ObIKTokenType::IK_ENGLISH_TOKEN};
+    ObIKToken second{text, 4, 3, 3, ObIKTokenType::IK_ENGLISH_TOKEN};
+    ASSERT_EQ(OB_SUCCESS, ctx.token_list().add_token(first));
+    ASSERT_EQ(OB_SUCCESS, ctx.token_list().add_token(second));
+    ASSERT_EQ(OB_SUCCESS, arbitrator.process(ctx));
+    ASSERT_EQ(OB_SUCCESS, arbitrator.output_result(ctx));
+    ASSERT_EQ(2, ctx.result_list().size());
+    EXPECT_EQ(0, ctx.result_list().get_first().offset_);
+    EXPECT_EQ(4, ctx.result_list().get_last().offset_);
+    EXPECT_EQ(3, ctx.result_list().get_first().length_);
+    EXPECT_EQ(3, ctx.result_list().get_last().length_);
+    arbitrator.reset();
+  }
+}
+
+TEST(TestFtsIkArbitrator, uncovered_chinese_characters_and_punctuation)
+{
+  ObArenaAllocator allocator;
+  const char *text = "\xe4\xb8\xad\xe6\x96\x87\xe3\x80\x82";
+  TokenizeContext ctx(CS_TYPE_UTF8MB4_BIN, allocator, text, 9, true);
+  ObIKArbitrator arbitrator;
+  ASSERT_EQ(OB_SUCCESS, ctx.init());
+  ASSERT_EQ(OB_SUCCESS, arbitrator.process(ctx));
+  ASSERT_EQ(OB_SUCCESS, arbitrator.output_result(ctx));
+  ASSERT_EQ(2, ctx.result_list().size());
+  EXPECT_EQ(0, ctx.result_list().get_first().offset_);
+  EXPECT_EQ(3, ctx.result_list().get_last().offset_);
+  EXPECT_EQ(ObIKTokenType::IK_CHINESE_TOKEN, ctx.result_list().get_first().type_);
+}
+
+TEST(TestFtsWordGrouping, preserves_latest_collation_equal_key_and_frequency)
+{
+  ObArenaAllocator allocator;
+  ObFTWordMap words;
+  ASSERT_EQ(OB_SUCCESS, words.create(2, ObMemAttr("FTWordMap")));
+  ObObjMeta meta;
+  meta.set_varchar();
+  meta.set_collation_type(CS_TYPE_UTF8MB4_GENERAL_CI);
+  ObFTParserProperty property;
+  ObAddWordFlag flag;
+  flag.set_groupby_word();
+  ObAddWord add_word(property, meta, flag, allocator, words);
+  ASSERT_EQ(OB_SUCCESS, add_word.process_word("Alpha", 5, 5, 7));
+  ASSERT_EQ(OB_SUCCESS, add_word.process_word("aLPHA", 5, 5, 5));
+  ASSERT_EQ(1, words.size());
+  EXPECT_EQ(6, words.begin()->second); // Existing first occurrence counts as one.
+  EXPECT_EQ(ObString("aLPHA"), words.begin()->first.get_word().get_string());
+  EXPECT_EQ(12, add_word.get_add_word_count());
+}
+
+TEST(TestFtsWordGrouping, updates_colliding_keys_without_reordering)
+{
+  ObArenaAllocator allocator;
+  ObFTWordMap words;
+  ASSERT_EQ(OB_SUCCESS, words.create(2, ObMemAttr("FTWordMap")));
+  ObObjMeta meta;
+  meta.set_varchar();
+  meta.set_collation_type(CS_TYPE_UTF8MB4_BIN);
+  ObFTParserProperty property;
+  ObAddWordFlag flag;
+  flag.set_groupby_word();
+  ObAddWord add_word(property, meta, flag, allocator, words);
+  std::vector<std::string> keys;
+  keys.reserve(100);
+  for (int i = 0; i < 100; ++i) {
+    keys.push_back("word" + std::to_string(i));
+    const std::string &key = keys.back();
+    ASSERT_EQ(OB_SUCCESS, add_word.process_word(key.data(), key.size(), key.size(), 1));
+  }
+  std::vector<std::string> order;
+  for (auto it = words.begin(); it != words.end(); ++it) {
+    const ObString key = it->first.get_word().get_string();
+    order.emplace_back(key.ptr(), key.length());
+  }
+  for (int pass = 0; pass < 5; ++pass) {
+    for (const std::string &key : keys) {
+      ASSERT_EQ(OB_SUCCESS, add_word.process_word(key.data(), key.size(), key.size(), 3));
+    }
+  }
+  int index = 0;
+  for (auto it = words.begin(); it != words.end(); ++it) {
+    const ObString key = it->first.get_word().get_string();
+    EXPECT_EQ(order[index++], std::string(key.ptr(), key.length()));
+    EXPECT_EQ(16, it->second);
+  }
+}
+
+TEST(TestFtsWordGrouping, ungrouped_duplicate_still_returns_hash_exist)
+{
+  ObArenaAllocator allocator;
+  ObFTWordMap words;
+  ASSERT_EQ(OB_SUCCESS, words.create(2, ObMemAttr("FTWordMap")));
+  ObObjMeta meta;
+  meta.set_varchar();
+  meta.set_collation_type(CS_TYPE_UTF8MB4_BIN);
+  ObFTParserProperty property;
+  ObAddWordFlag flag;
+  ObAddWord add_word(property, meta, flag, allocator, words);
+  ASSERT_EQ(OB_SUCCESS, add_word.process_word("word", 4, 4, 1));
+  EXPECT_EQ(OB_HASH_EXIST, add_word.process_word("word", 4, 4, 1));
+  EXPECT_EQ(1, words.begin()->second);
 }
 
 } // namespace storage

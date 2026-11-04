@@ -1,0 +1,36 @@
+Qualitative TOKENIZE stack excerpts from 20 GDB interrupts of the unchanged 75a4f9f0f binary. Not a CPU percentage profile. Trailing whitespace stripped.
+
+Thread 65 (Thread 0x7fffeb961300 (LWP 23784) "ReqWorker"):
+#0  0x00000000043394c4 in oceanbase::storage::ObFTCharUtil::first_valid_char_fast(oceanbase::common::ObCollationType, oceanbase::common::ObCharsetType, char const*, long, long&) ()
+#1  0x000000000433bc27 in oceanbase::storage::ObIKArbitrator::output_result(oceanbase::storage::TokenizeContext&) ()
+#2  0x0000000003d179cf in oceanbase::storage::ObIKFTParser::process_next_batch() ()
+#3  0x0000000003d1782c in oceanbase::storage::ObIKFTParser::get_next_token(char const*&, long&, long&, long&) ()
+#4  0x00000000046cfa96 in oceanbase::storage::ObFTParseHelper::segment(oceanbase::storage::ObFTParserProperty const&, long, oceanbase::storage::ObIFTParserDesc const*, ObCharsetInfo const*, char const*, long, oceanbase::common::ObIAllocator&, oceanbase::storage::ObAddWord&) ()
+#5  0x00000000046cfe33 in oceanbase::storage::ObFTParseHelper::segment(oceanbase::common::ObObjMeta const&, char const*, long, long&, oceanbase::common::hash::ObHashMap<oceanbase::storage::ObFTWord, long, oceanbase::common::hash::NoPthreadDefendMode, oceanbase::common::hash::hash_func<oceanbase::storage::ObFTWord>, oceanbase::common::hash::equal_to<oceanbase::storage::ObFTWord>, oceanbase::common::hash::SimpleAllocer<oceanbase::common::hash::ObHashTableNode<oceanbase::common::hash::HashMapPair<oceanbase::storage::ObFTWord, long> >, 97, oceanbase::common::hash::SpinMutexDefendMode, oceanbase::common::hash::DefaultSimpleAllocerAllocator>, oceanbase::common::hash::NormalPointer, oceanbase::common::ObMalloc, 1l>&) const ()
+#6  0x000000000276e95c in oceanbase::sql::ObExprTokenize::tokenize_fulltext(oceanbase::sql::ObExprTokenize::TokenizeParam const&, oceanbase::sql::ObExprTokenize::TokenizeParam::OUTPUT_MODE, oceanbase::common::ObIAllocator&, oceanbase::common::ObIJsonBase*&) ()
+#7  0x000000000276e666 in oceanbase::sql::ObExprTokenize::eval_tokenize(oceanbase::sql::ObExpr const&, oceanbase::sql::ObEvalCtx&, oceanbase::common::ObDatum&) ()
+(More stack frames follow...)
+
+
+Thread 65 (Thread 0x7fffeb961300 (LWP 23784) "ReqWorker"):
+#0  0x0000000005a9ca38 in oceanbase::common::ObILobCursor::read_bool(long, bool*) const ()
+#1  0x0000000005a5568a in oceanbase::common::ObJsonBin::init_bin_data() ()
+#2  0x0000000005a51c72 in oceanbase::common::ObJsonBin::parse_tree(oceanbase::common::ObJsonNode*) ()
+#3  0x0000000005a72e11 in oceanbase::common::ObJsonBaseFactory::transform(oceanbase::common::ObIAllocator*, oceanbase::common::ObIJsonBase*, oceanbase::common::ObJsonInType, oceanbase::common::ObIJsonBase*&) ()
+#4  0x0000000005a73627 in oceanbase::common::ObIJsonBase::get_raw_binary(oceanbase::common::ObString&, oceanbase::common::ObIAllocator*) ()
+#5  0x00000000048cf552 in oceanbase::share::ObJsonWrapper::get_raw_binary(oceanbase::common::ObIJsonBase*, oceanbase::common::ObString&, oceanbase::common::ObIAllocator*) ()
+#6  0x00000000027459d2 in oceanbase::sql::ObJsonExprHelper::pack_json_res(oceanbase::sql::ObExpr const&, oceanbase::sql::ObEvalCtx&, oceanbase::common::ObIAllocator&, oceanbase::common::ObIJsonBase*, oceanbase::common::ObDatum&) ()
+#7  0x000000000276e67f in oceanbase::sql::ObExprTokenize::eval_tokenize(oceanbase::sql::ObExpr const&, oceanbase::sql::ObEvalCtx&, oceanbase::common::ObDatum&) ()
+(More stack frames follow...)
+
+
+Thread 65 (Thread 0x7fffeb961300 (LWP 23784) "ReqWorker"):
+#0  0x0000000004339664 in oceanbase::storage::ObFTSortList::add_token(oceanbase::storage::ObIKToken const&) ()
+#1  0x000000000433b0a2 in oceanbase::storage::ObIKArbitrator::process(oceanbase::storage::TokenizeContext&) ()
+#2  0x0000000003d179bf in oceanbase::storage::ObIKFTParser::process_next_batch() ()
+#3  0x0000000003d1782c in oceanbase::storage::ObIKFTParser::get_next_token(char const*&, long&, long&, long&) ()
+#4  0x00000000046cfa96 in oceanbase::storage::ObFTParseHelper::segment(oceanbase::storage::ObFTParserProperty const&, long, oceanbase::storage::ObIFTParserDesc const*, ObCharsetInfo const*, char const*, long, oceanbase::common::ObIAllocator&, oceanbase::storage::ObAddWord&) ()
+#5  0x00000000046cfe33 in oceanbase::storage::ObFTParseHelper::segment(oceanbase::common::ObObjMeta const&, char const*, long, long&, oceanbase::common::hash::ObHashMap<oceanbase::storage::ObFTWord, long, oceanbase::common::hash::NoPthreadDefendMode, oceanbase::common::hash::hash_func<oceanbase::storage::ObFTWord>, oceanbase::common::hash::equal_to<oceanbase::storage::ObFTWord>, oceanbase::common::hash::SimpleAllocer<oceanbase::common::hash::ObHashTableNode<oceanbase::common::hash::HashMapPair<oceanbase::storage::ObFTWord, long> >, 97, oceanbase::common::hash::SpinMutexDefendMode, oceanbase::common::hash::DefaultSimpleAllocerAllocator>, oceanbase::common::hash::NormalPointer, oceanbase::common::ObMalloc, 1l>&) const ()
+#6  0x000000000276e95c in oceanbase::sql::ObExprTokenize::tokenize_fulltext(oceanbase::sql::ObExprTokenize::TokenizeParam const&, oceanbase::sql::ObExprTokenize::TokenizeParam::OUTPUT_MODE, oceanbase::common::ObIAllocator&, oceanbase::common::ObIJsonBase*&) ()
+#7  0x000000000276e666 in oceanbase::sql::ObExprTokenize::eval_tokenize(oceanbase::sql::ObExpr const&, oceanbase::sql::ObEvalCtx&, oceanbase::common::ObDatum&) ()
+(More stack frames follow...)

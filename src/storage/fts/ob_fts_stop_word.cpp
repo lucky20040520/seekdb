@@ -235,20 +235,21 @@ int ObAddWord::check_stopword(const ObFTWord &ft_word, bool &is_stopword)
 int ObAddWord::groupby_word(const ObFTWord &word, const int64_t word_freq)
 {
   int ret = OB_SUCCESS;
-  int64_t word_count = 0;
   if (OB_UNLIKELY(word.empty() || word_freq <= 0)) {
     ret = OB_INVALID_ARGUMENT;
   } else if (!flag_.groupby_word()) {
     if (OB_FAIL(word_map_.set_refactored(word, 1/*word count*/))) {
     }
-  } else if (OB_FAIL(word_map_.get_refactored(word, word_count)) && OB_HASH_NOT_EXIST != ret) {
   } else {
-    if (OB_HASH_NOT_EXIST == ret) {
-      word_count = 1;
-    } else {
-      word_count += word_freq;
-    }
-    if (OB_FAIL(word_map_.set_refactored(word, word_count, 1/*overwrite*/))) {
+    // One probe also avoids allocating and replacing the node on every hit.
+    // Keep the newest key, just as set_refactored(overwrite=1) did, including
+    // when collation-equal tokens have different byte representations.
+    auto update = [&word, word_freq](auto &entry) {
+      entry.first = word;
+      entry.second += word_freq;
+    };
+    // Preserve the existing first-occurrence count, even for word_freq > 1.
+    if (OB_FAIL(word_map_.set_or_update(word, 1, update))) {
     }
   }
   return ret;

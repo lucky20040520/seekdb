@@ -131,6 +131,8 @@ public:
   virtual void reuse() override;
   virtual int get_next(ObDatum &next_token, int64_t &token_freq) override;
 private:
+  int inner_init(const ObCharsetInfo *cs, ObITokenStream &in_stream) override;
+  bool ascii_case_mapping_;
   ObArenaAllocator norm_allocator_;
 };
 

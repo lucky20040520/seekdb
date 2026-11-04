@@ -1,0 +1,44 @@
+=== FTS Large Benchmark (label=group-v3-nov4) ===
+rows=20000 batch=500 rounds=3000 query_rounds=200 samples=3
+[0/5] SQL baseline ...
+  select1: sample=1/3 rounds=3000 total_ms=459.188 avg_ms=0.1531
+  select1: sample=2/3 rounds=3000 total_ms=382.709 avg_ms=0.1276
+  select1: sample=3/3 rounds=3000 total_ms=371.112 avg_ms=0.1237
+[1/5] setup raw schema ...
+[2/5] raw bulk load 20000 docs (batch=500) ...
+  raw load done: 0.485s (41237.1 rows/s)
+  table rows: 20000
+[3/5] build fulltext indexes ...
+  build_ik_all: 12.091s
+  build_ik_content: 9.582s
+  build_beng_en: 5.054s
+[4/5] TOKENIZE hot-path ...
+  tokenize_ik: sample=1/3 rounds=3000 total_ms=623.124 avg_ms=0.2077
+  tokenize_ik: sample=2/3 rounds=3000 total_ms=610.455 avg_ms=0.2035
+  tokenize_ik: sample=3/3 rounds=3000 total_ms=624.849 avg_ms=0.2083
+  tokenize_beng: sample=1/3 rounds=3000 total_ms=478.728 avg_ms=0.1596
+  tokenize_beng: sample=2/3 rounds=3000 total_ms=473.868 avg_ms=0.1580
+  tokenize_beng: sample=3/3 rounds=3000 total_ms=476.131 avg_ms=0.1587
+[5/5] MATCH query ...
+  query_cn: warmup_hits=8001
+  query_cn: sample=1/3 rounds=200 total_ms=755.256 avg_ms=3.7763
+  query_cn: sample=2/3 rounds=200 total_ms=829.691 avg_ms=4.1485
+  query_cn: sample=3/3 rounds=200 total_ms=823.671 avg_ms=4.1184
+  query_beng: warmup_hits=11000
+  query_beng: sample=1/3 rounds=200 total_ms=1131.493 avg_ms=5.6575
+  query_beng: sample=2/3 rounds=200 total_ms=1165.833 avg_ms=5.8292
+  query_beng: sample=3/3 rounds=200 total_ms=1083.397 avg_ms=5.4170
+  query_mixed: warmup_hits=7332
+  query_mixed: sample=1/3 rounds=200 total_ms=783.953 avg_ms=3.9198
+  query_mixed: sample=2/3 rounds=200 total_ms=787.510 avg_ms=3.9375
+  query_mixed: sample=3/3 rounds=200 total_ms=787.578 avg_ms=3.9379
+  query_limit: warmup_hits=20
+  query_limit: sample=1/3 rounds=200 total_ms=1016.817 avg_ms=5.0841
+  query_limit: sample=2/3 rounds=200 total_ms=1013.370 avg_ms=5.0668
+  query_limit: sample=3/3 rounds=200 total_ms=1000.270 avg_ms=5.0013
+Report appended to /home/wh-yin/seekdb-fts/evidence-group-v3-nov4/benchmark.report
+
+Compare before/after on these fields:
+  build_ik_all_sec, build_ik_content_sec, build_beng_en_sec, build_total_sec
+  tokenize_ik_avg_ms/stdev, tokenize_beng_avg_ms/stdev, select1_avg_ms as SQL-loop baseline
+  query_cn_avg_ms, query_beng_avg_ms, query_mixed_avg_ms, query_limit_avg_ms with *_hits

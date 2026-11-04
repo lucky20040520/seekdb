@@ -220,12 +220,14 @@ int ObTokenStopWordNormalizer::filter_special_marks(const ObDatum &check_token, 
 
 ObBasicEnglishNormalizer::ObBasicEnglishNormalizer()
   : ObTokenNormalizer(),
+    ascii_case_mapping_(false),
     norm_allocator_("TxtTokGrpFilter", OB_MALLOC_NORMAL_BLOCK_SIZE)
 {
 }
 
 void ObBasicEnglishNormalizer::reset()
 {
+  ascii_case_mapping_ = false;
   norm_allocator_.reset();
   ObTokenNormalizer::reset();
 }
@@ -234,6 +236,14 @@ void ObBasicEnglishNormalizer::reuse()
 {
   norm_allocator_.reuse();
   ObTokenNormalizer::reuse();
+}
+
+int ObBasicEnglishNormalizer::inner_init(const ObCharsetInfo *cs, ObITokenStream &in_stream)
+{
+  UNUSED(in_stream);
+  ascii_case_mapping_ = CHARSET_UTF8MB4 == ObCharset::charset_type_by_coll(
+      static_cast<ObCollationType>(cs->number));
+  return OB_SUCCESS;
 }
 
 int ObBasicEnglishNormalizer::get_next(ObDatum &next_token, int64_t &token_freq)
@@ -295,7 +305,29 @@ int ObBasicEnglishNormalizer::get_next(ObDatum &next_token, int64_t &token_freq)
     } else {
       ObString norm_alnum_token(norm_token_len, norm_token_ptr);
       ObString norm_lower_token;
-      if (OB_FAIL(ObCharset::tolower(cs_, norm_alnum_token, norm_lower_token, norm_allocator_))) {
+      bool ascii_only = ascii_case_mapping_;
+      bool has_upper = false;
+      for (uint32_t i = 0; ascii_only && i < norm_token_len; ++i) {
+        const unsigned char c = static_cast<unsigned char>(norm_token_ptr[i]);
+        ascii_only = c < 0x80;
+        has_upper |= c >= 'A' && c <= 'Z';
+      }
+      if (ascii_only && !has_upper) {
+        // The input stream owns the token until its next get_next/reuse call,
+        // which is also the lifetime promised by this normalizer.
+        next_token.set_string(norm_alnum_token);
+      } else if (ascii_only) {
+        char *lower = static_cast<char *>(norm_allocator_.alloc(norm_token_len));
+        if (OB_ISNULL(lower)) {
+          ret = OB_ALLOCATE_MEMORY_FAILED;
+        } else {
+          for (uint32_t i = 0; i < norm_token_len; ++i) {
+            const unsigned char c = static_cast<unsigned char>(norm_token_ptr[i]);
+            lower[i] = c >= 'A' && c <= 'Z' ? c + ('a' - 'A') : c;
+          }
+          next_token.set_string(lower, norm_token_len);
+        }
+      } else if (OB_FAIL(ObCharset::tolower(cs_, norm_alnum_token, norm_lower_token, norm_allocator_))) {
       } else {
         next_token.set_string(norm_lower_token);
       }
