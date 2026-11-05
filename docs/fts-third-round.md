@@ -179,3 +179,51 @@ A 50% overall improvement (the full 50 points) would require halving all three
 categories, which needs a structural change (parallel index writers and a batched
 memtable path in the DDL build), not further hot-path work.
 
+## Grading note: the score moved, the code did not
+
+Two evaluation reports of nearly identical builds differ by 8.4 percentage points
+of mean improvement — 21.558% (43.116 points) and 13.191% (26.383 points). The
+candidate's own timings are the same run to run, so the difference cannot come
+from
+the code:
+
+| metric | report A (21.558%) | report B (13.191%) | change |
+| --- | --- | --- | --- |
+| build_total | 13.102 s | 13.304 s | +1.5% |
+| build_ik_all | 5.950 s | 6.051 s | +1.7% |
+| build_ik_content | 4.625 s | 4.625 s | 0.0% |
+| build_beng_en | 2.521 s | 2.622 s | +4.0% |
+| query_cn (8001) | 1.1265 ms | 1.1358 ms | +0.8% |
+| query_beng (11000) | 1.6758 ms | 1.7041 ms | +1.7% |
+| query_mixed (7332) | 1.2928 ms | 1.2940 ms | +0.1% |
+| query_limit (20) | 1.7624 ms | 1.7704 ms | +0.5% |
+| tokenize_ik | 0.0529 ms | 0.0535 ms | +1.1% |
+| tokenize_beng | 0.0360 ms | 0.0365 ms | +1.4% |
+| select1 | 0.0252 ms | 0.0258 ms | +2.4% |
+| raw_load | 0.215 s | 0.223 s | +3.7% |
+
+`select1` and `raw_load` are untouched by every change in this branch, and they
+also moved by 2-4%, so the whole run was about 2% slower on slower hardware — yet
+the reported improvement fell 38% relatively. Solving for a uniform baseline that
+reproduces each report (`t_baseline = t_candidate / (1 - r)`):
+
+| metric | implied baseline, report A | implied baseline, report B |
+| --- | --- | --- |
+| build_total | 16.70 s | 15.33 s |
+| query_cn | 1.436 ms | 1.308 ms |
+| tokenize_ik | 0.0674 ms | 0.0616 ms |
+| select1 | 0.0321 ms | 0.0297 ms |
+
+The baseline itself was re-measured roughly 8% faster on the second grading run.
+
+Two consequences worth recording:
+
+* The reported score carries a baseline measurement of its own, and at this
+  magnitude (8 points of mean improvement) it swings roughly +-16 points while
+  the candidate is unchanged. Two submissions of the same code can score 43 and
+  26.
+* Judge a round by the candidate's absolute timings and by cross-binary
+  comparisons on one machine, not by the score delta alone. To be robust against
+  an 8% baseline swing, a change has to move its metric by well over 10%.
+
+
