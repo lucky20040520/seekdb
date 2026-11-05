@@ -113,13 +113,63 @@ the scale of run-to-run noise on this 4 vCPU VM. Tokenization — the only stage
 this change can touch — is flat. So the fused decoder removes redundant byte
 checks in a loop that was never a bottleneck: sound, but not a score lever.
 
-## What would actually move the number
+## Where the query time actually goes
 
-Both remaining categories are already close to a floor that this round can
-document but not lower:
+An earlier reading of these numbers was wrong: none of the four benchmark
+statements returns rows. `tools/benchmark/fts_large_bench.sh` lines 320-327 are
+all `SELECT COUNT(*)`, and the "hits" in the report are the counted matches, not
+rows fetched by the client. So the 141 ns per match on the reference machine is
+engine-side work, not result serialization, and the query category is not at a
+floor.
 
-* Query returns 8001 / 11000 / 7332 rows per statement, i.e. 141 ns per row on
-  the reference machine. That is fetch + serialization; there is no 2x left.
+A dense sampler (`profile5.py`: 200 captures, 20 ms apart, `thread apply all bt 8`,
+12,000 rounds of `query_cn` against a pre-built runtime dir) produced 87 usable
+captures. Because the client feeds statements one at a time, most threads sit in
+`futex`, and 47 samples land on the working thread. Their leaf frames:
+
+| leaf | samples |
+| --- | --- |
+| `ObSimpleRowsMerger` | 10 |
+| `__memmove_avx_unaligned_erms` | 9 |
+| `ObSRDaaTIterImpl::collect_dims_by_id` | 4 |
+| `ObIntegerBaseDiffDecoder::batch_get_bitpacked_values` | 3 |
+| `fill_merge_heap` / `do_one_merge_round` / `SRMergeCmp::cmp` / `filter_on_demand` | 1 each |
+| `ObExprBM25::eval_batch_bm25_relevance_expr` | 1 |
+
+So the cost is dominated by assembling the merged row stream (rows merger plus
+the copies it does), not by postings decoding: the bitpacked postings decoder
+shows up three times.
+
+`EXPLAIN` for the same statement confirms the shape and exposes a second issue:
+
+```
+|1 |└─TEXT RETRIEVAL SCAN|docs(fti_en_beng)|
+  1 - output(nil), filter(nil), is_index_back=false
+      calc_relevance=true, pushdown_match_filter(BOOL(MATCH(...)))
+```
+
+`output(nil)` and `is_index_back=false` are already optimal — nothing is fetched
+from the base table. But `calc_relevance=true` means BM25 is evaluated for every
+matched document although the aggregate only counts rows. Two places explain why:
+
+* `src/sql/das/iter/ob_das_text_retrieval_iter.h:109` —
+  `inline bool need_calc_relevance() { return true; } // TODO: reduce tsc ops if no need to calc relevance`
+* `src/sql/optimizer/ob_log_plan.cpp:12254-12265` — the block that would call
+  `ObTransformUtils::check_need_calc_match_score()` and set
+  `need_calc_relevance = false`, together with the constraint bookkeeping, is
+  commented out, so `tr_info.need_calc_relevance_` is always `true`.
+
+Turning that off is a real lever (it needs the flag to reach the DAS ctdef and the
+iterator, and a sound "score is not referenced" decision), but the sampler says
+scoring is a minority of the remaining time — the row-assembly path is the bigger
+half.
+
+## What would move the number
+
+* Query: row assembly in the DAS merge path (rows merger + copies) is the top
+  leaf, then relevance evaluation, then postings decode. No correctness-preserving
+  shortcut here matches the size of the build category, but skipping relevance for
+  count-only queries is the cheapest identified win.
 * Tokenize is ~50% client round-trip per call; the fused decoder shaves tens of
   nanoseconds from a 27 µs kernel.
 * Build is I/O + DAT dictionary + rowkey sort bound, and runs single threaded at
@@ -128,3 +178,4 @@ document but not lower:
 A 50% overall improvement (the full 50 points) would require halving all three
 categories, which needs a structural change (parallel index writers and a batched
 memtable path in the DDL build), not further hot-path work.
+
