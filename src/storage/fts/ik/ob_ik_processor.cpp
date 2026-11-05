@@ -103,16 +103,16 @@ int TokenizeContext::current_char_type(ObFTCharUtil::CharType &type)
 int TokenizeContext::prepare_next_char()
 {
   int ret = OB_SUCCESS;
-  if (OB_FAIL(ObFTCharUtil::first_valid_char_fast(coll_type_,
-                                                  charset_type_,
-                                                  fulltext_ + cursor_,
-                                                  fulltext_len_ - cursor_,
-                                                  next_char_len_))) {
-  } else if (OB_FAIL(ObFTCharUtil::classify_first_char(coll_type_,
-                                                       charset_type_,
-                                                       fulltext_ + cursor_,
-                                                       next_char_len_,
-                                                       next_char_type_))) {
+  uint8_t char_len = 0;
+  // One pass for both the character length and its class.
+  if (OB_FAIL(ObFTCharUtil::decode_and_classify(coll_type_,
+                                                charset_type_,
+                                                fulltext_ + cursor_,
+                                                fulltext_len_ - cursor_,
+                                                char_len,
+                                                next_char_type_))) {
+  } else {
+    next_char_len_ = char_len;
   }
   return ret;
 }

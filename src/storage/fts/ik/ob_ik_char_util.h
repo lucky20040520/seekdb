@@ -73,6 +73,20 @@ public:
                                    const uint8_t char_len,
                                    CharType &type);
 
+  // Resolve the length and the class of one character in a single pass. The
+  // tokenizer walks every byte of every document, so decoding the same UTF-8
+  // prefix twice (once for the length, once for the class) repeats the
+  // continuation-byte checks on the hottest loop of the FTS workload. Every
+  // byte sequence that is not the plain scalar case falls back to
+  // first_valid_char_fast + classify_first_char, so the fused helper keeps the
+  // same observable behaviour as the two-step one, including error codes.
+  static int decode_and_classify(ObCollationType coll_type,
+                                 ObCharsetType charset_type,
+                                 const char *buf,
+                                 const int64_t buf_size,
+                                 uint8_t &char_len,
+                                 CharType &type);
+
   static int check_cn_number(ObCollationType coll_type,
                              const char *input,
                              const uint8_t char_len,
@@ -644,6 +658,92 @@ inline int ObFTCharUtil::first_valid_char_fast(ObCollationType coll_type,
       // Keep the charset library's behavior for non-scalar encodings and
       // malformed input. The common valid UTF-8 path stays entirely inline.
       ret = ObCharset::first_valid_char(coll_type, buf, buf_size, char_len);
+    }
+  }
+  return ret;
+}
+
+inline int ObFTCharUtil::decode_and_classify(ObCollationType coll_type,
+                                             ObCharsetType charset_type,
+                                             const char *buf,
+                                             const int64_t buf_size,
+                                             uint8_t &char_len,
+                                             CharType &type)
+{
+  int ret = OB_SUCCESS;
+  int64_t len = 0;
+  char_len = 0;
+  type = CharType::USELESS;
+  if (OB_UNLIKELY(charset_type != CHARSET_UTF8MB4) || OB_ISNULL(buf) || buf_size <= 0) {
+    if (OB_FAIL(first_valid_char_fast(coll_type, charset_type, buf, buf_size, len))) {
+    } else if (OB_UNLIKELY(len <= 0 || len > 0xff)) {
+      ret = OB_INVALID_ARGUMENT;
+    } else if (OB_FAIL(classify_first_char(coll_type, charset_type, buf,
+                                           static_cast<uint8_t>(len), type))) {
+    } else {
+      char_len = static_cast<uint8_t>(len);
+    }
+  } else {
+    const unsigned char first = static_cast<unsigned char>(buf[0]);
+    bool plain = false;
+    if (first < 0x80) {
+      char_len = 1;
+      if ((first >= 'A' && first <= 'Z') || (first >= 'a' && first <= 'z')) {
+        type = CharType::ENGLISH_LETTER;
+      } else if (first >= '0' && first <= '9') {
+        type = CharType::ARABIC_LETTER;
+      }
+      plain = true;
+    } else if (first < 0xe0) {
+      // 0x80..0xc1 is never a valid leading byte; those go to the fallback.
+      if (first >= 0xc2 && buf_size >= 2 && is_continuation_byte(buf[1])) {
+        char_len = 2;
+        if (OB_FAIL(do_classify<CHARSET_UTF8MB4>(buf, 2, type))) {
+        } else {
+          plain = true;
+        }
+      }
+    } else if (first < 0xf0) {
+      if (buf_size >= 3 && is_continuation_byte(buf[1]) && is_continuation_byte(buf[2])
+          && (first >= 0xe1 || static_cast<unsigned char>(buf[1]) >= 0xa0)
+          && !(first == 0xed && static_cast<unsigned char>(buf[1]) >= 0xa0)) {
+        char_len = 3;
+        // Same CJK shortcut as classify_utf8mb4_fast: U+4E00..U+9FFF dominates
+        // the workload. buf[2] was already checked above, so no second test.
+        if (first >= 0xe4 && first <= 0xe9
+            && (first > 0xe4 || static_cast<unsigned char>(buf[1]) >= 0xb8)) {
+          type = CharType::CHINESE;
+          plain = true;
+        } else if (OB_FAIL(do_classify<CHARSET_UTF8MB4>(buf, 3, type))) {
+        } else {
+          plain = true;
+        }
+      }
+    } else if (first < 0xf5) {
+      if (buf_size >= 4 && is_continuation_byte(buf[1]) && is_continuation_byte(buf[2])
+          && is_continuation_byte(buf[3])
+          && (first >= 0xf1 || static_cast<unsigned char>(buf[1]) >= 0x90)
+          && (first <= 0xf3 || static_cast<unsigned char>(buf[1]) <= 0x8f)) {
+        char_len = 4;
+        if (OB_FAIL(do_classify<CHARSET_UTF8MB4>(buf, 4, type))) {
+        } else {
+          plain = true;
+        }
+      }
+    }
+    if (!plain && OB_SUCC(ret)) {
+      // Malformed or truncated input: keep the charset library's decision and
+      // the error code of the original two-step path.
+      char_len = 0;
+      type = CharType::USELESS;
+      if (OB_FAIL(first_valid_char_fast(coll_type, charset_type, buf, buf_size, len))) {
+      } else if (OB_UNLIKELY(len <= 0 || len > 0xff)) {
+        ret = OB_INVALID_ARGUMENT;
+      } else if (OB_FAIL(classify_first_char(coll_type, charset_type, buf,
+                                             static_cast<uint8_t>(len), type))) {
+      } else {
+        char_len = static_cast<uint8_t>(len);
+      }
     }
   }
   return ret;
