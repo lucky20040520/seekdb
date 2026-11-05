@@ -112,20 +112,18 @@ int ObIKArbitrator::output_result(TokenizeContext &ctx)
   int ret = OB_SUCCESS;
 
   int64_t char_len = 0;
+  uint8_t cur_char_len = 0;
   ObIKTokenChain *chain = nullptr;
   for (int64_t current = 0; OB_SUCC(ret) && current < ctx.fulltext_len();) {
-    ObFTCharUtil::CharType type;
+    ObFTCharUtil::CharType type = ObFTCharUtil::CharType::USELESS;
     // maybe not so good to keep single, check it later
-    if (OB_FAIL(ObFTCharUtil::first_valid_char_fast(ctx.collation(),
-                                                    ctx.charset_type(),
-                                                    ctx.fulltext() + current,
-                                                    ctx.fulltext_len() - current,
-                                                    char_len))) {
-    } else if (OB_FAIL(ObFTCharUtil::classify_first_char(ctx.collation(),
-                                                         ctx.charset_type(),
-                                                         ctx.fulltext() + current,
-                                                         char_len,
-                                                         type))) {
+    if (OB_FAIL(ObFTCharUtil::decode_and_classify(ctx.collation(),
+                                                 ctx.charset_type(),
+                                                 ctx.fulltext() + current,
+                                                 ctx.fulltext_len() - current,
+                                                 cur_char_len,
+                                                 type))) {
+    } else if (FALSE_IT(char_len = cur_char_len)) {
     } else if (ObFTCharUtil::CharType::USELESS == type) {
       current += char_len; // skip useless char
     } else if (OB_FAIL(chains_.get_refactored(current, chain)) && OB_HASH_NOT_EXIST != ret) {
