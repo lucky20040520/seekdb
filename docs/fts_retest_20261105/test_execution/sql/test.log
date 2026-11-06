@@ -1,0 +1,158 @@
+exec ${PAGER:-/usr/bin/less} "$0" || exit 1
+Executing tests from //unittest/sql:sql_tests
+-----------------------------------------------------------------------------
+[==========] Running 60 tests from 10 test cases.
+[----------] Global test environment set-up.
+[----------] 3 tests from FtsScanColumns
+[ RUN      ] FtsScanColumns.membership_scan_reads_and_outputs_only_id
+[       OK ] FtsScanColumns.membership_scan_reads_and_outputs_only_id (1 ms)
+[ RUN      ] FtsScanColumns.ranked_scan_retains_frequency_id_and_length
+[       OK ] FtsScanColumns.ranked_scan_retains_frequency_id_and_length (0 ms)
+[ RUN      ] FtsScanColumns.block_max_scan_retains_all_score_bound_columns
+[       OK ] FtsScanColumns.block_max_scan_retains_all_score_bound_columns (0 ms)
+[----------] 3 tests from FtsScanColumns (1 ms total)
+
+[----------] 9 tests from SortKeyCompare
+[ RUN      ] SortKeyCompare.short_string_equality_preserves_collation
+[       OK ] SortKeyCompare.short_string_equality_preserves_collation (117 ms)
+[ RUN      ] SortKeyCompare.general_ci_short_equality_checks_every_payload_byte
+[       OK ] SortKeyCompare.general_ci_short_equality_checks_every_payload_byte (34 ms)
+[ RUN      ] SortKeyCompare.general_ci_short_equality_requires_no_readable_prefix_or_suffix
+[       OK ] SortKeyCompare.general_ci_short_equality_requires_no_readable_prefix_or_suffix (0 ms)
+[ RUN      ] SortKeyCompare.general_ci_ascii_first_weight_preserves_collation_and_dispatch
+[       OK ] SortKeyCompare.general_ci_ascii_first_weight_preserves_collation_and_dispatch (502 ms)
+[ RUN      ] SortKeyCompare.general_ci_three_byte_first_weight_matches_charset
+[       OK ] SortKeyCompare.general_ci_three_byte_first_weight_matches_charset (939 ms)
+[ RUN      ] SortKeyCompare.binary_comparison_preserves_bytes_padding_and_null_ordering
+[       OK ] SortKeyCompare.binary_comparison_preserves_bytes_padding_and_null_ordering (225 ms)
+[ RUN      ] SortKeyCompare.fixed_binary_keys_preserve_first_differing_unsigned_byte
+[       OK ] SortKeyCompare.fixed_binary_keys_preserve_first_differing_unsigned_byte (43 ms)
+[ RUN      ] SortKeyCompare.fixed_binary_keys_require_no_readable_prefix_or_suffix
+[       OK ] SortKeyCompare.fixed_binary_keys_require_no_readable_prefix_or_suffix (3 ms)
+[ RUN      ] SortKeyCompare.cached_metadata_preserves_order_ranges_and_merge_adapters
+[       OK ] SortKeyCompare.cached_metadata_preserves_order_ranges_and_merge_adapters (0 ms)
+[----------] 9 tests from SortKeyCompare (1863 ms total)
+
+[----------] 1 test from FtsIndexBatch
+[ RUN      ] FtsIndexBatch.stays_within_document_and_preserves_rows_across_batch_boundaries
+[       OK ] FtsIndexBatch.stays_within_document_and_preserves_rows_across_batch_boundaries (0 ms)
+[----------] 1 test from FtsIndexBatch (0 ms total)
+
+[----------] 3 tests from FtsIndexRowCache
+[ RUN      ] FtsIndexRowCache.matches_materialized_rows_across_reuse_resize_and_collation
+[       OK ] FtsIndexRowCache.matches_materialized_rows_across_reuse_resize_and_collation (9 ms)
+[ RUN      ] FtsIndexRowCache.owns_document_id_and_word_bytes_until_next_document
+[       OK ] FtsIndexRowCache.owns_document_id_and_word_bytes_until_next_document (0 ms)
+[ RUN      ] FtsIndexRowCache.empty_failure_partial_consumption_reset_and_reinitialization
+[       OK ] FtsIndexRowCache.empty_failure_partial_consumption_reset_and_reinitialization (0 ms)
+[----------] 3 tests from FtsIndexRowCache (9 ms total)
+
+[----------] 9 tests from FTParserProperties
+[ RUN      ] FTParserProperties.canonical_predicates_preserve_normalization_and_serialized_versions
+[       OK ] FTParserProperties.canonical_predicates_preserve_normalization_and_serialized_versions (0 ms)
+[ RUN      ] FTParserProperties.canonical_predicates_preserve_unknown_names_and_stored_bytes
+[       OK ] FTParserProperties.canonical_predicates_preserve_unknown_names_and_stored_bytes (0 ms)
+[ RUN      ] FTParserProperties.canonical_predicates_preserve_length_boundaries_and_embedded_nul
+[       OK ] FTParserProperties.canonical_predicates_preserve_length_boundaries_and_embedded_nul (0 ms)
+[ RUN      ] FTParserProperties.tokenize_defaults_match_rebuilt_properties_for_every_parser
+[       OK ] FTParserProperties.tokenize_defaults_match_rebuilt_properties_for_every_parser (0 ms)
+[ RUN      ] FTParserProperties.tokenize_custom_and_invalid_properties_do_not_use_defaults
+[       OK ] FTParserProperties.tokenize_custom_and_invalid_properties_do_not_use_defaults (0 ms)
+[ RUN      ] FTParserProperties.tokenize_parameters_and_json_share_the_callers_arena
+[       OK ] FTParserProperties.tokenize_parameters_and_json_share_the_callers_arena (0 ms)
+[ RUN      ] FTParserProperties.rebuilt_tree_matches_serialized_helper_properties
+[       OK ] FTParserProperties.rebuilt_tree_matches_serialized_helper_properties (0 ms)
+[ RUN      ] FTParserProperties.preserve_missing_and_invalid_properties
+[       OK ] FTParserProperties.preserve_missing_and_invalid_properties (0 ms)
+[ RUN      ] FTParserProperties.typed_helper_preserves_tokens_frequencies_and_collation
+[       OK ] FTParserProperties.typed_helper_preserves_tokens_frequencies_and_collation (0 ms)
+[----------] 9 tests from FTParserProperties (0 ms total)
+
+[----------] 7 tests from FTTokenArrayJson
+[ RUN      ] FTTokenArrayJson.tree_differential_preserves_empty_unicode_controls_and_collation
+[       OK ] FTTokenArrayJson.tree_differential_preserves_empty_unicode_controls_and_collation (0 ms)
+[ RUN      ] FTTokenArrayJson.tree_differential_crosses_string_length_and_container_width_boundaries
+[       OK ] FTTokenArrayJson.tree_differential_crosses_string_length_and_container_width_boundaries (245 ms)
+[ RUN      ] FTTokenArrayJson.binary_owns_bytes_after_input_and_helper_destruction
+[       OK ] FTTokenArrayJson.binary_owns_bytes_after_input_and_helper_destruction (0 ms)
+[ RUN      ] FTTokenArrayJson.every_allocation_failure_releases_partial_state
+[       OK ] FTTokenArrayJson.every_allocation_failure_releases_partial_state (0 ms)
+[ RUN      ] FTTokenArrayJson.oversized_layout_fails_before_allocating_or_reading_string_payloads
+[       OK ] FTTokenArrayJson.oversized_layout_fails_before_allocating_or_reading_string_payloads (0 ms)
+[ RUN      ] FTTokenArrayJson.packed_results_survive_scratch_release_and_repeated_evaluation
+[       OK ] FTTokenArrayJson.packed_results_survive_scratch_release_and_repeated_evaluation (0 ms)
+[ RUN      ] FTTokenArrayJson.default_tokenizer_returns_valid_binary_after_local_map_destruction
+[       OK ] FTTokenArrayJson.default_tokenizer_returns_valid_binary_after_local_map_destruction (0 ms)
+[----------] 7 tests from FTTokenArrayJson (245 ms total)
+
+[----------] 4 tests from MysqlJsonCell
+[ RUN      ] MysqlJsonCell.output_survives_local_destructors_with_freeing_and_poison_allocators
+[       OK ] MysqlJsonCell.output_survives_local_destructors_with_freeing_and_poison_allocators (0 ms)
+[ RUN      ] MysqlJsonCell.multiple_cells_and_buffer_growth_preserve_all_results
+[       OK ] MysqlJsonCell.multiple_cells_and_buffer_growth_preserve_all_results (3 ms)
+[ RUN      ] MysqlJsonCell.allocation_failures_release_partial_state_and_keep_previous_cells
+[       OK ] MysqlJsonCell.allocation_failures_release_partial_state_and_keep_previous_cells (2 ms)
+[ RUN      ] MysqlJsonCell.empty_null_pointer_and_truncated_values_keep_the_contract
+[       OK ] MysqlJsonCell.empty_null_pointer_and_truncated_values_keep_the_contract (0 ms)
+[----------] 4 tests from MysqlJsonCell (5 ms total)
+
+[----------] 6 tests from BinaryJsonArrayPrint
+[ RUN      ] BinaryJsonArrayPrint.tree_and_generic_traversal_match_complete_nested_and_boundary_outputs
+[       OK ] BinaryJsonArrayPrint.tree_and_generic_traversal_match_complete_nested_and_boundary_outputs (9 ms)
+[ RUN      ] BinaryJsonArrayPrint.forwarded_values_keep_type_prefix_decoding
+[       OK ] BinaryJsonArrayPrint.forwarded_values_keep_type_prefix_decoding (0 ms)
+[ RUN      ] BinaryJsonArrayPrint.child_views_borrow_the_owning_parent_context
+[       OK ] BinaryJsonArrayPrint.child_views_borrow_the_owning_parent_context (0 ms)
+[ RUN      ] BinaryJsonArrayPrint.accepted_parent_with_damaged_children_matches_generic_errors_and_partial_bytes
+[       OK ] BinaryJsonArrayPrint.accepted_parent_with_damaged_children_matches_generic_errors_and_partial_bytes (1 ms)
+[ RUN      ] BinaryJsonArrayPrint.nonseek_and_external_update_cursors_retain_generic_read_errors
+[       OK ] BinaryJsonArrayPrint.nonseek_and_external_update_cursors_retain_generic_read_errors (0 ms)
+[ RUN      ] BinaryJsonArrayPrint.every_output_allocation_failure_keeps_parent_usable
+[       OK ] BinaryJsonArrayPrint.every_output_allocation_failure_keeps_parent_usable (2 ms)
+[----------] 6 tests from BinaryJsonArrayPrint (12 ms total)
+
+[----------] 13 tests from CountStarViewOrder
+[ RUN      ] CountStarViewOrder.projection_pruning_releases_unused_columns_and_keeps_match_inputs
+[       OK ] CountStarViewOrder.projection_pruning_releases_unused_columns_and_keeps_match_inputs (0 ms)
+[ RUN      ] CountStarViewOrder.projection_pruning_honors_parent_and_child_optouts
+[       OK ] CountStarViewOrder.projection_pruning_honors_parent_and_child_optouts (0 ms)
+[ RUN      ] CountStarViewOrder.projection_pruning_requires_unobservable_safe_projections
+[       OK ] CountStarViewOrder.projection_pruning_requires_unobservable_safe_projections (0 ms)
+[ RUN      ] CountStarViewOrder.missing_preprocess_hint_metadata_keeps_order_without_error
+[       OK ] CountStarViewOrder.missing_preprocess_hint_metadata_keeps_order_without_error (0 ms)
+[ RUN      ] CountStarViewOrder.ordinary_column_and_literal_orders_do_not_affect_count
+[       OK ] CountStarViewOrder.ordinary_column_and_literal_orders_do_not_affect_count (0 ms)
+[ RUN      ] CountStarViewOrder.literal_null_and_parameter_limits_remain_unchanged
+[       OK ] CountStarViewOrder.literal_null_and_parameter_limits_remain_unchanged (0 ms)
+[ RUN      ] CountStarViewOrder.natural_match_order_is_unobservable_only_through_count
+[       OK ] CountStarViewOrder.natural_match_order_is_unobservable_only_through_count (0 ms)
+[ RUN      ] CountStarViewOrder.row_values_or_another_aggregate_preserve_ranked_subset
+[       OK ] CountStarViewOrder.row_values_or_another_aggregate_preserve_ranked_subset (0 ms)
+[ RUN      ] CountStarViewOrder.parent_clauses_that_can_observe_or_change_rows_preserve_order
+[       OK ] CountStarViewOrder.parent_clauses_that_can_observe_or_change_rows_preserve_order (1 ms)
+[ RUN      ] CountStarViewOrder.generated_source_must_be_the_only_exact_from_source
+[       OK ] CountStarViewOrder.generated_source_must_be_the_only_exact_from_source (0 ms)
+[ RUN      ] CountStarViewOrder.inner_limit_cardinality_and_effect_barriers_preserve_order
+[       OK ] CountStarViewOrder.inner_limit_cardinality_and_effect_barriers_preserve_order (0 ms)
+[ RUN      ] CountStarViewOrder.potentially_failing_or_effectful_expressions_preserve_order
+[       OK ] CountStarViewOrder.potentially_failing_or_effectful_expressions_preserve_order (0 ms)
+[ RUN      ] CountStarViewOrder.match_order_requires_the_same_safe_membership_predicate
+[       OK ] CountStarViewOrder.match_order_requires_the_same_safe_membership_predicate (0 ms)
+[----------] 13 tests from CountStarViewOrder (1 ms total)
+
+[----------] 5 tests from CountBatch
+[ RUN      ] CountBatch.slices_match_iterator_at_word_and_batch_boundaries
+[       OK ] CountBatch.slices_match_iterator_at_word_and_batch_boundaries (2 ms)
+[ RUN      ] CountBatch.empty_and_reversed_slices_need_no_skip_vector
+[       OK ] CountBatch.empty_and_reversed_slices_need_no_skip_vector (0 ms)
+[ RUN      ] CountBatch.explicit_selections_keep_duplicates_and_ignore_skip_bits
+[       OK ] CountBatch.explicit_selections_keep_duplicates_and_ignore_skip_bits (0 ms)
+[ RUN      ] CountBatch.maximum_batch_and_repeated_calls_accumulate
+[       OK ] CountBatch.maximum_batch_and_repeated_calls_accumulate (1 ms)
+[ RUN      ] CountBatch.nullable_count_keeps_null_filtering_for_slices_and_selections
+[       OK ] CountBatch.nullable_count_keeps_null_filtering_for_slices_and_selections (0 ms)
+[----------] 5 tests from CountBatch (3 ms total)
+
+[----------] Global test environment tear-down
+[==========] 60 tests from 10 test cases ran. (2139 ms total)
+[  PASSED  ] 60 tests.

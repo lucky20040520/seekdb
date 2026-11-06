@@ -1,0 +1,36 @@
+INFO: Invocation ID: 00cc6c7b-636f-488a-aa03-38248e56e861
+Computing main repo mapping: 
+Loading: 
+Loading: 0 packages loaded
+Analyzing: 3 targets (2 packages loaded, 0 targets configured)
+Analyzing: 3 targets (2 packages loaded, 0 targets configured)
+
+INFO: Analyzed 3 targets (7 packages loaded, 5283 targets configured).
+[332 / 661] Compiling unittest/all_tests_main.cpp; 0s disk-cache, linux-sandbox ... (2 actions, 1 running)
+[336 / 664] Compiling src/share/share_runtime_share_runtime_standalone_24.unity.cpp; 1s disk-cache, linux-sandbox ... (2 actions running)
+ERROR: /var/tmp/seekdb-retest-dcabb07-20261105/src/src/sql/BUILD.bazel:284:11: Compiling unittest/fts_exec_context_fixture.cpp failed: (Exit 1): clang failed: error executing CppCompile command (from target //src/sql:fts_exec_context_test_runtime) 
+  (cd /var/tmp/seekdb-retest-dcabb07-20261105/bazel-build/output-base/sandbox/linux-sandbox/214/execroot/_main && \
+  exec env - \
+    PATH=/home/cailucky/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+    PWD=/proc/self/cwd \
+  external/+_repo_rules2+seekdb_cc_toolchain/devtools/bin/clang -U_FORTIFY_SOURCE -Wall -Wthread-safety -Wself-assign -Wunused-but-set-parameter -Wno-free-nonheap-object -fcolor-diagnostics -fno-omit-frame-pointer -O2 '-std=c++17' -MD -MF bazel-out/k8-opt/bin/src/sql/_objs/fts_exec_context_test_runtime/fts_exec_context_fixture.pic.d '-frandom-seed=bazel-out/k8-opt/bin/src/sql/_objs/fts_exec_context_test_runtime/fts_exec_context_fixture.pic.o' -fPIC '-DDEFAULT_LOG_FILE_SIZE_MB=256' '-DDEFAULT_LOG_LEVEL=OB_LOG_LEVEL_ERROR' -DENABLE_500_MEMORY_LIMIT -DENABLE_INITIAL_EXEC_TLS_MODEL -DFATAL_ERROR_HANG -DNDEBUG -DOB_BUILD_LITE -DOB_BUILD_OBSERVER_LITE -DOB_BUILD_SYS_VEC_IDX -DOCI_LINK_RUNTIME '-DPACKAGE_NAME="OceanBase"' '-DPACKAGE_STRING="OceanBase 1.4.0.0"' '-DPACKAGE_VERSION="1.4.0.0"' '-DRELEASEID="1"' '-D_GLIBCXX_USE_CXX11_ABI=1' -D_NO_EXCEPTION -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS -iquote . -iquote bazel-out/k8-opt/bin -iquote external/+_repo_rules+seekdb_3rd_headers -iquote bazel-out/k8-opt/bin/external/+_repo_rules+seekdb_3rd_headers -Ibazel-out/k8-opt/bin/src/share/_virtual_includes/_generated_inner_table_headers -Ibazel-out/k8-opt/bin/src/share/_virtual_includes/local_table_schema -isystem src/oblib/easy -isystem bazel-out/k8-opt/bin/src/oblib/easy -isystem src/oblib/easy/include -isystem bazel-out/k8-opt/bin/src/oblib/easy/include -isystem external/+_repo_rules+seekdb_3rd_headers/include -isystem bazel-out/k8-opt/bin/external/+_repo_rules+seekdb_3rd_headers/include -isystem src/data_plane/api -isystem bazel-out/k8-opt/bin/src/data_plane/api -isystem src/oblib -isystem bazel-out/k8-opt/bin/src/oblib -isystem src/share/inner_table/bazel_generated -isystem bazel-out/k8-opt/bin/src/share/inner_table/bazel_generated -isystem rust/config/include -isystem bazel-out/k8-opt/bin/rust/config/include -isystem rust/unix/include -isystem bazel-out/k8-opt/bin/rust/unix/include -isystem rust/local/include -isystem bazel-out/k8-opt/bin/rust/local/include -isystem src/query/api -isystem bazel-out/k8-opt/bin/src/query/api -isystem external/+_repo_rules+seekdb_3rd_headers/include/libxml2 -isystem bazel-out/k8-opt/bin/external/+_repo_rules+seekdb_3rd_headers/include/libxml2 -isystem rust/sql-nio/include -isystem bazel-out/k8-opt/bin/rust/sql-nio/include -isystem src/sql/parser -isystem bazel-out/k8-opt/bin/src/sql/parser '-std=gnu++20' -I. -Isrc -Isrc/data_plane/api -Isrc/query/api -Isrc/objit/include -Isrc/oblib/easy -Isrc/oblib/easy/include -Isrc/oblib -Isrc/oblib/common -gdwarf-4 -ffunction-sections -fdata-sections -fdebug-info-for-profiling '-fmax-type-align=8' -fno-strict-aliasing -fno-omit-frame-pointer -g -Wno-everything -Wno-deprecated -Wno-reserved-user-defined-literal -Wno-unused-parameter '-Werror=private-header' '-mtune=core2' -c unittest/fts_exec_context_fixture.cpp -o bazel-out/k8-opt/bin/src/sql/_objs/fts_exec_context_test_runtime/fts_exec_context_fixture.pic.o -no-canonical-prefixes -Wno-builtin-macro-redefined '-D__DATE__="redacted"' '-D__TIMESTAMP__="redacted"' '-D__TIME__="redacted"')
+# Configuration: 988f1c055bff75da772a4964d7e8537270bf6ac86565cfa2d0775c10efa43fd7
+# Execution platform: @@platforms//host:host
+
+Use --sandbox_debug to see verbose messages from the sandbox and retain the sandbox build root for debugging
+In file included from unittest/fts_exec_context_fixture.cpp:3:
+In file included from src/sql/engine/ob_exec_context.h:29:
+In file included from src/sql/ob_sql_trans_control.h:23:
+src/sql/session/ob_sql_session_info.h:27:10: fatal error: 'lib/oblog/ob_warning_buffer.h' file not found
+   27 | #include "lib/oblog/ob_warning_buffer.h"
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1 error generated.
+[338 / 664] 1 / 3 tests, 1 failed; checking cached actions
+INFO: Elapsed time: 7.798s, Critical Path: 6.43s
+INFO: 23 processes: 315 action cache hit, 22 internal, 1 linux-sandbox.
+ERROR: Build did NOT complete successfully
+//unittest/sql:sql_tests                                              NO STATUS
+//unittest/storage:storage_tests                                      NO STATUS
+//unittest/share:share_tests                                    FAILED TO BUILD
+
+Executed 0 out of 3 tests: 1 fails to build and 2 were skipped.

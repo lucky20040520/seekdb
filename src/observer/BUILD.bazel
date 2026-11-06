@@ -717,6 +717,8 @@ seekdb_final_link(
 # compile-time access from source-module-owned test interfaces.
 seekdb_final_link(
     name = "_liboceanbase_link",
+    testonly = True,
+    whole_archive_deps = ["//src/sql:fts_exec_context_test_runtime"],
     whole_group_deps = (
         _OBSERVER_RETRIEVAL_COMPOSITION_OBJECT_TARGETS +
         _SEEKDB_CORE_LINK_DEPS +

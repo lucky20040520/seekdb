@@ -165,6 +165,8 @@ UNITTEST_RUNTIME_DEPS = [
 UNITTEST_INFRASTRUCTURE_FILES = [
     "unittest/BUILD.bazel",
     "unittest/all_tests_main.cpp",
+    "unittest/fts_exec_context_fixture.cpp",
+    "unittest/fts_exec_context_fixture.h",
 ]
 
 # These paths identify programs that do not belong in the default C++ unit-test

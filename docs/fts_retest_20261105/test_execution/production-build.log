@@ -1,0 +1,19 @@
+INFO: Invocation ID: f70a3be0-e435-42f1-a3e4-964909c0ba91
+Computing main repo mapping: 
+Loading: 
+Loading: 0 packages loaded
+Analyzing: target //src/observer:seekdb_link (0 packages loaded, 0 targets configured)
+Analyzing: target //src/observer:seekdb_link (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed target //src/observer:seekdb_link (0 packages loaded, 10 targets configured).
+[1,906 / 1,909] Compiling src/observer/observer_main_ob_main_0.unity.cpp; 1s disk-cache, linux-sandbox ... (2 actions running)
+[1,907 / 1,909] Compiling src/observer/observer_main_ob_main_0.unity.cpp; 4s disk-cache, linux-sandbox
+[1,907 / 1,909] Compiling src/observer/observer_main_ob_main_0.unity.cpp; 14s disk-cache, linux-sandbox
+[1,908 / 1,909] Linking seekdb executable src/observer/seekdb; 1s disk-cache, linux-sandbox
+INFO: Found 1 target...
+Target //src/observer:seekdb_link up-to-date:
+  /var/tmp/seekdb-retest-dcabb07-20261105/bazel-build/bin/src/observer/seekdb
+INFO: Elapsed time: 22.443s, Critical Path: 22.04s
+INFO: 5 processes: 10 action cache hit, 2 internal, 3 linux-sandbox.
+INFO: Build completed successfully, 5 total actions
+INFO: 

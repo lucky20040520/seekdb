@@ -552,7 +552,11 @@ TEST_F(FtsDictViewTest, immutable_views_match_legacy_ranges_and_survive_allocato
     ObArenaAllocator allocator;
     ObFTCacheRangeContainer container(allocator);
     ObFTDictDesc desc(names[i], types[i], CHARSET_UTF8MB4, CS_TYPE_UTF8MB4_BIN);
-    ASSERT_EQ(OB_SUCCESS, hub.load_cache(desc, container));
+    int load_ret = hub.load_cache(desc, container);
+    if (OB_ENTRY_NOT_EXIST == load_ret) {
+      load_ret = hub.build_cache(desc, container);
+    }
+    ASSERT_EQ(OB_SUCCESS, load_ret);
     ObFTRangeDict legacy(allocator, &container, desc);
     ASSERT_EQ(OB_SUCCESS, legacy.init());
     for (const char *probe : {"\xe4\xb8\xad\xe5\x9b\xbd", "\xe7\xb1\xb3", "\xe7\x9a\x84",
@@ -664,6 +668,68 @@ TEST_F(FtsDictViewTest, failed_view_initialization_does_not_publish_or_prevent_r
   bool matched = false;
   ASSERT_EQ(OB_SUCCESS, view->match(ObString("\xe7\xb1\xb3"), matched));
   EXPECT_TRUE(matched);
+}
+
+TEST(FtsDictCacheKey, equality_includes_range_id)
+{
+  const ObDictCacheKey first(1, ObFTDictType::DICT_IK_MAIN, 0);
+  const ObDictCacheKey same(1, ObFTDictType::DICT_IK_MAIN, 0);
+  const ObDictCacheKey other_range(1, ObFTDictType::DICT_IK_MAIN, 1);
+  const ObDictCacheKey other_type(1, ObFTDictType::DICT_IK_QUAN, 0);
+  const ObDictCacheKey other_name(2, ObFTDictType::DICT_IK_MAIN, 0);
+  EXPECT_TRUE(first == same);
+  EXPECT_EQ(first.hash(), same.hash());
+  EXPECT_FALSE(first == other_range);
+  EXPECT_FALSE(first == other_type);
+  EXPECT_FALSE(first == other_name);
+}
+
+class FtsDictCacheEvictionTest : public ::testing::Test
+{
+protected:
+  static void SetUpTestCase()
+  {
+    // Explicit eviction below controls the scenario; keep the periodic wash
+    // from racing the setup and making the test depend on scheduling.
+    ASSERT_EQ(OB_SUCCESS, ObKVGlobalCache::get_instance().init(
+        1024, 256L << 20, lib::ACHUNK_SIZE, 60L * 1000 * 1000));
+    ASSERT_EQ(OB_SUCCESS, ObDictCache::get_instance().init("fts_dict_eviction_test"));
+  }
+  static void TearDownTestCase()
+  {
+    ObDictCache::get_instance().destroy();
+    ObKVGlobalCache::get_instance().destroy();
+  }
+};
+
+TEST_F(FtsDictCacheEvictionTest, pinned_view_survives_cache_miss_and_rebuild)
+{
+  ObFTDictHub hub;
+  ASSERT_EQ(OB_SUCCESS, hub.init());
+  const ObIFTDict *view = nullptr;
+  ASSERT_EQ(OB_SUCCESS, hub.get_builtin_dict(ObFTDictType::DICT_IK_MAIN, view));
+  ASSERT_NE(nullptr, view);
+
+  const ObString word("\xe4\xb8\xad\xe5\x9b\xbd");
+  bool before = false;
+  ASSERT_EQ(OB_SUCCESS, view->match(word, before));
+  ASSERT_TRUE(before);
+  const ObDictCacheKey first_range(1, ObFTDictType::DICT_IK_MAIN, 0);
+  ASSERT_EQ(OB_SUCCESS, ObDictCache::get_instance().erase(first_range));
+
+  ObArenaAllocator allocator;
+  ObFTCacheRangeContainer container(allocator);
+  ObFTDictDesc desc("main_dict", ObFTDictType::DICT_IK_MAIN, CHARSET_UTF8MB4, CS_TYPE_UTF8MB4_BIN);
+  EXPECT_EQ(OB_ENTRY_NOT_EXIST, hub.load_cache(desc, container));
+  bool after_eviction = false;
+  ASSERT_EQ(OB_SUCCESS, view->match(word, after_eviction));
+  EXPECT_EQ(before, after_eviction);
+  ASSERT_EQ(OB_SUCCESS, hub.build_cache(desc, container));
+  ObFTRangeDict rebuilt(allocator, &container, desc);
+  ASSERT_EQ(OB_SUCCESS, rebuilt.init());
+  bool after_rebuild = false;
+  ASSERT_EQ(OB_SUCCESS, rebuilt.match(word, after_rebuild));
+  EXPECT_EQ(before, after_rebuild);
 }
 
 TEST(FtsDicLoader, concurrent_first_lookup_and_shared_lookups_pin_one_loader)

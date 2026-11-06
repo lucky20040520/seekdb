@@ -1,0 +1,24 @@
+Starting local Bazel server (8.2.1) and connecting to it...
+INFO: Invocation ID: 922f5a28-d3d3-47e9-94fe-18692174758c
+Computing main repo mapping: 
+Loading: 
+Loading: 0 packages loaded
+Loading: 0 packages loaded
+    currently loading: src/observer
+Analyzing: target //src/observer:seekdb_link (1 packages loaded, 0 targets configured)
+Analyzing: target //src/observer:seekdb_link (1 packages loaded, 0 targets configured)
+
+Analyzing: target //src/observer:seekdb_link (91 packages loaded, 6503 targets configured)
+
+ERROR: /var/tmp/seekdb-retest-dcabb07-20261105/src/src/oblib/BUILD.bazel:34:18: in //bazel/architecture:module_dependency_aspect.bzl%module_dependency_aspect aspect on cc_library rule //src/oblib:_jemalloc_headers: 
+Traceback (most recent call last):
+	File "/var/tmp/seekdb-retest-dcabb07-20261105/src/bazel/architecture/module_dependency_aspect.bzl", line 200, column 13, in _module_dependency_aspect_impl
+		fail("\n".join([
+Error in fail: first-party cc_library must be static-only: @@//src/oblib:_jemalloc_headers
+  load //bazel:defs.bzl%seekdb_cc_library
+  shared-library products must use an explicit cc_shared_library
+Target //src/observer:seekdb_link failed to build
+ERROR: Analysis of aspects '[//bazel/architecture:module_dependency_aspect.bzl%module_dependency_aspect] with parameters {} on //src/observer:seekdb_link' failed; build aborted: Analysis of target '//src/oblib:_jemalloc_headers' failed
+INFO: Elapsed time: 7.352s, Critical Path: 0.05s
+INFO: 1 process: 1 internal.
+ERROR: Build did NOT complete successfully

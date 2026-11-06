@@ -1,0 +1,8 @@
+//src/oblib:_jemalloc_headers (988f1c0)
+@bazel_tools//tools/cpp:toolchain_type (988f1c0)
+@bazel_tools//tools:host_platform (f37096a)
+@seekdb_cc_toolchain//:local_compile_cc_toolchain (988f1c0)
+//bazel:sanity_enabled (988f1c0)
+@bazel_tools//tools/cpp:current_cc_toolchain (988f1c0)
+@platforms//host:host (f37096a)
+@bazel_tools//tools/def_parser:def_parser (ca5463b)

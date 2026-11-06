@@ -1,0 +1,102 @@
+{
+  "baseline_violation_count": 12,
+  "current_violation_count": 9,
+  "new_violations": [],
+  "resolved_violations": [
+    [
+      "cross_module_include",
+      "unittest/sql/engine/expr/test_fts_membership_batch.cpp",
+      "sql",
+      "storage",
+      "storage/retrieval/ob_text_daat_iter.h"
+    ],
+    [
+      "cross_module_include",
+      "unittest/sql/engine/expr/test_fts_token_batch.cpp",
+      "sql",
+      "data_plane",
+      "data_plane/access/ob_table_scan_param.h"
+    ],
+    [
+      "cross_module_include",
+      "unittest/sql/engine/expr/test_fts_token_batch.cpp",
+      "sql",
+      "storage",
+      "storage/retrieval/ob_text_daat_iter.h"
+    ]
+  ],
+  "remaining_violations": [
+    {
+      "kind": "cross_module_include",
+      "path": "unittest/sql/engine/basic/test_sort_key_compare.cpp",
+      "line": 23,
+      "owner": "sql",
+      "dependency": "share",
+      "detail": "share/datum/ob_datum_cmp_func_def.h"
+    },
+    {
+      "kind": "cross_module_include",
+      "path": "unittest/sql/engine/expr/test_fts_parser_properties.cpp",
+      "line": 21,
+      "owner": "sql",
+      "dependency": "data_plane",
+      "detail": "data_plane/fts/ob_fts_parser_helper.h"
+    },
+    {
+      "kind": "cross_module_include",
+      "path": "unittest/sql/engine/expr/test_fts_token_array_json.cpp",
+      "line": 10,
+      "owner": "sql",
+      "dependency": "data_plane",
+      "detail": "data_plane/fts/ob_fts_parser_helper.h"
+    },
+    {
+      "kind": "cross_module_include",
+      "path": "unittest/sql/engine/expr/test_mysql_json_cell.cpp",
+      "line": 13,
+      "owner": "sql",
+      "dependency": "query",
+      "detail": "query/protocol/ob_mysql_protocol_util.h"
+    },
+    {
+      "kind": "cross_module_include",
+      "path": "unittest/storage/fts/test_fts_beng.cpp",
+      "line": 23,
+      "owner": "storage",
+      "dependency": "share",
+      "detail": "share/text_analysis/ob_text_analyzer.h"
+    },
+    {
+      "kind": "cross_module_include",
+      "path": "unittest/storage/fts/test_fts_dict_view.cpp",
+      "line": 38,
+      "owner": "storage",
+      "dependency": "data_plane",
+      "detail": "data_plane/fts/dict/ob_gen_dic_loader.h"
+    },
+    {
+      "kind": "cross_module_include",
+      "path": "unittest/storage/fts/test_fts_domain_id_cmp.cpp",
+      "line": 20,
+      "owner": "storage",
+      "dependency": "query",
+      "detail": "query/das/ob_das_id_protocol.h"
+    },
+    {
+      "kind": "cross_module_include",
+      "path": "unittest/storage/fts/test_fts_text_membership_union.cpp",
+      "line": 23,
+      "owner": "storage",
+      "dependency": "data_plane",
+      "detail": "data_plane/access/ob_tablet_scan.h"
+    },
+    {
+      "kind": "cross_module_include",
+      "path": "unittest/storage/fts/test_fts_text_membership_union.cpp",
+      "line": 24,
+      "owner": "storage",
+      "dependency": "query",
+      "detail": "query/ob_sql_define.h"
+    }
+  ]
+}

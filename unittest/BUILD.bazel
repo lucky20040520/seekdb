@@ -1,4 +1,4 @@
 exports_files(
-    ["all_tests_main.cpp"],
-    visibility = ["//unittest:__subpackages__"],
+    ["all_tests_main.cpp", "fts_exec_context_fixture.cpp", "fts_exec_context_fixture.h"],
+    visibility = ["//unittest:__subpackages__", "//src/sql:__pkg__"],
 )

@@ -1,0 +1,22 @@
+INFO: Invocation ID: ea1225d4-4af9-419c-b62e-d32188a8c099
+Computing main repo mapping: 
+Loading: 
+Loading: 0 packages loaded
+WARNING: Build option --//bazel:enable_sanity has changed, discarding analysis cache (this can be expensive, see https://bazel.build/advanced/performance/iteration-speed).
+Analyzing: 3 targets (0 packages loaded, 0 targets configured)
+Analyzing: 3 targets (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed 3 targets (1 packages loaded, 17088 targets configured).
+[1,667 / 1,939] checking cached actions
+[1,948 / 1,950] 1 / 3 tests; Testing //unittest/storage:storage_tests; 1s linux-sandbox ... (2 actions running)
+[1,949 / 1,950] 2 / 3 tests; Testing //unittest/sql:sql_tests; 2s linux-sandbox
+INFO: Found 3 test targets...
+INFO: Elapsed time: 5.323s, Critical Path: 2.78s
+INFO: 4 processes: 1949 action cache hit, 1 internal, 3 linux-sandbox.
+INFO: Build completed successfully, 4 total actions
+//unittest/share:share_tests                                             PASSED in 0.5s
+//unittest/sql:sql_tests                                                 PASSED in 2.7s
+//unittest/storage:storage_tests                                         PASSED in 2.2s
+
+Executed 3 out of 3 tests: 3 tests pass.
+There were tests whose specified size is too big. Use the --test_verbose_timeout_warnings command line option to see which ones these are.

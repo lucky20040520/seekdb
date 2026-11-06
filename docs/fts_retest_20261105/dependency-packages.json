@@ -1,0 +1,147 @@
+[
+  {
+    "package": "devdeps-gtest-1.8.0-242026020914.el8.x86_64.rpm",
+    "bytes": 4813820,
+    "sha256": "0559509bc2ea4953bdcae834a10a1d05b8f729c5ff10b44c02ff95478fd2b5c3"
+  },
+  {
+    "package": "devdeps-libcurl-static-8.12.1-132025040210.el8.x86_64.rpm",
+    "bytes": 334464,
+    "sha256": "ef41cbd6c8bf4bc90ee92310560de7ef7d2647123db1f5a9f544a3fcea51f816"
+  },
+  {
+    "package": "devdeps-libunwind-static-1.6.2-402025072120.el8.x86_64.rpm",
+    "bytes": 693644,
+    "sha256": "16c44857135ed390e6b307305b69457ee6d45510e2826101d0ac83fa6ad3c6d1"
+  },
+  {
+    "package": "devdeps-libaio-0.3.112-12022092915.el8.x86_64.rpm",
+    "bytes": 25964,
+    "sha256": "103b06ef0e2def02dbc59ee10fb24d305a051b52a018618961c6ff72a10e27ff"
+  },
+  {
+    "package": "devdeps-relaxed-rapidjson-1.0.0-52023011719.el8.x86_64.rpm",
+    "bytes": 129872,
+    "sha256": "cde7c2f75d504721a1b977432f017fd37ab535f829a164093a01f3aea5a47304"
+  },
+  {
+    "package": "devdeps-openssl-static-1.1.1u-22023100710.el8.x86_64.rpm",
+    "bytes": 1821256,
+    "sha256": "7202e06f7766e523cf7eb18f80332fda17dd0ea65dd75ec4274eebef13f7bea7"
+  },
+  {
+    "package": "devdeps-libxml2-2.13.6-22025032016.el8.x86_64.rpm",
+    "bytes": 5758228,
+    "sha256": "aa5d15b727bb83003509bd7d0ce57e33d42e23239509ddbff57a176868dc1caf"
+  },
+  {
+    "package": "devdeps-xz-5.2.2-42022090615.el8.x86_64.rpm",
+    "bytes": 707568,
+    "sha256": "6bed511ce5ae3ef37ab0464cc743492819d927467f64dcbae39b51dd49394dc8"
+  },
+  {
+    "package": "devdeps-zlib-static-1.2.13-82024102414.el8.x86_64.rpm",
+    "bytes": 91856,
+    "sha256": "4acba886a5bc669ea305e8c67b65c010f0704d1d6d983f0887f365595720cbc7"
+  },
+  {
+    "package": "devdeps-boost-1.74.0-22022110914.el8.x86_64.rpm",
+    "bytes": 3557640,
+    "sha256": "6bf6ac64312ef605fba7e831306d09775ee857a0cbd27d96ec56a7ac613a011e"
+  },
+  {
+    "package": "devdeps-abseil-cpp-20211102.0-82026020911.el8.x86_64.rpm",
+    "bytes": 1103732,
+    "sha256": "3d04efde116d9c7d8c59a1c4b181735c8a2f835c070d721b9e6ce7cb42161af1"
+  },
+  {
+    "package": "devdeps-s2geometry-0.10.0-222026021017.el8.x86_64.rpm",
+    "bytes": 1076104,
+    "sha256": "e37dd8e413ef80dda4cc786aa99af1a24a79a5c91cd70bd757cf5df53f839fa5"
+  },
+  {
+    "package": "devdeps-icu-69.1-362026020911.el8.x86_64.rpm",
+    "bytes": 11632696,
+    "sha256": "444a1f49edf65f8b9279df28b29ef2b7fe0e2a8115bc2eaf0d8744beff78758f"
+  },
+  {
+    "package": "devdeps-protobuf-c-abiv1-1.4.1-100000202026031815.el8.x86_64.rpm",
+    "bytes": 31152,
+    "sha256": "17831bb19de12bf670d83c695ca4f752c789d15b7499a81497b295c9ffd67749"
+  },
+  {
+    "package": "devdeps-grpc-abiv1-1.46.7-572026031815.el8.x86_64.rpm",
+    "bytes": 272420136,
+    "sha256": "e8fb15ef353c295063b1a3b7a9aaf54fe37e3d4bb5c920cf4dcafde33d30937e"
+  },
+  {
+    "package": "devdeps-roaringbitmap-croaring-3.0.0-42024042816.el8.x86_64.rpm",
+    "bytes": 215576,
+    "sha256": "66b721cfab776b1566900ed3b4aec4e315ec8382de6f5f912b049a1ac20335d9"
+  },
+  {
+    "package": "devdeps-vsag-abiv1-1.1.0-1752026041310.el8.x86_64.rpm",
+    "bytes": 19607460,
+    "sha256": "12751606cc76a5c59c9cccd936201783a4bcd546d15d1a0449ab4d141351fbf1"
+  },
+  {
+    "package": "devdeps-fast-float-6.1.3-42024112122.el8.x86_64.rpm",
+    "bytes": 114668,
+    "sha256": "3d8b6f5ec54dc663fe2411022374d237161478d0e175c88f221de0b972da268e"
+  },
+  {
+    "package": "obdevtools-binutils-2.30-12022100413.el8.x86_64.rpm",
+    "bytes": 6761104,
+    "sha256": "b7f6ab97c06f6518a364a7eb0bac8f47f35e24c8c5d5f1c4741f95e15d4d6ac5"
+  },
+  {
+    "package": "obdevtools-bison-2.4.1-12022100413.el8.x86_64.rpm",
+    "bytes": 423344,
+    "sha256": "3a3bdbb952249c6ed9d77504ee10cb8ade2ab99a36b0b107d9e1bf4e830c9890"
+  },
+  {
+    "package": "obdevtools-ccache-3.7.12-12022100417.el8.x86_64.rpm",
+    "bytes": 70200,
+    "sha256": "fcf3c92e622ef0ad7736a20002c970e44bc57badcf1aa1ae6b0e94fe3c82497f"
+  },
+  {
+    "package": "obdevtools-cmake-3.30.3-52024111819.el8.x86_64.rpm",
+    "bytes": 22304384,
+    "sha256": "d472dc4ff63cdade99b7f06ed41b980dd29f724ac44f8fc6d1cb31afd097dbe3"
+  },
+  {
+    "package": "obdevtools-flex-2.5.35-12022100417.el8.x86_64.rpm",
+    "bytes": 271616,
+    "sha256": "8bf8a88e1ce62bd61643e0f52a78a1d2cc3d15e2ef2a7bb26f1ba7729dd68730"
+  },
+  {
+    "package": "obdevtools-gcc-12.3.0-32024122017.el8.x86_64.rpm",
+    "bytes": 77581568,
+    "sha256": "a8440853c543fcb72b5f19f5c2f22fe7ae605da472a034311f9e550062414990"
+  },
+  {
+    "package": "obdevtools-llvm-17.0.6-202026032415.el8.x86_64.rpm",
+    "bytes": 833444580,
+    "sha256": "98fc7353e57ad0b7fd0fa0c4ddb4a78ac0993774276f34503ff50fc3a8e29cf3"
+  },
+  {
+    "package": "obshell-4.4.1.1-32026031914.el8.x86_64.rpm",
+    "bytes": 15789560,
+    "sha256": "6ab27e0f2cd7a0152120e948fcbc47e5a0c8478b47a88e3d7ec7438adee096fa"
+  },
+  {
+    "package": "ob-deploy-4.1.0-2.el8.x86_64.rpm",
+    "bytes": 89525392,
+    "sha256": "b29e0b78b17f6dc56365a076d8b74f3e075259a8ab14295f4e0ef8334ac37fd8"
+  },
+  {
+    "package": "obclient-2.2.3-1.el8.x86_64.rpm",
+    "bytes": 13728920,
+    "sha256": "35e38b580996fc583b0eaa961bd78911feff08981624154851db51d7e5aa935d"
+  },
+  {
+    "package": "libobclient-2.2.3-1.el8.x86_64.rpm",
+    "bytes": 1766420,
+    "sha256": "e53cadb0d91c1a0d78369f0c9488be8d774f03ea09346e7b218799a5318a9a68"
+  }
+]

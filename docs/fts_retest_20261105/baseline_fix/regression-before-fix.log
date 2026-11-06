@@ -1,0 +1,53 @@
+INFO: Invocation ID: f6a8a904-e78a-4240-bdef-18c59ba35a10
+Computing main repo mapping: 
+Loading: 
+Loading: 0 packages loaded
+Analyzing: target //unittest/storage:storage_tests (0 packages loaded, 0 targets configured)
+Analyzing: target //unittest/storage:storage_tests (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed target //unittest/storage:storage_tests (0 packages loaded, 4 targets configured).
+[1,918 / 1,920] Compiling unittest/storage/_storage_tests_unity_0.unity.cpp; 1s disk-cache, linux-sandbox
+[1,918 / 1,920] Compiling unittest/storage/_storage_tests_unity_0.unity.cpp; 11s disk-cache, linux-sandbox
+[1,919 / 1,920] [Prepa] Linking unittest/storage/storage_tests
+[1,919 / 1,920] [Sched] Linking unittest/storage/storage_tests; Downloading src/observer/liboceanbase.so, 480.6 MiB / 1.4 GiB
+[1,919 / 1,920] [Sched] Linking unittest/storage/storage_tests; Downloading src/observer/liboceanbase.so, 777.2 MiB / 1.4 GiB
+[1,919 / 1,920] [Sched] Linking unittest/storage/storage_tests; Downloading src/observer/liboceanbase.so, 1023.3 MiB / 1.4 GiB
+[1,919 / 1,920] Linking unittest/storage/storage_tests; 0s disk-cache, linux-sandbox
+FAIL: //unittest/storage:storage_tests (Exit 1) (see /var/tmp/seekdb-retest-dcabb07-20261105/bazel-build/output-base/execroot/_main/bazel-out/k8-opt/testlogs/unittest/storage/storage_tests/test.log)
+INFO: From Testing //unittest/storage:storage_tests:
+==================== Test output for //unittest/storage:storage_tests:
+Note: Google Test filter = FtsDictCacheKey.*:FtsDictCacheEvictionTest.*
+[==========] Running 2 tests from 2 test cases.
+[----------] Global test environment set-up.
+[----------] 1 test from FtsDictCacheKey
+[ RUN      ] FtsDictCacheKey.equality_includes_range_id
+./unittest/storage/fts/test_fts_dict_view.cpp:682: Failure
+Value of: first == other_range
+  Actual: true
+Expected: false
+[  FAILED  ] FtsDictCacheKey.equality_includes_range_id (0 ms)
+[----------] 1 test from FtsDictCacheKey (0 ms total)
+
+[----------] 1 test from FtsDictCacheEvictionTest
+[ RUN      ] FtsDictCacheEvictionTest.pinned_view_survives_cache_miss_and_rebuild
+[       OK ] FtsDictCacheEvictionTest.pinned_view_survives_cache_miss_and_rebuild (116 ms)
+[----------] 1 test from FtsDictCacheEvictionTest (116 ms total)
+
+[----------] Global test environment tear-down
+[==========] 2 tests from 2 test cases ran. (117 ms total)
+[  PASSED  ] 1 test.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] FtsDictCacheKey.equality_includes_range_id
+
+ 1 FAILED TEST
+================================================================================
+INFO: Found 1 test target...
+Target //unittest/storage:storage_tests up-to-date:
+  /var/tmp/seekdb-retest-dcabb07-20261105/bazel-build/bin/unittest/storage/storage_tests
+INFO: Elapsed time: 30.387s, Critical Path: 29.88s
+INFO: 10 processes: 107 action cache hit, 5 disk cache hit, 2 internal, 3 linux-sandbox.
+INFO: Build completed, 1 test FAILED, 10 total actions
+//unittest/storage:storage_tests                                         FAILED in 0.6s
+  /var/tmp/seekdb-retest-dcabb07-20261105/bazel-build/output-base/execroot/_main/bazel-out/k8-opt/testlogs/unittest/storage/storage_tests/test.log
+
+Executed 1 out of 1 test: 1 fails locally.

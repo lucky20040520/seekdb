@@ -1,0 +1,37 @@
+{
+  "source_revision_parent": "dcabb078a02fdcfe3a8e2e911a2484d15b7f32df",
+  "verified_source_files_sha256_lf": {
+    "src/oblib/BUILD.bazel": "1b62c13ce5de2e4e81a41766d3aeb6121bf9178652c51acc01fce506b5b368c3",
+    "src/oblib/oblib_header_inventory.bzl": "91803c8139de14ac11c4094e23fb744f8a87da1dfb023884ce5f337dadf1a959",
+    "src/share/BUILD.bazel": "7df50ca369b371d8b56da4368638f368039b09b4f04b05d3f01d2a61f5de3d37",
+    "src/sql/BUILD.bazel": "74ce82f6a4acdc38077043b39e6fa62d3b8ad9e7d678402e950398de23aa70a0",
+    "src/observer/BUILD.bazel": "d5d92831e17b632b4a5170cfc0fb3aa5ef299bd7deaacf8dccc943720767af03",
+    "src/storage/fts/dict/ob_ft_cache.h": "989e9f5673629cd9f1a97546116c3fd7b5e6e5ea17f48cd65039577211bc475e",
+    "bazel/architecture/module_policy.bzl": "84eba2141f32ea3b308a5ec7838ac75c09e2ddc42eee24a800edd1b329fe247d",
+    "unittest/BUILD.bazel": "1445f8ddfefa227a4d9574f8b98a44bd6dc60bcb064091caf14be2b4400f6144",
+    "unittest/CMakeLists.txt": "ec4e52eb51281d6cc69c92f39e6de06150c46c97eca6b01204f70dac70815b48",
+    "unittest/storage/BUILD.bazel": "7a872494aecbece0dbc9a0ded9565a364896cc6622f360f7a8ffa577fd109049",
+    "unittest/fts_exec_context_fixture.h": "e918f2357c9d077646309b0086901135125892da2976aa04e8f792f97b30106b",
+    "unittest/fts_exec_context_fixture.cpp": "4ef4f95bf60ffc010581a7b19c01d19af88d8b44b597f00dd0ca911018126f32",
+    "unittest/storage/fts/test_fts_membership_batch.cpp": "baf5ac3c3be9ed2c63074c31a2551f49abb37499e48e3bad650d2046a26b1151",
+    "unittest/storage/fts/test_fts_token_batch.cpp": "278f956a28f00aca7c9078b75486716348c73c9c951403e2bafa7db3cf0940d3",
+    "unittest/storage/fts/test_fts_dict_view.cpp": "0b1978bb7ab1cc99b5acff2cba122c7f8ac75cf704da17be0cefe6d9a2257d2b",
+    "removed_paths": [
+      "unittest/sql/engine/expr/test_fts_membership_batch.cpp",
+      "unittest/sql/engine/expr/test_fts_token_batch.cpp"
+    ],
+    "rust/Cargo.lock": "099da00dbad8732ed6bb77e81be85321824dc8c8069f26a02ff14a22aedc6aa0"
+  },
+  "artifacts": {
+    "seekdb": {
+      "sha256": "2d3a2e346b9182f22e11c15a2fb8a66f3521ab75c0e6cdd6f5b98fe69b66fa66",
+      "bytes": 1358829280
+    },
+    "liboceanbase.so": {
+      "sha256": "a53cc818a383d8df695160c5d0435d5a821dfdf00f627307ff92c36c5e129fb8",
+      "bytes": 1459443304
+    }
+  },
+  "build_config": "Bazel 8.2.1, Release/O2, WSL Ubuntu-22.04",
+  "test_results": "full-suites-repeat50-result.json"
+}

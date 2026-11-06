@@ -1,0 +1,19 @@
+INFO: Invocation ID: d26683ac-c948-4da8-a1db-8edef7d20f0d
+Computing main repo mapping: 
+Loading: 
+Loading: 0 packages loaded
+Analyzing: 3 targets (3 packages loaded, 0 targets configured)
+Analyzing: 3 targets (3 packages loaded, 0 targets configured)
+
+ERROR: /var/tmp/seekdb-retest-dcabb07-20261105/src/src/oblib/BUILD.bazel:34:18: in //bazel/architecture:module_dependency_aspect.bzl%module_dependency_aspect aspect on cc_library rule //src/oblib:_jemalloc_headers: 
+Traceback (most recent call last):
+	File "/var/tmp/seekdb-retest-dcabb07-20261105/src/bazel/architecture/module_dependency_aspect.bzl", line 200, column 13, in _module_dependency_aspect_impl
+		fail("\n".join([
+Error in fail: first-party cc_library must be static-only: @@//src/oblib:_jemalloc_headers
+  load //bazel:defs.bzl%seekdb_cc_library
+  shared-library products must use an explicit cc_shared_library
+ERROR: Analysis of aspects '[//bazel/architecture:module_dependency_aspect.bzl%module_dependency_aspect] with parameters {} on //unittest/storage:storage_tests' failed; build aborted: Analysis of target '//src/oblib:_jemalloc_headers' failed
+INFO: Elapsed time: 0.444s, Critical Path: 0.02s
+INFO: 1 process: 1 internal.
+ERROR: Build did NOT complete successfully
+ERROR: No test targets were found, yet testing was requested

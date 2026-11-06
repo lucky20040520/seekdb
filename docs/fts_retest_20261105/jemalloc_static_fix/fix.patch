@@ -1,0 +1,13 @@
+diff --git a/src/oblib/BUILD.bazel b/src/oblib/BUILD.bazel
+index acbafd7..3cec7c2 100644
+--- a/src/oblib/BUILD.bazel
++++ b/src/oblib/BUILD.bazel
+@@ -33,6 +33,8 @@ declare_oblib_header_interfaces(_OBLIB_INTERFACE_VISIBILITY)
+ 
+ native_cc_library(
+     name = "_jemalloc_headers",
++    # Header-only forwarding still follows the first-party static-link policy.
++    linkstatic = True,
+     deps = select({
+         "//bazel:sanity_enabled": ["//deps/external:jemalloc_headers"],
+         "//conditions:default": [],

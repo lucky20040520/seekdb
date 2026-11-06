@@ -1,0 +1,157 @@
+[
+  {
+    "name": "release-share-analysis",
+    "command": [
+      "python3",
+      "bazel.py",
+      "--bazel=/mnt/e/project/seekdb-2026-competition/bazel-8.2.1-linux-x86_64",
+      "--build-dir=/var/tmp/seekdb-retest-dcabb07-20261105/bazel-build",
+      "--disk-cache=/var/tmp/seekdb-retest-dcabb07-20261105/bazel-disk-cache",
+      "--launcher-cache-dir=/var/tmp/seekdb-retest-dcabb07-20261105/bazel-launcher",
+      "build",
+      "--nobuild",
+      "--jobs=2",
+      "--local_resources=cpu=2",
+      "--local_resources=memory=5500",
+      "--distdir=/mnt/e/project/seekdb-2026-competition/bazel-distfiles",
+      "//unittest/share:share_tests"
+    ],
+    "returncode": 0,
+    "elapsed_sec": 1.2170047760009766
+  },
+  {
+    "name": "release-storage-analysis",
+    "command": [
+      "python3",
+      "bazel.py",
+      "--bazel=/mnt/e/project/seekdb-2026-competition/bazel-8.2.1-linux-x86_64",
+      "--build-dir=/var/tmp/seekdb-retest-dcabb07-20261105/bazel-build",
+      "--disk-cache=/var/tmp/seekdb-retest-dcabb07-20261105/bazel-disk-cache",
+      "--launcher-cache-dir=/var/tmp/seekdb-retest-dcabb07-20261105/bazel-launcher",
+      "build",
+      "--nobuild",
+      "--jobs=2",
+      "--local_resources=cpu=2",
+      "--local_resources=memory=5500",
+      "--distdir=/mnt/e/project/seekdb-2026-competition/bazel-distfiles",
+      "//unittest/storage:storage_tests"
+    ],
+    "returncode": 0,
+    "elapsed_sec": 0.3019106388092041
+  },
+  {
+    "name": "sanity-production-analysis",
+    "command": [
+      "python3",
+      "bazel.py",
+      "--bazel=/mnt/e/project/seekdb-2026-competition/bazel-8.2.1-linux-x86_64",
+      "--build-dir=/var/tmp/seekdb-retest-dcabb07-20261105/bazel-build",
+      "--disk-cache=/var/tmp/seekdb-retest-dcabb07-20261105/bazel-disk-cache",
+      "--launcher-cache-dir=/var/tmp/seekdb-retest-dcabb07-20261105/bazel-launcher",
+      "build",
+      "--nobuild",
+      "--sanity=true",
+      "--jobs=2",
+      "--local_resources=cpu=2",
+      "--local_resources=memory=5500",
+      "--distdir=/mnt/e/project/seekdb-2026-competition/bazel-distfiles",
+      "//src/observer:seekdb_link"
+    ],
+    "returncode": 0,
+    "elapsed_sec": 1.032254934310913
+  },
+  {
+    "name": "release-production-path",
+    "command": [
+      "python3",
+      "bazel.py",
+      "--bazel=/mnt/e/project/seekdb-2026-competition/bazel-8.2.1-linux-x86_64",
+      "--build-dir=/var/tmp/seekdb-retest-dcabb07-20261105/bazel-build",
+      "--disk-cache=/var/tmp/seekdb-retest-dcabb07-20261105/bazel-disk-cache",
+      "--launcher-cache-dir=/var/tmp/seekdb-retest-dcabb07-20261105/bazel-launcher",
+      "cquery",
+      "somepath(//src/observer:seekdb_link, //src/oblib:_jemalloc_headers)"
+    ],
+    "returncode": 0,
+    "elapsed_sec": 1.0891025066375732
+  },
+  {
+    "name": "release-test-runtime-path",
+    "command": [
+      "python3",
+      "bazel.py",
+      "--bazel=/mnt/e/project/seekdb-2026-competition/bazel-8.2.1-linux-x86_64",
+      "--build-dir=/var/tmp/seekdb-retest-dcabb07-20261105/bazel-build",
+      "--disk-cache=/var/tmp/seekdb-retest-dcabb07-20261105/bazel-disk-cache",
+      "--launcher-cache-dir=/var/tmp/seekdb-retest-dcabb07-20261105/bazel-launcher",
+      "cquery",
+      "somepath(//src/observer:liboceanbase, //src/oblib:_jemalloc_headers)"
+    ],
+    "returncode": 0,
+    "elapsed_sec": 0.3134279251098633
+  },
+  {
+    "name": "release-header-deps",
+    "command": [
+      "python3",
+      "bazel.py",
+      "--bazel=/mnt/e/project/seekdb-2026-competition/bazel-8.2.1-linux-x86_64",
+      "--build-dir=/var/tmp/seekdb-retest-dcabb07-20261105/bazel-build",
+      "--disk-cache=/var/tmp/seekdb-retest-dcabb07-20261105/bazel-disk-cache",
+      "--launcher-cache-dir=/var/tmp/seekdb-retest-dcabb07-20261105/bazel-launcher",
+      "cquery",
+      "deps(//src/oblib:_jemalloc_headers, 1)"
+    ],
+    "returncode": 0,
+    "elapsed_sec": 0.3110013008117676
+  },
+  {
+    "name": "sanity-header-deps",
+    "command": [
+      "python3",
+      "bazel.py",
+      "--bazel=/mnt/e/project/seekdb-2026-competition/bazel-8.2.1-linux-x86_64",
+      "--build-dir=/var/tmp/seekdb-retest-dcabb07-20261105/bazel-build",
+      "--disk-cache=/var/tmp/seekdb-retest-dcabb07-20261105/bazel-disk-cache",
+      "--launcher-cache-dir=/var/tmp/seekdb-retest-dcabb07-20261105/bazel-launcher",
+      "cquery",
+      "--sanity=true",
+      "deps(//src/oblib:_jemalloc_headers, 1)"
+    ],
+    "returncode": 0,
+    "elapsed_sec": 0.4301126003265381
+  },
+  {
+    "name": "release-link-actions",
+    "command": [
+      "python3",
+      "bazel.py",
+      "--bazel=/mnt/e/project/seekdb-2026-competition/bazel-8.2.1-linux-x86_64",
+      "--build-dir=/var/tmp/seekdb-retest-dcabb07-20261105/bazel-build",
+      "--disk-cache=/var/tmp/seekdb-retest-dcabb07-20261105/bazel-disk-cache",
+      "--launcher-cache-dir=/var/tmp/seekdb-retest-dcabb07-20261105/bazel-launcher",
+      "aquery",
+      "--output=jsonproto",
+      "mnemonic(\"SeekdbFinalLink\", set(//src/observer:seekdb_link //src/observer:_liboceanbase_link))"
+    ],
+    "returncode": 0,
+    "elapsed_sec": 1.237992763519287
+  },
+  {
+    "name": "sanity-link-actions",
+    "command": [
+      "python3",
+      "bazel.py",
+      "--bazel=/mnt/e/project/seekdb-2026-competition/bazel-8.2.1-linux-x86_64",
+      "--build-dir=/var/tmp/seekdb-retest-dcabb07-20261105/bazel-build",
+      "--disk-cache=/var/tmp/seekdb-retest-dcabb07-20261105/bazel-disk-cache",
+      "--launcher-cache-dir=/var/tmp/seekdb-retest-dcabb07-20261105/bazel-launcher",
+      "aquery",
+      "--sanity=true",
+      "--output=jsonproto",
+      "mnemonic(\"SeekdbFinalLink\", set(//src/observer:seekdb_link //src/observer:_liboceanbase_link))"
+    ],
+    "returncode": 0,
+    "elapsed_sec": 1.2260143756866455
+  }
+]

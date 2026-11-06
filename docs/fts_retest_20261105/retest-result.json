@@ -1,0 +1,16 @@
+{
+  "source_commit": "dcabb078a02fdcfe3a8e2e911a2484d15b7f32df",
+  "tracked_source_changes": "",
+  "bazel_version": "bazel 8.2.1",
+  "bazel_sha256": "7ff2b6a675b59a791d007c526977d5262ade8fa52efc8e0d1ff9e18859909fc0",
+  "bazel_path": "/mnt/e/project/seekdb-2026-competition/bazel-8.2.1-linux-x86_64",
+  "build_status": "analysis_failed",
+  "tests_status": "analysis_failed_no_tests_executed",
+  "benchmark_status": "not_run_no_binary",
+  "first_blocker": "first-party cc_library must be static-only: //src/oblib:_jemalloc_headers",
+  "source_rule": "src/oblib/BUILD.bazel:34",
+  "policy_check": "bazel/architecture/module_dependency_aspect.bzl:200",
+  "cmake_attempt": "configured successfully; compilation deliberately stopped after user specified Bazel",
+  "recorded_utc": "2026-11-05T08:10:29.595059+00:00",
+  "linux_retest_root": "/var/tmp/seekdb-retest-dcabb07-20261105"
+}

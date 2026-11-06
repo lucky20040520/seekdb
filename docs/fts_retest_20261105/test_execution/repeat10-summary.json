@@ -1,0 +1,204 @@
+[
+  {
+    "module": "share",
+    "runs": [
+      {
+        "file": "repeat10/share/run_1_of_10/test.xml",
+        "cases": 2,
+        "failures": [],
+        "skipped": 0
+      },
+      {
+        "file": "repeat10/share/run_2_of_10/test.xml",
+        "cases": 2,
+        "failures": [],
+        "skipped": 0
+      },
+      {
+        "file": "repeat10/share/run_3_of_10/test.xml",
+        "cases": 2,
+        "failures": [],
+        "skipped": 0
+      },
+      {
+        "file": "repeat10/share/run_4_of_10/test.xml",
+        "cases": 2,
+        "failures": [],
+        "skipped": 0
+      },
+      {
+        "file": "repeat10/share/run_5_of_10/test.xml",
+        "cases": 2,
+        "failures": [],
+        "skipped": 0
+      },
+      {
+        "file": "repeat10/share/run_6_of_10/test.xml",
+        "cases": 2,
+        "failures": [],
+        "skipped": 0
+      },
+      {
+        "file": "repeat10/share/run_7_of_10/test.xml",
+        "cases": 2,
+        "failures": [],
+        "skipped": 0
+      },
+      {
+        "file": "repeat10/share/run_8_of_10/test.xml",
+        "cases": 2,
+        "failures": [],
+        "skipped": 0
+      },
+      {
+        "file": "repeat10/share/run_9_of_10/test.xml",
+        "cases": 2,
+        "failures": [],
+        "skipped": 0
+      },
+      {
+        "file": "repeat10/share/run_10_of_10/test.xml",
+        "cases": 2,
+        "failures": [],
+        "skipped": 0
+      }
+    ]
+  },
+  {
+    "module": "storage",
+    "runs": [
+      {
+        "file": "repeat10/storage/run_1_of_10/test.xml",
+        "cases": 79,
+        "failures": [
+          {
+            "name": "immutable_views_match_legacy_ranges_and_survive_allocator_reuse",
+            "status": "run",
+            "time": "0.057",
+            "classname": "FtsDictViewTest"
+          }
+        ],
+        "skipped": 0
+      },
+      {
+        "file": "repeat10/storage/run_2_of_10/test.xml",
+        "cases": 79,
+        "failures": [],
+        "skipped": 0
+      },
+      {
+        "file": "repeat10/storage/run_3_of_10/test.xml",
+        "cases": 79,
+        "failures": [],
+        "skipped": 0
+      },
+      {
+        "file": "repeat10/storage/run_4_of_10/test.xml",
+        "cases": 79,
+        "failures": [],
+        "skipped": 0
+      },
+      {
+        "file": "repeat10/storage/run_5_of_10/test.xml",
+        "cases": 79,
+        "failures": [],
+        "skipped": 0
+      },
+      {
+        "file": "repeat10/storage/run_6_of_10/test.xml",
+        "cases": 79,
+        "failures": [],
+        "skipped": 0
+      },
+      {
+        "file": "repeat10/storage/run_7_of_10/test.xml",
+        "cases": 79,
+        "failures": [],
+        "skipped": 0
+      },
+      {
+        "file": "repeat10/storage/run_8_of_10/test.xml",
+        "cases": 79,
+        "failures": [],
+        "skipped": 0
+      },
+      {
+        "file": "repeat10/storage/run_9_of_10/test.xml",
+        "cases": 79,
+        "failures": [],
+        "skipped": 0
+      },
+      {
+        "file": "repeat10/storage/run_10_of_10/test.xml",
+        "cases": 79,
+        "failures": [],
+        "skipped": 0
+      }
+    ]
+  },
+  {
+    "module": "sql",
+    "runs": [
+      {
+        "file": "repeat10/sql/run_1_of_10/test.xml",
+        "cases": 60,
+        "failures": [],
+        "skipped": 0
+      },
+      {
+        "file": "repeat10/sql/run_2_of_10/test.xml",
+        "cases": 60,
+        "failures": [],
+        "skipped": 0
+      },
+      {
+        "file": "repeat10/sql/run_3_of_10/test.xml",
+        "cases": 60,
+        "failures": [],
+        "skipped": 0
+      },
+      {
+        "file": "repeat10/sql/run_4_of_10/test.xml",
+        "cases": 60,
+        "failures": [],
+        "skipped": 0
+      },
+      {
+        "file": "repeat10/sql/run_5_of_10/test.xml",
+        "cases": 60,
+        "failures": [],
+        "skipped": 0
+      },
+      {
+        "file": "repeat10/sql/run_6_of_10/test.xml",
+        "cases": 60,
+        "failures": [],
+        "skipped": 0
+      },
+      {
+        "file": "repeat10/sql/run_7_of_10/test.xml",
+        "cases": 60,
+        "failures": [],
+        "skipped": 0
+      },
+      {
+        "file": "repeat10/sql/run_8_of_10/test.xml",
+        "cases": 60,
+        "failures": [],
+        "skipped": 0
+      },
+      {
+        "file": "repeat10/sql/run_9_of_10/test.xml",
+        "cases": 60,
+        "failures": [],
+        "skipped": 0
+      },
+      {
+        "file": "repeat10/sql/run_10_of_10/test.xml",
+        "cases": 60,
+        "failures": [],
+        "skipped": 0
+      }
+    ]
+  }
+]

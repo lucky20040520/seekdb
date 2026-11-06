@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="81" failures="0" disabled="0" errors="0" timestamp="2026-11-06T09:43:33" time="1.001" name="AllTests">
+  <testsuite name="StorageChecksum" tests="5" failures="0" disabled="0" errors="0" time="0.297">
+    <testcase name="every_short_length_alignment_and_seed_matches_scalar" status="run" time="0.183" classname="StorageChecksum" />
+    <testcase name="long_lengths_and_stream_boundaries_match_scalar" status="run" time="0.102" classname="StorageChecksum" />
+    <testcase name="null_and_nonpositive_updates_preserve_the_entire_seed" status="run" time="0" classname="StorageChecksum" />
+    <testcase name="guarded_inputs_require_no_prefix_or_suffix_padding" status="run" time="0.012" classname="StorageChecksum" />
+    <testcase name="datum_and_microblock_row_checksums_keep_pack_bytes_and_order" status="run" time="0" classname="StorageChecksum" />
+  </testsuite>
+  <testsuite name="StringDiffDecoder" tests="12" failures="0" disabled="0" errors="0" time="0.162">
+    <testcase name="every_short_width_and_packed_length_matches_scalar_and_original_batch" status="run" time="0.018" classname="StringDiffDecoder" />
+    <testcase name="alternating_fragments_and_batch_boundaries_preserve_every_byte" status="run" time="0.008" classname="StringDiffDecoder" />
+    <testcase name="all_binary_byte_values_survive_reconstruction" status="run" time="0.008" classname="StringDiffDecoder" />
+    <testcase name="unsupported_cpu_uses_original_allocation_and_decoder" status="run" time="0" classname="StringDiffDecoder" />
+    <testcase name="long_variable_and_hex_formats_keep_original_batch_semantics" status="run" time="0.007" classname="StringDiffDecoder" />
+    <testcase name="null_and_nope_columns_stay_on_original_batch_path" status="run" time="0.007" classname="StringDiffDecoder" />
+    <testcase name="allocation_failure_is_returned_once_without_touching_datums" status="run" time="0.02" classname="StringDiffDecoder" />
+    <testcase name="variable_row_error_stops_before_later_datums" status="run" time="0.019" classname="StringDiffDecoder" />
+    <testcase name="nullable_allocation_error_preserves_original_partial_state" status="run" time="0.056" classname="StringDiffDecoder" />
+    <testcase name="pointer_update_and_reuse_rebuild_the_plan_from_current_metadata" status="run" time="0.007" classname="StringDiffDecoder" />
+    <testcase name="returned_bytes_are_owned_by_the_decoder_allocator" status="run" time="0.006" classname="StringDiffDecoder" />
+    <testcase name="uninitialized_decoder_returns_original_error_without_allocation" status="run" time="0.006" classname="StringDiffDecoder" />
+  </testsuite>
+  <testsuite name="FtsBengTest" tests="4" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="normalized_tokens_keep_caller_lifetime_and_match_original_pipeline" status="run" time="0" classname="FtsBengTest" />
+    <testcase name="explicit_normalizer_reuse_retains_output_allocator" status="run" time="0" classname="FtsBengTest" />
+    <testcase name="parser_reset_and_invalid_initialization_preserve_caller_tokens" status="run" time="0" classname="FtsBengTest" />
+    <testcase name="descriptor_allocation_failures_allow_retry_without_releasing_tokens" status="run" time="0" classname="FtsBengTest" />
+  </testsuite>
+  <testsuite name="FtsDatCodeMap" tests="5" failures="0" disabled="0" errors="0" time="0.011">
+    <testcase name="collision_and_wrap_probes_keep_original_layout_and_lookup" status="run" time="0.001" classname="FtsDatCodeMap" />
+    <testcase name="three_byte_utf8_uses_original_buckets_and_codes" status="run" time="0.009" classname="FtsDatCodeMap" />
+    <testcase name="three_byte_collisions_wrap_and_support_full_cycle_hits" status="run" time="0.001" classname="FtsDatCodeMap" />
+    <testcase name="three_byte_prefixes_and_other_lengths_remain_distinct" status="run" time="0" classname="FtsDatCodeMap" />
+    <testcase name="three_byte_lookup_needs_no_bytes_outside_packed_objects" status="run" time="0" classname="FtsDatCodeMap" />
+  </testsuite>
+  <testsuite name="FtsDictViewTest" tests="7" failures="0" disabled="0" errors="0" time="0.215">
+    <testcase name="fixed_ik_pipeline_matches_virtual_dispatch_in_both_modes" status="run" time="0.067" classname="FtsDictViewTest" />
+    <testcase name="fixed_ik_pipeline_initialization_failures_release_memory_and_retry" status="run" time="0.048" classname="FtsDictViewTest" />
+    <testcase name="range_lookup_preserves_binary_boundaries_and_first_match_order" status="run" time="0.002" classname="FtsDictViewTest" />
+    <testcase name="range_lookup_preserves_empty_and_reversed_range_behavior" status="run" time="0" classname="FtsDictViewTest" />
+    <testcase name="immutable_views_match_legacy_ranges_and_survive_allocator_reuse" status="run" time="0.097" classname="FtsDictViewTest" />
+    <testcase name="concurrent_first_use_publishes_one_complete_view" status="run" time="0" classname="FtsDictViewTest" />
+    <testcase name="failed_view_initialization_does_not_publish_or_prevent_retry" status="run" time="0.001" classname="FtsDictViewTest" />
+  </testsuite>
+  <testsuite name="FtsDictCacheKey" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="equality_includes_range_id" status="run" time="0" classname="FtsDictCacheKey" />
+  </testsuite>
+  <testsuite name="FtsDictCacheEvictionTest" tests="1" failures="0" disabled="0" errors="0" time="0.09">
+    <testcase name="pinned_view_survives_cache_miss_and_rebuild" status="run" time="0.089" classname="FtsDictCacheEvictionTest" />
+  </testsuite>
+  <testsuite name="FtsDicLoader" tests="1" failures="0" disabled="0" errors="0" time="0.001">
+    <testcase name="concurrent_first_lookup_and_shared_lookups_pin_one_loader" status="run" time="0.001" classname="FtsDicLoader" />
+  </testsuite>
+  <testsuite name="FtsDomainIdCmp" tests="6" failures="0" disabled="0" errors="0" time="0.026">
+    <testcase name="owned_id_copy_matches_datum_deep_copy_at_width_boundaries" status="run" time="0" classname="FtsDomainIdCmp" />
+    <testcase name="binary_ids_match_generic_collation" status="run" time="0.025" classname="FtsDomainIdCmp" />
+    <testcase name="unaligned_binary_ids_compare_every_byte" status="run" time="0.001" classname="FtsDomainIdCmp" />
+    <testcase name="other_types_and_collations_keep_generic_comparison" status="run" time="0" classname="FtsDomainIdCmp" />
+    <testcase name="block_boundaries_keep_min_max_and_null_ordering" status="run" time="0" classname="FtsDomainIdCmp" />
+    <testcase name="merge_comparison_observes_live_slots_and_reinitialization" status="run" time="0" classname="FtsDomainIdCmp" />
+  </testsuite>
+  <testsuite name="FtsIKTest" tests="6" failures="0" disabled="0" errors="0" time="0.114">
+    <testcase name="utf8_category_ranges_and_precedence" status="run" time="0.021" classname="FtsIKTest" />
+    <testcase name="malformed_utf8_and_unsupported_charset" status="run" time="0" classname="FtsIKTest" />
+    <testcase name="fused_character_validation_matches_all_utf8_scalars" status="run" time="0.092" classname="FtsIKTest" />
+    <testcase name="fused_character_validation_preserves_errors_and_other_charsets" status="run" time="0" classname="FtsIKTest" />
+    <testcase name="fused_character_validation_respects_input_boundaries" status="run" time="0" classname="FtsIKTest" />
+    <testcase name="shared_character_dispatch_preserves_processor_state_and_tokens" status="run" time="0.001" classname="FtsIKTest" />
+  </testsuite>
+  <testsuite name="FtsMembershipBatchProjection" tests="1" failures="0" disabled="0" errors="0" time="0.001">
+    <testcase name="real_get_next_rows_projects_and_paginates_complete_results" status="run" time="0.001" classname="FtsMembershipBatchProjection" />
+  </testsuite>
+  <testsuite name="FtsStopWordTest" tests="4" failures="0" disabled="0" errors="0" time="0.003">
+    <testcase name="utf8_input_always_uses_stopword_collation" status="run" time="0" classname="FtsStopWordTest" />
+    <testcase name="binary_conversion_and_unsupported_collations" status="run" time="0" classname="FtsStopWordTest" />
+    <testcase name="initialization_empty_input_and_reinitialization" status="run" time="0" classname="FtsStopWordTest" />
+    <testcase name="published_set_supports_concurrent_readers_and_reinitialization" status="run" time="0.003" classname="FtsStopWordTest" />
+  </testsuite>
+  <testsuite name="FtsAddWordTest" tests="3" failures="0" disabled="0" errors="0" time="0.001">
+    <testcase name="grouping_preserves_last_collation_equivalent_key_and_frequencies" status="run" time="0" classname="FtsAddWordTest" />
+    <testcase name="non_grouping_duplicate_errors_and_casedown_are_unchanged" status="run" time="0" classname="FtsAddWordTest" />
+    <testcase name="independent_document_maps_can_group_and_reuse_concurrently" status="run" time="0.001" classname="FtsAddWordTest" />
+  </testsuite>
+  <testsuite name="FtsTextMembershipUnion" tests="5" failures="0" disabled="0" errors="0" time="0.004">
+    <testcase name="complete_ids_match_heap_with_one_two_and_three_dimensions" status="run" time="0.001" classname="FtsTextMembershipUnion" />
+    <testcase name="binary_prefixes_unsigned_ids_and_buffer_overwrite" status="run" time="0" classname="FtsTextMembershipUnion" />
+    <testcase name="batching_offset_limit_and_reuse_match_heap" status="run" time="0.003" classname="FtsTextMembershipUnion" />
+    <testcase name="init_reset_empty_eof_and_highest_equal_head" status="run" time="0" classname="FtsTextMembershipUnion" />
+    <testcase name="advance_id_and_comparison_errors_do_not_emit_a_partial_id" status="run" time="0" classname="FtsTextMembershipUnion" />
+  </testsuite>
+  <testsuite name="FtsTextMembershipBatchUnion" tests="11" failures="0" disabled="0" errors="0" time="0.062">
+    <testcase name="complete_ids_match_heap_and_row_union_across_buffer_boundaries" status="run" time="0.014" classname="FtsTextMembershipBatchUnion" />
+    <testcase name="binary_ids_unsigned_extremes_and_partial_batches_keep_borrowed_bytes" status="run" time="0" classname="FtsTextMembershipBatchUnion" />
+    <testcase name="generated_sorted_postings_match_reference_with_asymmetric_batches" status="run" time="0.011" classname="FtsTextMembershipBatchUnion" />
+    <testcase name="all_three_tie_masks_choose_last_source_and_bulk_tail_keeps_bytes" status="run" time="0" classname="FtsTextMembershipBatchUnion" />
+    <testcase name="fixed_two_and_three_way_comparison_errors_publish_no_rows" status="run" time="0" classname="FtsTextMembershipBatchUnion" />
+    <testcase name="initialization_eof_with_rows_and_errors" status="run" time="0" classname="FtsTextMembershipBatchUnion" />
+    <testcase name="fixed16_proven_and_fallback_spans_match_registered_comparison" status="run" time="0.014" classname="FtsTextMembershipBatchUnion" />
+    <testcase name="fixed16_proof_is_cleared_before_refill_errors" status="run" time="0" classname="FtsTextMembershipBatchUnion" />
+    <testcase name="shared_prefix8_keeps_complete_ids_and_dynamic_fallback" status="run" time="0.004" classname="FtsTextMembershipBatchUnion" />
+    <testcase name="three_way_shared_prefix_scalar_keys_match_full_binary_reference" status="run" time="0.015" classname="FtsTextMembershipBatchUnion" />
+    <testcase name="from_obj_fixed16_default_and_false_proofs_preserve_full_payload" status="run" time="0.004" classname="FtsTextMembershipBatchUnion" />
+  </testsuite>
+  <testsuite name="FtsTokenAdvance" tests="3" failures="0" disabled="0" errors="0" time="0.012">
+    <testcase name="unsigned_ids_match_linear_search" status="run" time="0.012" classname="FtsTokenAdvance" />
+    <testcase name="binary_and_collation_order_match_the_original_comparator" status="run" time="0" classname="FtsTokenAdvance" />
+    <testcase name="nearby_advances_stay_cheap_and_far_advances_are_bounded" status="run" time="0" classname="FtsTokenAdvance" />
+  </testsuite>
+  <testsuite name="FtsRealTokenBatch" tests="6" failures="0" disabled="0" errors="0" time="0.002">
+    <testcase name="returns_cached_unsigned_and_binary_spans_then_refills" status="run" time="0.001" classname="FtsRealTokenBatch" />
+    <testcase name="empty_and_already_consumed_cache_clear_outputs_on_refill_error" status="run" time="0" classname="FtsRealTokenBatch" />
+    <testcase name="scoring_iterator_rejects_the_membership_api_without_consuming_cache" status="run" time="0" classname="FtsRealTokenBatch" />
+    <testcase name="save_docids_preserves_skip_scalar_and_partial_batch_semantics" status="run" time="0.001" classname="FtsRealTokenBatch" />
+    <testcase name="fixed16_proof_tracks_complete_owned_copies_and_load_lifetime" status="run" time="0" classname="FtsRealTokenBatch" />
+    <testcase name="fixed16_inline_payload_survives_copy_assignment_and_source_overwrite" status="run" time="0" classname="FtsRealTokenBatch" />
+  </testsuite>
+</testsuites>

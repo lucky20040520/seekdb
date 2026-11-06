@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="2" failures="0" disabled="0" errors="0" timestamp="2026-11-06T09:43:46" time="0" name="AllTests">
+  <testsuite name="FTSCharsetAccess" tests="2" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="compare_matches_collation_callbacks" status="run" time="0" classname="FTSCharsetAccess" />
+    <testcase name="array_access_preserves_references" status="run" time="0" classname="FTSCharsetAccess" />
+  </testsuite>
+</testsuites>

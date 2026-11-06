@@ -269,7 +269,6 @@ seekdb_test_interface(
     deps = [
         ":_textual_sql_map_inputs",
         ":sql_runtime_internal_headers",
-        "//src/storage:storage_runtime_interface",
     ] + sorted({
         dep: True
         for dep in (
@@ -280,6 +279,15 @@ seekdb_test_interface(
         )
     }.keys()),
     visibility = ["//unittest/sql:__pkg__"],
+)
+
+cc_library(
+    name = "fts_exec_context_test_runtime",
+    srcs = ["//unittest:fts_exec_context_fixture.cpp"],
+    hdrs = ["//unittest:fts_exec_context_fixture.h"],
+    deps = [":sql_unit_test_interface", ":sql_retrieval_composition_headers"],
+    testonly = True,
+    visibility = ["//src/observer:__pkg__"],
 )
 
 _SQL_STANDALONE_SANITY_PARTITION = sql_partition_sources(

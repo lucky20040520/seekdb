@@ -1,0 +1,21 @@
+{
+  "command": [
+    "python3",
+    "bazel.py",
+    "--bazel=/mnt/e/project/seekdb-2026-competition/bazel-8.2.1-linux-x86_64",
+    "--build-dir=/var/tmp/seekdb-retest-dcabb07-20261105/bazel-build",
+    "--disk-cache=/var/tmp/seekdb-retest-dcabb07-20261105/bazel-disk-cache",
+    "--launcher-cache-dir=/var/tmp/seekdb-retest-dcabb07-20261105/bazel-launcher",
+    "test",
+    "--test_output=errors",
+    "--jobs=2",
+    "--local_resources=cpu=2",
+    "--local_resources=memory=5500",
+    "--distdir=/mnt/e/project/seekdb-2026-competition/bazel-distfiles",
+    "//unittest/share:share_tests",
+    "//unittest/storage:storage_tests",
+    "//unittest/sql:sql_tests"
+  ],
+  "returncode": 8,
+  "elapsed_sec": 614.835143327713
+}

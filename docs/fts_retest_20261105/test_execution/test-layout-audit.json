@@ -1,0 +1,12 @@
+{
+  "repository_violation_count": 9,
+  "changed_test_files": [
+    "unittest/BUILD.bazel",
+    "unittest/fts_exec_context_fixture.cpp",
+    "unittest/fts_exec_context_fixture.h",
+    "unittest/storage/BUILD.bazel",
+    "unittest/storage/fts/test_fts_membership_batch.cpp",
+    "unittest/storage/fts/test_fts_token_batch.cpp"
+  ],
+  "changed_test_file_violations": []
+}

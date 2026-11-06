@@ -1,0 +1,27 @@
+INFO: Invocation ID: 0bada13a-0144-4baa-92e3-18e7d198f742
+Computing main repo mapping: 
+Loading: 
+Loading: 0 packages loaded
+Analyzing: target //unittest/storage:storage_tests (0 packages loaded, 0 targets configured)
+Analyzing: target //unittest/storage:storage_tests (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed target //unittest/storage:storage_tests (0 packages loaded, 0 targets configured).
+[186 / 195] Compiling unittest/storage/_storage_tests_unity_0.unity.cpp; 1s disk-cache, linux-sandbox ... (3 actions running)
+[187 / 195] Compiling unittest/storage/_storage_tests_unity_0.unity.cpp; 10s disk-cache, linux-sandbox ... (3 actions, 2 running)
+[188 / 195] Compiling unittest/storage/_storage_tests_unity_0.unity.cpp; 12s disk-cache, linux-sandbox ... (2 actions running)
+[190 / 195] [Prepa] Linking src/observer/lib_observer_runtime_ob_server_standalone_0_objects.a
+[191 / 195] checking cached actions
+[191 / 195] Linking seekdb shared library src/observer/liboceanbase.so; 0s disk-cache, linux-sandbox
+[192 / 195] [Prepa] action 'SolibSymlink _solib_k8/_U_S_Ssrc_Sobserver_Cliboceanbase___Usrc_Sobserver/liboceanbase.so'
+[194 / 195] 1 / 1 tests; Testing //unittest/storage:storage_tests; 0s linux-sandbox
+INFO: Found 1 test target...
+Target //unittest/storage:storage_tests up-to-date:
+  /var/tmp/seekdb-retest-dcabb07-20261105/bazel-build/bin/unittest/storage/storage_tests
+INFO: Elapsed time: 29.937s, Critical Path: 29.46s
+INFO: 10 processes: 103 action cache hit, 2 internal, 8 linux-sandbox.
+INFO: Build completed successfully, 10 total actions
+INFO: 
+//unittest/storage:storage_tests                                         PASSED in 0.8s
+
+Executed 1 out of 1 test: 1 test passes.
+There were tests whose specified size is too big. Use the --test_verbose_timeout_warnings command line option to see which ones these are.

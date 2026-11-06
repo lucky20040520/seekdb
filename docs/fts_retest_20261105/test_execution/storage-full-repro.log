@@ -1,0 +1,20 @@
+INFO: Invocation ID: f9fa5556-4b6d-4367-9320-c34426d9afae
+Computing main repo mapping: 
+Loading: 
+Loading: 0 packages loaded
+Analyzing: target //unittest/storage:storage_tests (0 packages loaded, 0 targets configured)
+Analyzing: target //unittest/storage:storage_tests (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed target //unittest/storage:storage_tests (0 packages loaded, 38 targets configured).
+[1,920 / 1,923] Testing //unittest/storage:storage_tests (run 3 of 3); 1s linux-sandbox ... (3 actions running)
+INFO: Found 1 test target...
+Target //unittest/storage:storage_tests up-to-date:
+  /var/tmp/seekdb-retest-dcabb07-20261105/bazel-build/bin/unittest/storage/storage_tests
+INFO: Elapsed time: 2.817s, Critical Path: 2.22s
+INFO: 4 processes: 334 action cache hit, 1 internal, 3 linux-sandbox.
+INFO: Build completed successfully, 4 total actions
+//unittest/storage:storage_tests                                         PASSED in 2.2s
+  Stats over 3 runs: max = 2.2s, min = 2.2s, avg = 2.2s, dev = 0.0s
+
+Executed 1 out of 1 test: 1 test passes.
+There were tests whose specified size is too big. Use the --test_verbose_timeout_warnings command line option to see which ones these are.

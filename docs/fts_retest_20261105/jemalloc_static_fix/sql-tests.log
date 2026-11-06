@@ -1,0 +1,24 @@
+INFO: Invocation ID: 97c2212d-53c6-47ce-9246-8268dfb6212b
+Computing main repo mapping: 
+Loading: 
+Loading: 0 packages loaded
+Analyzing: target //unittest/sql:sql_tests (0 packages loaded, 0 targets configured)
+Analyzing: target //unittest/sql:sql_tests (0 packages loaded, 0 targets configured)
+
+ERROR: /var/tmp/seekdb-retest-dcabb07-20261105/src/src/sql/BUILD.bazel:267:22: in //bazel/architecture:module_dependency_aspect.bzl%module_dependency_aspect aspect on _seekdb_test_interface rule //src/sql:sql_unit_test_interface: 
+Traceback (most recent call last):
+	File "/var/tmp/seekdb-retest-dcabb07-20261105/src/bazel/architecture/module_dependency_aspect.bzl", line 209, column 30, in _module_dependency_aspect_impl
+		_check_dependency(target.label, dependency.label, attribute)
+	File "/var/tmp/seekdb-retest-dcabb07-20261105/src/bazel/architecture/module_dependency_aspect.bzl", line 161, column 9, in _check_dependency
+		fail("\n".join([
+Error in fail: module dependency violation:
+  @@//src/sql:sql_unit_test_interface [sql]
+    --deps--> @@//src/storage:storage_runtime_interface [storage]
+  allowed dependencies of sql: data_plane, oblib, query, share
+  change //bazel/architecture:module_policy.bzl to authorize a new module edge
+Target //unittest/sql:sql_tests failed to build
+ERROR: Analysis of aspects '[//bazel/architecture:module_dependency_aspect.bzl%module_dependency_aspect] with parameters {} on //unittest/sql:sql_tests' failed; build aborted: Analysis of target '//src/sql:sql_unit_test_interface' failed
+INFO: Elapsed time: 0.246s, Critical Path: 0.02s
+INFO: 1 process: 1 internal.
+ERROR: Build did NOT complete successfully
+ERROR: No test targets were found, yet testing was requested

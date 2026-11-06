@@ -1,0 +1,21 @@
+{
+  "base_commit": "dcabb078a02fdcfe3a8e2e911a2484d15b7f32df",
+  "modified_product_files": [
+    "src/oblib/BUILD.bazel"
+  ],
+  "patch_sha256": "bb655eb84b08ebe5a66cefe836bc04b92d31d2e53141d1f8d3055c4f58729b0f",
+  "build_file_sha256": "1b62c13ce5de2e4e81a41766d3aeb6121bf9178652c51acc01fce506b5b368c3",
+  "jemalloc_original_analysis_error_resolved": true,
+  "release_production_analysis": "pass",
+  "release_share_storage_analysis": "pass",
+  "sanity_production_share_storage_analysis": "pass",
+  "header_only_helper_archive_outputs": [],
+  "sanity_static_archive_in_production_and_test_runtime_link_actions": true,
+  "production_full_build": "blocked_by_undeclared_charset_header",
+  "share_storage_tests": "blocked_by_undeclared_charset_header_no_tests_executed",
+  "sql_tests": "blocked_by_existing_sql_to_storage_module_edge_no_tests_executed",
+  "static_checker_modified": false,
+  "sanity_selection_modified": false,
+  "jemalloc_header_or_archive_dependencies_removed": false,
+  "linux_validation_root": "/var/tmp/seekdb-retest-dcabb07-20261105"
+}

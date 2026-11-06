@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="60" failures="0" disabled="0" errors="0" timestamp="2026-11-05T09:56:50" time="2.058" name="AllTests">
+  <testsuite name="FtsScanColumns" tests="3" failures="0" disabled="0" errors="0" time="0.001">
+    <testcase name="membership_scan_reads_and_outputs_only_id" status="run" time="0.001" classname="FtsScanColumns" />
+    <testcase name="ranked_scan_retains_frequency_id_and_length" status="run" time="0" classname="FtsScanColumns" />
+    <testcase name="block_max_scan_retains_all_score_bound_columns" status="run" time="0" classname="FtsScanColumns" />
+  </testsuite>
+  <testsuite name="SortKeyCompare" tests="9" failures="0" disabled="0" errors="0" time="1.807">
+    <testcase name="short_string_equality_preserves_collation" status="run" time="0.12" classname="SortKeyCompare" />
+    <testcase name="general_ci_short_equality_checks_every_payload_byte" status="run" time="0.03" classname="SortKeyCompare" />
+    <testcase name="general_ci_short_equality_requires_no_readable_prefix_or_suffix" status="run" time="0.001" classname="SortKeyCompare" />
+    <testcase name="general_ci_ascii_first_weight_preserves_collation_and_dispatch" status="run" time="0.461" classname="SortKeyCompare" />
+    <testcase name="general_ci_three_byte_first_weight_matches_charset" status="run" time="0.924" classname="SortKeyCompare" />
+    <testcase name="binary_comparison_preserves_bytes_padding_and_null_ordering" status="run" time="0.225" classname="SortKeyCompare" />
+    <testcase name="fixed_binary_keys_preserve_first_differing_unsigned_byte" status="run" time="0.044" classname="SortKeyCompare" />
+    <testcase name="fixed_binary_keys_require_no_readable_prefix_or_suffix" status="run" time="0.002" classname="SortKeyCompare" />
+    <testcase name="cached_metadata_preserves_order_ranges_and_merge_adapters" status="run" time="0" classname="SortKeyCompare" />
+  </testsuite>
+  <testsuite name="FtsIndexBatch" tests="1" failures="0" disabled="0" errors="0" time="0.001">
+    <testcase name="stays_within_document_and_preserves_rows_across_batch_boundaries" status="run" time="0.001" classname="FtsIndexBatch" />
+  </testsuite>
+  <testsuite name="FtsIndexRowCache" tests="3" failures="0" disabled="0" errors="0" time="0.007">
+    <testcase name="matches_materialized_rows_across_reuse_resize_and_collation" status="run" time="0.007" classname="FtsIndexRowCache" />
+    <testcase name="owns_document_id_and_word_bytes_until_next_document" status="run" time="0" classname="FtsIndexRowCache" />
+    <testcase name="empty_failure_partial_consumption_reset_and_reinitialization" status="run" time="0" classname="FtsIndexRowCache" />
+  </testsuite>
+  <testsuite name="FTParserProperties" tests="9" failures="0" disabled="0" errors="0" time="0.001">
+    <testcase name="canonical_predicates_preserve_normalization_and_serialized_versions" status="run" time="0" classname="FTParserProperties" />
+    <testcase name="canonical_predicates_preserve_unknown_names_and_stored_bytes" status="run" time="0" classname="FTParserProperties" />
+    <testcase name="canonical_predicates_preserve_length_boundaries_and_embedded_nul" status="run" time="0" classname="FTParserProperties" />
+    <testcase name="tokenize_defaults_match_rebuilt_properties_for_every_parser" status="run" time="0" classname="FTParserProperties" />
+    <testcase name="tokenize_custom_and_invalid_properties_do_not_use_defaults" status="run" time="0" classname="FTParserProperties" />
+    <testcase name="tokenize_parameters_and_json_share_the_callers_arena" status="run" time="0.001" classname="FTParserProperties" />
+    <testcase name="rebuilt_tree_matches_serialized_helper_properties" status="run" time="0" classname="FTParserProperties" />
+    <testcase name="preserve_missing_and_invalid_properties" status="run" time="0" classname="FTParserProperties" />
+    <testcase name="typed_helper_preserves_tokens_frequencies_and_collation" status="run" time="0" classname="FTParserProperties" />
+  </testsuite>
+  <testsuite name="FTTokenArrayJson" tests="7" failures="0" disabled="0" errors="0" time="0.222">
+    <testcase name="tree_differential_preserves_empty_unicode_controls_and_collation" status="run" time="0" classname="FTTokenArrayJson" />
+    <testcase name="tree_differential_crosses_string_length_and_container_width_boundaries" status="run" time="0.221" classname="FTTokenArrayJson" />
+    <testcase name="binary_owns_bytes_after_input_and_helper_destruction" status="run" time="0" classname="FTTokenArrayJson" />
+    <testcase name="every_allocation_failure_releases_partial_state" status="run" time="0.001" classname="FTTokenArrayJson" />
+    <testcase name="oversized_layout_fails_before_allocating_or_reading_string_payloads" status="run" time="0" classname="FTTokenArrayJson" />
+    <testcase name="packed_results_survive_scratch_release_and_repeated_evaluation" status="run" time="0" classname="FTTokenArrayJson" />
+    <testcase name="default_tokenizer_returns_valid_binary_after_local_map_destruction" status="run" time="0" classname="FTTokenArrayJson" />
+  </testsuite>
+  <testsuite name="MysqlJsonCell" tests="4" failures="0" disabled="0" errors="0" time="0.005">
+    <testcase name="output_survives_local_destructors_with_freeing_and_poison_allocators" status="run" time="0" classname="MysqlJsonCell" />
+    <testcase name="multiple_cells_and_buffer_growth_preserve_all_results" status="run" time="0.003" classname="MysqlJsonCell" />
+    <testcase name="allocation_failures_release_partial_state_and_keep_previous_cells" status="run" time="0.002" classname="MysqlJsonCell" />
+    <testcase name="empty_null_pointer_and_truncated_values_keep_the_contract" status="run" time="0" classname="MysqlJsonCell" />
+  </testsuite>
+  <testsuite name="BinaryJsonArrayPrint" tests="6" failures="0" disabled="0" errors="0" time="0.01">
+    <testcase name="tree_and_generic_traversal_match_complete_nested_and_boundary_outputs" status="run" time="0.008" classname="BinaryJsonArrayPrint" />
+    <testcase name="forwarded_values_keep_type_prefix_decoding" status="run" time="0" classname="BinaryJsonArrayPrint" />
+    <testcase name="child_views_borrow_the_owning_parent_context" status="run" time="0" classname="BinaryJsonArrayPrint" />
+    <testcase name="accepted_parent_with_damaged_children_matches_generic_errors_and_partial_bytes" status="run" time="0" classname="BinaryJsonArrayPrint" />
+    <testcase name="nonseek_and_external_update_cursors_retain_generic_read_errors" status="run" time="0.001" classname="BinaryJsonArrayPrint" />
+    <testcase name="every_output_allocation_failure_keeps_parent_usable" status="run" time="0.001" classname="BinaryJsonArrayPrint" />
+  </testsuite>
+  <testsuite name="CountStarViewOrder" tests="13" failures="0" disabled="0" errors="0" time="0.002">
+    <testcase name="projection_pruning_releases_unused_columns_and_keeps_match_inputs" status="run" time="0.001" classname="CountStarViewOrder" />
+    <testcase name="projection_pruning_honors_parent_and_child_optouts" status="run" time="0" classname="CountStarViewOrder" />
+    <testcase name="projection_pruning_requires_unobservable_safe_projections" status="run" time="0" classname="CountStarViewOrder" />
+    <testcase name="missing_preprocess_hint_metadata_keeps_order_without_error" status="run" time="0" classname="CountStarViewOrder" />
+    <testcase name="ordinary_column_and_literal_orders_do_not_affect_count" status="run" time="0" classname="CountStarViewOrder" />
+    <testcase name="literal_null_and_parameter_limits_remain_unchanged" status="run" time="0" classname="CountStarViewOrder" />
+    <testcase name="natural_match_order_is_unobservable_only_through_count" status="run" time="0" classname="CountStarViewOrder" />
+    <testcase name="row_values_or_another_aggregate_preserve_ranked_subset" status="run" time="0" classname="CountStarViewOrder" />
+    <testcase name="parent_clauses_that_can_observe_or_change_rows_preserve_order" status="run" time="0" classname="CountStarViewOrder" />
+    <testcase name="generated_source_must_be_the_only_exact_from_source" status="run" time="0" classname="CountStarViewOrder" />
+    <testcase name="inner_limit_cardinality_and_effect_barriers_preserve_order" status="run" time="0" classname="CountStarViewOrder" />
+    <testcase name="potentially_failing_or_effectful_expressions_preserve_order" status="run" time="0.001" classname="CountStarViewOrder" />
+    <testcase name="match_order_requires_the_same_safe_membership_predicate" status="run" time="0" classname="CountStarViewOrder" />
+  </testsuite>
+  <testsuite name="CountBatch" tests="5" failures="0" disabled="0" errors="0" time="0.002">
+    <testcase name="slices_match_iterator_at_word_and_batch_boundaries" status="run" time="0.002" classname="CountBatch" />
+    <testcase name="empty_and_reversed_slices_need_no_skip_vector" status="run" time="0" classname="CountBatch" />
+    <testcase name="explicit_selections_keep_duplicates_and_ignore_skip_bits" status="run" time="0" classname="CountBatch" />
+    <testcase name="maximum_batch_and_repeated_calls_accumulate" status="run" time="0" classname="CountBatch" />
+    <testcase name="nullable_count_keeps_null_filtering_for_slices_and_selections" status="run" time="0" classname="CountBatch" />
+  </testsuite>
+</testsuites>

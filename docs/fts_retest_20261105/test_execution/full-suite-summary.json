@@ -1,0 +1,27 @@
+[
+  {
+    "module": "share",
+    "cases": 2,
+    "failures": [],
+    "skipped": 0
+  },
+  {
+    "module": "storage",
+    "cases": 79,
+    "failures": [
+      {
+        "name": "immutable_views_match_legacy_ranges_and_survive_allocator_reuse",
+        "status": "run",
+        "time": "0.05",
+        "classname": "FtsDictViewTest"
+      }
+    ],
+    "skipped": 0
+  },
+  {
+    "module": "sql",
+    "cases": 60,
+    "failures": [],
+    "skipped": 0
+  }
+]

@@ -1,0 +1,14 @@
+INFO: Invocation ID: cd23855e-15b1-486c-bfed-40d453106e90
+Computing main repo mapping: 
+Loading: 
+Loading: 0 packages loaded
+Analyzing: target //src/observer:seekdb_link (0 packages loaded, 0 targets configured)
+Analyzing: target //src/observer:seekdb_link (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed target //src/observer:seekdb_link (0 packages loaded, 10 targets configured).
+INFO: Found 1 target...
+Target //src/observer:seekdb_link up-to-date:
+  /var/tmp/seekdb-retest-dcabb07-20261105/bazel-build/bin/src/observer/seekdb
+INFO: Elapsed time: 0.333s, Critical Path: 0.01s
+INFO: 1 process: 14 action cache hit, 1 internal.
+INFO: Build completed successfully, 1 total action

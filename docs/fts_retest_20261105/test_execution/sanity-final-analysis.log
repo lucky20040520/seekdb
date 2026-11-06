@@ -1,0 +1,11 @@
+INFO: Invocation ID: cbba0a49-4557-4ad6-9c70-89651dfbbedb
+Computing main repo mapping: 
+Loading: 
+Loading: 0 packages loaded
+WARNING: Build option --//bazel:enable_sanity has changed, discarding analysis cache (this can be expensive, see https://bazel.build/advanced/performance/iteration-speed).
+Analyzing: 4 targets (0 packages loaded, 0 targets configured)
+INFO: Analyzed 4 targets (1 packages loaded, 17107 targets configured).
+INFO: Found 4 targets...
+INFO: Elapsed time: 1.235s, Critical Path: 0.00s
+INFO: 0 processes.
+INFO: Build completed successfully, 0 total actions

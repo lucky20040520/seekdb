@@ -534,6 +534,7 @@ seekdb_semantic_unity_cc_library(
         ":cluster_version_interface",
         ":error_codes",
         ":io",
+        ":local_storage_interface",
         ":resource_limit_interface",
         ":sql_persistence_support",
         ":task_control",
@@ -1668,7 +1669,7 @@ _SHARE_RUNTIME_COMPILE_DEPS = [
 cc_library(
     name = "_share_implementation_headers",
     hdrs = SHARE_IMPLEMENTATION_HEADERS,
-    deps = _SHARE_RUNTIME_COMPILE_DEPS,
+    deps = _SHARE_RUNTIME_COMPILE_DEPS + [":local_table_schema"],
     implementation_deps = _SHARE_RUNTIME_OBLIB_DEPS,
     features = ["layering_check"],
     tags = ["manual"],
@@ -1761,6 +1762,7 @@ seekdb_semantic_unity_cc_library(
     group_implementation_deps = share_runtime_group_oblib_deps(
         _SHARE_RUNTIME_UNITY_GROUPS,
         {
+            "ob_share_common_mixed_1": ["//src/oblib:oblib_mysql_client_services"],
             "ob_share_redolog_0": [":config"],
         },
     ),

@@ -1,0 +1,18 @@
+INFO: Invocation ID: a78ee2e2-287a-4c31-a504-645e28976b75
+Computing main repo mapping: 
+Loading: 
+Loading: 0 packages loaded
+Analyzing: target //src/observer:seekdb_link (0 packages loaded, 0 targets configured)
+Analyzing: target //src/observer:seekdb_link (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed target //src/observer:seekdb_link (0 packages loaded, 10 targets configured).
+[1,908 / 1,909] checking cached actions
+[1,908 / 1,909] [Prepa] Linking seekdb executable src/observer/seekdb
+[1,908 / 1,909] Linking seekdb executable src/observer/seekdb; 1s disk-cache, linux-sandbox
+INFO: Found 1 target...
+Target //src/observer:seekdb_link up-to-date:
+  /var/tmp/seekdb-retest-dcabb07-20261105/bazel-build/bin/src/observer/seekdb
+INFO: Elapsed time: 8.639s, Critical Path: 8.20s
+INFO: 2 processes: 12 action cache hit, 1 internal, 1 linux-sandbox.
+INFO: Build completed successfully, 2 total actions
+INFO: 

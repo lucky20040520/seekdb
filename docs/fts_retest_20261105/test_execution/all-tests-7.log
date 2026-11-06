@@ -1,0 +1,31 @@
+INFO: Invocation ID: ae97a2ef-e7d2-459c-8a2d-433ca78499fe
+Computing main repo mapping: 
+Loading: 
+Loading: 0 packages loaded
+Analyzing: 3 targets (0 packages loaded, 0 targets configured)
+Analyzing: 3 targets (0 packages loaded, 0 targets configured)
+
+Analyzing: 3 targets (1 packages loaded, 1354 targets configured)
+[1 / 1] no actions running
+ERROR: /var/tmp/seekdb-retest-dcabb07-20261105/src/src/share/BUILD.bazel:1438:8: Executing genrule //src/share:_generate_inner_table_schema failed: (Exit 127): bash failed: error executing Genrule command (from target //src/share:_generate_inner_table_schema) 
+  (cd /var/tmp/seekdb-retest-dcabb07-20261105/bazel-build/output-base/sandbox/linux-sandbox/758/execroot/_main && \
+  exec env - \
+    PATH=/home/cailucky/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+  /bin/bash -c 'source external/bazel_tools/tools/genrule/genrule-setup.sh; 
+      PYTHONDONTWRITEBYTECODE=1 python3         src/share/inner_table/generate_inner_table_schema.py         --def-file src/share/inner_table/ob_inner_table_schema_def.py         --share-output-dir bazel-out/k8-opt/bin/src/share/inner_table/bazel_generated         --observer-output-dir bazel-out/k8-opt/bin/src/share/inner_table/bazel_generated_observer         --expected-output '\''observer/ob_all_virtual_local_tables.cpp'\'' --expected-output '\''observer/ob_all_virtual_local_tables.h'\'' --expected-output '\''share/local_table_schema.h'\'' --expected-output '\''share/ob_inner_table_schema.10001_10050.cpp'\'' --expected-output '\''share/ob_inner_table_schema.1001_1050.cpp'\'' --expected-output '\''share/ob_inner_table_schema.101_150.cpp'\'' --expected-output '\''share/ob_inner_table_schema.1051_1100.cpp'\'' --expected-output '\''share/ob_inner_table_schema.11001_11050.cpp'\'' --expected-output '\''share/ob_inner_table_schema.1101_1150.cpp'\'' --expected-output '\''share/ob_inner_table_schema.11051_11100.cpp'\'' --expected-output '\''share/ob_inner_table_schema.11101_11150.cpp'\'' --expected-output '\''share/ob_inner_table_schema.12001_12050.cpp'\'' --expected-output '\''share/ob_inner_table_schema.12051_12100.cpp'\'' --expected-output '\''share/ob_inner_table_schema.12101_12150.cpp'\'' --expected-output '\''share/ob_inner_table_schema.12151_12200.cpp'\'' --expected-output '\''share/ob_inner_table_schema.12201_12250.cpp'\'' --expected-output '\''share/ob_inner_table_schema.12251_12300.cpp'\'' --expected-output '\''share/ob_inner_table_schema.12301_12350.cpp'\'' --expected-output '\''share/ob_inner_table_schema.12351_12400.cpp'\'' --expected-output '\''share/ob_inner_table_schema.12401_12450.cpp'\'' --expected-output '\''share/ob_inner_table_schema.12451_12500.cpp'\'' --expected-output '\''share/ob_inner_table_schema.12501_12550.cpp'\'' --expected-output '\''share/ob_inner_table_schema.12551_12600.cpp'\'' --expected-output '\''share/ob_inner_table_schema.1_50.cpp'\'' --expected-output '\''share/ob_inner_table_schema.20001_20050.cpp'\'' --expected-output '\''share/ob_inner_table_schema.21001_21050.cpp'\'' --expected-output '\''share/ob_inner_table_schema.21051_21100.cpp'\'' --expected-output '\''share/ob_inner_table_schema.21101_21150.cpp'\'' --expected-output '\''share/ob_inner_table_schema.21151_21200.cpp'\'' --expected-output '\''share/ob_inner_table_schema.21201_21250.cpp'\'' --expected-output '\''share/ob_inner_table_schema.21251_21300.cpp'\'' --expected-output '\''share/ob_inner_table_schema.21301_21350.cpp'\'' --expected-output '\''share/ob_inner_table_schema.21351_21400.cpp'\'' --expected-output '\''share/ob_inner_table_schema.21401_21450.cpp'\'' --expected-output '\''share/ob_inner_table_schema.21451_21500.cpp'\'' --expected-output '\''share/ob_inner_table_schema.21501_21550.cpp'\'' --expected-output '\''share/ob_inner_table_schema.21551_21600.cpp'\'' --expected-output '\''share/ob_inner_table_schema.21601_21650.cpp'\'' --expected-output '\''share/ob_inner_table_schema.21651_21700.cpp'\'' --expected-output '\''share/ob_inner_table_schema.50001_50050.cpp'\'' --expected-output '\''share/ob_inner_table_schema.50101_50150.cpp'\'' --expected-output '\''share/ob_inner_table_schema.51001_51050.cpp'\'' --expected-output '\''share/ob_inner_table_schema.51051_51100.cpp'\'' --expected-output '\''share/ob_inner_table_schema.51101_51150.cpp'\'' --expected-output '\''share/ob_inner_table_schema.60001_60050.cpp'\'' --expected-output '\''share/ob_inner_table_schema.60101_60150.cpp'\'' --expected-output '\''share/ob_inner_table_schema.61001_61050.cpp'\'' --expected-output '\''share/ob_inner_table_schema.61051_61100.cpp'\'' --expected-output '\''share/ob_inner_table_schema.61101_61150.cpp'\'' --expected-output '\''share/ob_inner_table_schema.h'\'' --expected-output '\''share/ob_inner_table_schema.lob.cpp'\'' --expected-output '\''share/ob_inner_table_schema_constants.h'\'' --expected-output '\''share/ob_inner_table_schema_misc.ipp'\'' --expected-output '\''share/table_id_to_name'\''         --quiet
+    ')
+# Configuration: 988f1c055bff75da772a4964d7e8537270bf6ac86565cfa2d0775c10efa43fd7
+# Execution platform: @@platforms//host:host
+
+Use --sandbox_debug to see verbose messages from the sandbox and retain the sandbox build root for debugging
+/bin/bash: line 1: $'\r': command not found
+INFO: Analyzed 3 targets (1 packages loaded, 1354 targets configured).
+INFO: Found 3 test targets...
+INFO: Elapsed time: 3.026s, Critical Path: 0.10s
+INFO: 6 processes: 648 action cache hit, 6 internal.
+ERROR: Build did NOT complete successfully
+//unittest/share:share_tests                                    FAILED TO BUILD
+//unittest/sql:sql_tests                                        FAILED TO BUILD
+//unittest/storage:storage_tests                                FAILED TO BUILD
+
+Executed 0 out of 3 tests: 3 fail to build.

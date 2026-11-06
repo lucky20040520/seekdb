@@ -1,0 +1,76 @@
+INFO: Invocation ID: 4c649dfc-4a3d-439d-b741-ec8603feb0a2
+Computing main repo mapping: 
+Loading: 
+Loading: 0 packages loaded
+Analyzing: 3 targets (2 packages loaded, 0 targets configured)
+Analyzing: 3 targets (2 packages loaded, 0 targets configured)
+
+INFO: Analyzed 3 targets (2 packages loaded, 31 targets configured).
+[1,947 / 2,097] Testing //unittest/storage:storage_tests (run 1 of 50); 1s linux-sandbox ... (4 actions running)
+[1,949 / 2,097] Testing //unittest/storage:storage_tests (run 3 of 50); 2s linux-sandbox ... (4 actions running)
+[1,951 / 2,097] Testing //unittest/storage:storage_tests (run 5 of 50); 1s linux-sandbox ... (4 actions running)
+[1,954 / 2,097] Testing //unittest/storage:storage_tests (run 8 of 50); 2s linux-sandbox ... (4 actions, 3 running)
+[1,955 / 2,097] Testing //unittest/storage:storage_tests (run 9 of 50); 2s linux-sandbox ... (4 actions running)
+[1,959 / 2,097] Testing //unittest/storage:storage_tests (run 13 of 50); 0s linux-sandbox ... (4 actions running)
+[1,960 / 2,097] Testing //unittest/storage:storage_tests (run 13 of 50); 2s linux-sandbox ... (4 actions, 3 running)
+[1,963 / 2,097] Testing //unittest/storage:storage_tests (run 17 of 50); 1s linux-sandbox ... (4 actions, 3 running)
+[1,964 / 2,097] Testing //unittest/storage:storage_tests (run 18 of 50); 2s linux-sandbox ... (4 actions, 3 running)
+[1,967 / 2,097] Testing //unittest/storage:storage_tests (run 21 of 50); 1s linux-sandbox ... (4 actions, 3 running)
+[1,968 / 2,097] Testing //unittest/storage:storage_tests (run 22 of 50); 2s linux-sandbox ... (4 actions, 3 running)
+[1,970 / 2,097] Testing //unittest/storage:storage_tests (run 24 of 50); 2s linux-sandbox ... (3 actions running)
+[1,972 / 2,097] Testing //unittest/storage:storage_tests (run 26 of 50); 2s linux-sandbox ... (4 actions running)
+[1,975 / 2,097] Testing //unittest/storage:storage_tests (run 29 of 50); 1s linux-sandbox ... (4 actions, 3 running)
+[1,977 / 2,097] Testing //unittest/storage:storage_tests (run 31 of 50); 1s linux-sandbox ... (4 actions, 3 running)
+[1,979 / 2,097] Testing //unittest/storage:storage_tests (run 33 of 50); 1s linux-sandbox ... (4 actions, 3 running)
+[1,981 / 2,097] Testing //unittest/storage:storage_tests (run 35 of 50); 1s linux-sandbox ... (4 actions, 3 running)
+[1,983 / 2,097] Testing //unittest/storage:storage_tests (run 37 of 50); 1s linux-sandbox ... (4 actions, 3 running)
+[1,985 / 2,097] Testing //unittest/storage:storage_tests (run 39 of 50); 1s linux-sandbox ... (4 actions, 3 running)
+[1,986 / 2,097] Testing //unittest/storage:storage_tests (run 40 of 50); 2s linux-sandbox ... (4 actions running)
+[1,988 / 2,097] Testing //unittest/storage:storage_tests (run 42 of 50); 2s linux-sandbox ... (4 actions, 3 running)
+[1,991 / 2,097] Testing //unittest/storage:storage_tests (run 45 of 50); 1s linux-sandbox ... (4 actions, 3 running)
+[1,994 / 2,097] Testing //unittest/storage:storage_tests (run 48 of 50); 1s linux-sandbox ... (4 actions, 3 running)
+[1,997 / 2,097] Testing //unittest/storage:storage_tests (run 49 of 50); 1s linux-sandbox ... (4 actions, 3 running)
+[2,002 / 2,097] 1 / 3 tests; Testing //unittest/share:share_tests (run 6 of 50); 0s linux-sandbox ... (4 actions running)
+[2,009 / 2,097] 1 / 3 tests; Testing //unittest/share:share_tests (run 13 of 50); 0s linux-sandbox ... (4 actions running)
+[2,016 / 2,097] 1 / 3 tests; Testing //unittest/share:share_tests (run 20 of 50); 0s linux-sandbox ... (4 actions, 3 running)
+[2,023 / 2,097] 1 / 3 tests; Testing //unittest/share:share_tests (run 27 of 50); 0s linux-sandbox ... (4 actions, 3 running)
+[2,030 / 2,097] 1 / 3 tests; Testing //unittest/share:share_tests (run 34 of 50); 0s linux-sandbox ... (4 actions, 3 running)
+[2,037 / 2,097] 1 / 3 tests; Testing //unittest/share:share_tests (run 41 of 50); 0s linux-sandbox ... (4 actions, 3 running)
+[2,045 / 2,097] 1 / 3 tests; Testing //unittest/share:share_tests (run 49 of 50); 0s linux-sandbox ... (4 actions, 3 running)
+[2,047 / 2,097] 2 / 3 tests; Testing //unittest/sql:sql_tests (run 1 of 50); 1s linux-sandbox ... (4 actions running)
+[2,048 / 2,097] 2 / 3 tests; Testing //unittest/sql:sql_tests (run 2 of 50); 2s linux-sandbox ... (4 actions running)
+[2,051 / 2,097] 2 / 3 tests; Testing //unittest/sql:sql_tests (run 5 of 50); 2s linux-sandbox ... (4 actions running)
+[2,053 / 2,097] 2 / 3 tests; Testing //unittest/sql:sql_tests (run 7 of 50); 2s linux-sandbox ... (4 actions running)
+[2,055 / 2,097] 2 / 3 tests; Testing //unittest/sql:sql_tests (run 9 of 50); 2s linux-sandbox ... (4 actions running)
+[2,058 / 2,097] 2 / 3 tests; Testing //unittest/sql:sql_tests (run 12 of 50); 2s linux-sandbox ... (4 actions running)
+[2,059 / 2,097] 2 / 3 tests; Testing //unittest/sql:sql_tests (run 13 of 50); 1s linux-sandbox ... (4 actions running)
+[2,060 / 2,097] 2 / 3 tests; Testing //unittest/sql:sql_tests (run 14 of 50); 2s linux-sandbox ... (4 actions, 3 running)
+[2,063 / 2,097] 2 / 3 tests; Testing //unittest/sql:sql_tests (run 17 of 50); 1s linux-sandbox ... (4 actions running)
+[2,064 / 2,097] 2 / 3 tests; Testing //unittest/sql:sql_tests (run 18 of 50); 2s linux-sandbox ... (4 actions running)
+[2,067 / 2,097] 2 / 3 tests; Testing //unittest/sql:sql_tests (run 21 of 50); 2s linux-sandbox ... (4 actions running)
+[2,070 / 2,097] 2 / 3 tests; Testing //unittest/sql:sql_tests (run 24 of 50); 2s linux-sandbox ... (4 actions running)
+[2,072 / 2,097] 2 / 3 tests; Testing //unittest/sql:sql_tests (run 26 of 50); 2s linux-sandbox ... (4 actions, 3 running)
+[2,075 / 2,097] 2 / 3 tests; Testing //unittest/sql:sql_tests (run 29 of 50); 1s linux-sandbox ... (4 actions running)
+[2,076 / 2,097] 2 / 3 tests; Testing //unittest/sql:sql_tests (run 30 of 50); 2s linux-sandbox ... (4 actions, 3 running)
+[2,079 / 2,097] 2 / 3 tests; Testing //unittest/sql:sql_tests (run 33 of 50); 1s linux-sandbox ... (4 actions running)
+[2,080 / 2,097] 2 / 3 tests; Testing //unittest/sql:sql_tests (run 34 of 50); 2s linux-sandbox ... (4 actions, 3 running)
+[2,083 / 2,097] 2 / 3 tests; Testing //unittest/sql:sql_tests (run 37 of 50); 1s linux-sandbox ... (4 actions running)
+[2,085 / 2,097] 2 / 3 tests; Testing //unittest/sql:sql_tests (run 38 of 50); 2s linux-sandbox ... (4 actions, 3 running)
+[2,087 / 2,097] 2 / 3 tests; Testing //unittest/sql:sql_tests (run 41 of 50); 2s linux-sandbox ... (4 actions running)
+[2,089 / 2,097] 2 / 3 tests; Testing //unittest/sql:sql_tests (run 42 of 50); 2s linux-sandbox ... (4 actions, 3 running)
+[2,091 / 2,097] 2 / 3 tests; Testing //unittest/sql:sql_tests (run 45 of 50); 2s linux-sandbox ... (4 actions running)
+[2,095 / 2,097] 2 / 3 tests; Testing //unittest/sql:sql_tests (run 49 of 50); 1s linux-sandbox ... (2 actions running)
+[2,096 / 2,097] 2 / 3 tests; Testing //unittest/sql:sql_tests (run 50 of 50); 2s linux-sandbox
+INFO: Found 3 test targets...
+INFO: Elapsed time: 72.010s, Critical Path: 3.59s
+INFO: 153 processes: 343 action cache hit, 1 internal, 152 linux-sandbox.
+INFO: Build completed successfully, 153 total actions
+//unittest/share:share_tests                                             PASSED in 0.7s
+  Stats over 50 runs: max = 0.7s, min = 0.5s, avg = 0.6s, dev = 0.0s
+//unittest/sql:sql_tests                                                 PASSED in 3.0s
+  Stats over 50 runs: max = 3.0s, min = 2.6s, avg = 2.7s, dev = 0.1s
+//unittest/storage:storage_tests                                         PASSED in 2.4s
+  Stats over 50 runs: max = 2.4s, min = 2.1s, avg = 2.3s, dev = 0.1s
+
+Executed 3 out of 3 tests: 3 tests pass.
+There were tests whose specified size is too big. Use the --test_verbose_timeout_warnings command line option to see which ones these are.

@@ -1,0 +1,60 @@
+Starting local Bazel server (8.2.1) and connecting to it...
+INFO: Invocation ID: ac47fae4-729e-47cf-9fe1-43af76db06cf
+Computing main repo mapping: 
+Loading: 
+Loading: 0 packages loaded
+Analyzing: 2 targets (2 packages loaded, 0 targets configured)
+Analyzing: 2 targets (2 packages loaded, 0 targets configured)
+
+Analyzing: 2 targets (77 packages loaded, 2441 targets configured)
+
+Analyzing: 2 targets (99 packages loaded, 17068 targets configured)
+
+INFO: Analyzed 2 targets (100 packages loaded, 17085 targets configured).
+[558 / 1,060] checking cached actions
+[1,200 / 1,929] [Prepa] Symlinking virtual headers for //src/share:_generated_inner_table_short_headers
+[1,209 / 1,929] Compiling src/oblib/lib/compress/ob_compressor.cpp; 0s disk-cache, linux-sandbox ... (2 actions, 1 running)
+[1,214 / 1,929] Compiling src/oblib/lib/compress/zstd_1_3_8/zstd_src/zstd_compress.c; 0s disk-cache, linux-sandbox ... (2 actions, 1 running)
+[1,218 / 1,929] Compiling src/oblib/common/timezone/ob_timezone_util.cpp; 0s disk-cache, linux-sandbox ... (2 actions, 1 running)
+[1,220 / 1,929] Compiling src/oblib/lib/compress/zstd_1_3_8/zstd_src/zstd_double_fast.c; 1s disk-cache, linux-sandbox ... (2 actions running)
+[1,221 / 1,929] Compiling src/oblib/_oblib_codec_simd_impl_oblib_lib_simd_codec_simd_0.unity.cpp; 1s disk-cache, linux-sandbox ... (2 actions running)
+[1,222 / 1,929] Compiling src/oblib/lib/compress/zstd_1_3_8/zstd_src/zstd_lazy.c; 1s disk-cache, linux-sandbox ... (2 actions, 1 running)
+[1,224 / 1,929] Compiling src/oblib/_oblib_codec_scalar_impl_oblib_lib_codec_0.unity.cpp; 0s disk-cache, linux-sandbox ... (2 actions, 1 running)
+[1,225 / 1,929] Compiling src/oblib/_oblib_codec_scalar_impl_oblib_lib_codec_0.unity.cpp; 2s disk-cache, linux-sandbox ... (2 actions running)
+[1,226 / 1,929] Compiling src/oblib/_oblib_codec_scalar_impl_oblib_lib_codec_0.unity.cpp; 9s disk-cache, linux-sandbox ... (2 actions, 1 running)
+[1,228 / 1,929] Compiling src/oblib/_oblib_codec_scalar_impl_oblib_lib_codec_0.unity.cpp; 10s disk-cache, linux-sandbox ... (2 actions, 1 running)
+[1,231 / 1,929] Compiling src/oblib/_oblib_codec_scalar_impl_oblib_lib_codec_0.unity.cpp; 11s disk-cache, linux-sandbox ... (2 actions, 1 running)
+[1,232 / 1,929] Compiling src/oblib/_oblib_codec_scalar_impl_oblib_lib_codec_0.unity.cpp; 12s disk-cache, linux-sandbox ... (2 actions running)
+[1,236 / 1,929] Compiling src/oblib/_oblib_codec_scalar_impl_oblib_lib_codec_0.unity.cpp; 13s disk-cache, linux-sandbox ... (2 actions running)
+[1,242 / 1,929] Compiling src/oblib/_oblib_codec_scalar_impl_oblib_lib_codec_0.unity.cpp; 14s disk-cache, linux-sandbox ... (2 actions running)
+[1,244 / 1,929] Compiling src/oblib/_oblib_codec_scalar_impl_oblib_lib_codec_0.unity.cpp; 18s disk-cache, linux-sandbox ... (2 actions, 1 running)
+[1,244 / 1,929] Compiling src/oblib/_oblib_codec_scalar_impl_oblib_lib_codec_0.unity.cpp; 19s disk-cache, linux-sandbox ... (2 actions running)
+[1,245 / 1,929] Compiling src/oblib/_oblib_codec_scalar_impl_oblib_lib_codec_0.unity.cpp; 20s disk-cache, linux-sandbox ... (2 actions running)
+[1,248 / 1,929] Compiling src/oblib/_oblib_bitmap_impl_oblib_lib_bitmap_common_0.unity.cpp; 1s disk-cache, linux-sandbox ... (2 actions, 1 running)
+[1,248 / 1,929] Compiling src/oblib/_oblib_bitmap_impl_oblib_lib_bitmap_common_0.unity.cpp; 2s disk-cache, linux-sandbox ... (2 actions running)
+[1,251 / 1,929] Compiling src/share/schema_list_row_values_schema_list_row_values.unity.cpp; 1s disk-cache, linux-sandbox ... (2 actions running)
+[1,254 / 1,929] Compiling src/oblib/lib/restore/ob_io_device.cpp; 0s disk-cache, linux-sandbox ... (2 actions, 1 running)
+[1,260 / 1,929] Compiling src/observer/ob_version.cpp; 0s disk-cache, linux-sandbox ... (2 actions running)
+ERROR: /var/tmp/seekdb-retest-dcabb07-20261105/src/src/oblib/BUILD.bazel:95:33: Compiling src/oblib/_oblib_foundation_impl_oblib_lib_charset_0.unity.cpp failed: (Exit 1): clang failed: error executing CppCompile command (from target //src/oblib:_oblib_foundation_impl) 
+  (cd /var/tmp/seekdb-retest-dcabb07-20261105/bazel-build/output-base/sandbox/linux-sandbox/46/execroot/_main && \
+  exec env - \
+    PATH=/home/cailucky/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+    PWD=/proc/self/cwd \
+  external/+_repo_rules2+seekdb_cc_toolchain/devtools/bin/clang -U_FORTIFY_SOURCE -Wall -Wthread-safety -Wself-assign -Wunused-but-set-parameter -Wno-free-nonheap-object -fcolor-diagnostics -fno-omit-frame-pointer -O2 '-std=c++17' -MD -MF bazel-out/k8-opt/bin/src/oblib/_objs/_oblib_foundation_impl/_oblib_foundation_impl_oblib_lib_charset_0.unity.pic.d '-frandom-seed=bazel-out/k8-opt/bin/src/oblib/_objs/_oblib_foundation_impl/_oblib_foundation_impl_oblib_lib_charset_0.unity.pic.o' -fPIC '-DDEFAULT_LOG_FILE_SIZE_MB=256' '-DDEFAULT_LOG_LEVEL=OB_LOG_LEVEL_ERROR' -DENABLE_500_MEMORY_LIMIT -DENABLE_INITIAL_EXEC_TLS_MODEL -DFATAL_ERROR_HANG -DNDEBUG -DOB_BUILD_LITE -DOB_BUILD_OBSERVER_LITE -DOB_BUILD_SYS_VEC_IDX -DOCI_LINK_RUNTIME '-D_GLIBCXX_USE_CXX11_ABI=1' -D_NO_EXCEPTION -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS -iquote . -iquote bazel-out/k8-opt/bin -iquote external/+_repo_rules+seekdb_3rd_headers -iquote bazel-out/k8-opt/bin/external/+_repo_rules+seekdb_3rd_headers -isystem src/oblib -isystem bazel-out/k8-opt/bin/src/oblib -isystem src/oblib/easy -isystem bazel-out/k8-opt/bin/src/oblib/easy -isystem src/oblib/easy/include -isystem bazel-out/k8-opt/bin/src/oblib/easy/include -isystem external/+_repo_rules+seekdb_3rd_headers/include -isystem bazel-out/k8-opt/bin/external/+_repo_rules+seekdb_3rd_headers/include -isystem external/+_repo_rules+seekdb_3rd_headers/include/libxml2 -isystem bazel-out/k8-opt/bin/external/+_repo_rules+seekdb_3rd_headers/include/libxml2 -isystem rust/sql-nio/include -isystem bazel-out/k8-opt/bin/rust/sql-nio/include -isystem rust/unix/include -isystem bazel-out/k8-opt/bin/rust/unix/include -isystem external/+_repo_rules+seekdb_3rd_headers/include/mariadb -isystem bazel-out/k8-opt/bin/external/+_repo_rules+seekdb_3rd_headers/include/mariadb -isystem external/+_repo_rules+seekdb_3rd_headers/include/fast_float -isystem bazel-out/k8-opt/bin/external/+_repo_rules+seekdb_3rd_headers/include/fast_float '-std=gnu++20' -gdwarf-4 -ffunction-sections -fdata-sections -fdebug-info-for-profiling '-fmax-type-align=8' -fno-strict-aliasing -fno-omit-frame-pointer -g -Wno-everything -Wno-deprecated -Wno-reserved-user-defined-literal -Wno-unused-parameter -fopenmp '-mtune=core2' -c bazel-out/k8-opt/bin/src/oblib/_oblib_foundation_impl_oblib_lib_charset_0.unity.cpp -o bazel-out/k8-opt/bin/src/oblib/_objs/_oblib_foundation_impl/_oblib_foundation_impl_oblib_lib_charset_0.unity.pic.o -no-canonical-prefixes -Wno-builtin-macro-redefined '-D__DATE__="redacted"' '-D__TIMESTAMP__="redacted"' '-D__TIME__="redacted"' '-fmodule-name=//src/oblib:_oblib_foundation_impl' '-fmodule-map-file=bazel-out/k8-opt/bin/src/oblib/_oblib_foundation_impl.cppmap' -Xclang -fno-cxx-modules -fmodules-strict-decluse -Wprivate-header '-fmodule-map-file=external/+_repo_rules2+seekdb_cc_toolchain/module.modulemap' '-fmodule-map-file=bazel-out/k8-opt/bin/src/oblib/__oblib_foundation_impl_unity_members.cppmap' '-fmodule-map-file=bazel-out/k8-opt/bin/src/oblib/_oblib_implementation_headers.cppmap' '-fmodule-map-file=bazel-out/k8-opt/bin/src/oblib/oblib_foundation.cppmap' '-fmodule-map-file=bazel-out/k8-opt/bin/external/+_repo_rules+seekdb_3rd_headers/fast_float_headers.cppmap')
+# Configuration: 988f1c055bff75da772a4964d7e8537270bf6ac86565cfa2d0775c10efa43fd7
+# Execution platform: @@platforms//host:host
+
+Use --sandbox_debug to see verbose messages from the sandbox and retain the sandbox build root for debugging
+In file included from bazel-out/k8-opt/bin/src/oblib/_oblib_foundation_impl_oblib_lib_charset_0.unity.cpp:27:
+In file included from ./src/oblib/lib/charset/ob_ctype_uca.cc:21:
+src/oblib/lib/charset/ob_ctype_uca_tab.h:19:10: fatal error: 'lib/charset/str_uca_type.h' file not found
+   19 | #include "lib/charset/str_uca_type.h"
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1 error generated.
+INFO: Elapsed time: 46.250s, Critical Path: 21.68s
+INFO: 53 processes: 1211 action cache hit, 7 internal, 46 linux-sandbox.
+ERROR: Build did NOT complete successfully
+//unittest/storage:storage_tests                                      NO STATUS
+//unittest/share:share_tests                                    FAILED TO BUILD
+
+Executed 0 out of 2 tests: 1 fails to build and 1 was skipped.

@@ -1,0 +1,34 @@
+{
+  "base_commit": "dcabb078a02fdcfe3a8e2e911a2484d15b7f32df",
+  "validation_patch_committed": false,
+  "source_files_sha256": {
+    "src/oblib/BUILD.bazel": "1b62c13ce5de2e4e81a41766d3aeb6121bf9178652c51acc01fce506b5b368c3",
+    "src/oblib/oblib_header_inventory.bzl": "91803c8139de14ac11c4094e23fb744f8a87da1dfb023884ce5f337dadf1a959",
+    "src/share/BUILD.bazel": "7df50ca369b371d8b56da4368638f368039b09b4f04b05d3f01d2a61f5de3d37",
+    "src/sql/BUILD.bazel": "74ce82f6a4acdc38077043b39e6fa62d3b8ad9e7d678402e950398de23aa70a0",
+    "src/observer/BUILD.bazel": "d5d92831e17b632b4a5170cfc0fb3aa5ef299bd7deaacf8dccc943720767af03",
+    "bazel/architecture/module_policy.bzl": "84eba2141f32ea3b308a5ec7838ac75c09e2ddc42eee24a800edd1b329fe247d",
+    "unittest/BUILD.bazel": "1445f8ddfefa227a4d9574f8b98a44bd6dc60bcb064091caf14be2b4400f6144",
+    "unittest/CMakeLists.txt": "ec4e52eb51281d6cc69c92f39e6de06150c46c97eca6b01204f70dac70815b48",
+    "unittest/storage/BUILD.bazel": "7a872494aecbece0dbc9a0ded9565a364896cc6622f360f7a8ffa577fd109049",
+    "unittest/fts_exec_context_fixture.h": "e918f2357c9d077646309b0086901135125892da2976aa04e8f792f97b30106b",
+    "unittest/fts_exec_context_fixture.cpp": "4ef4f95bf60ffc010581a7b19c01d19af88d8b44b597f00dd0ca911018126f32",
+    "unittest/storage/fts/test_fts_membership_batch.cpp": "baf5ac3c3be9ed2c63074c31a2551f49abb37499e48e3bad650d2046a26b1151",
+    "unittest/storage/fts/test_fts_token_batch.cpp": "278f956a28f00aca7c9078b75486716348c73c9c951403e2bafa7db3cf0940d3"
+  },
+  "benchmark_sha256_unchanged": {
+    "tools/benchmark/fts_large_bench.sh": "596ea5d1c0038e666b78aa94bef22d2dfb87ffc9e84dbc7e2a1da1f746424462",
+    "tools/benchmark/fts_large_bench_gen.py": "b0c816dd8211ac0471f60b72a37a3fb5c62580357a5b6d7ac95f5a8c2e3f143d",
+    "tools/benchmark/fts_large_bench_setup.sql": "311826751df7f51ac45156fb4284aeca9bd9197370aceb88f4fb92832b458108",
+    "tools/benchmark/fts_large_bench_score.py": "bea52eb1c68d05693bb3ac5b910ab0e2fa0e70e01582f40466898ee1e2e3ef55",
+    "tools/benchmark/fts_large_bench_baseline.json": "f4e97eddb2e49c982b967fc8047f7cf37177eebe53d648f6746d85aacda91f0c"
+  },
+  "binaries_sha256": {
+    "seekdb": "c4d324ae53b7139ba65d1270971c4d498657cfeeebac9f4395bf05482c5bdc13",
+    "liboceanbase.so": "efc8b1755aa480cbfe03c7b768b9095c1c05f8c1b5d3a296b4b09ce98750f834"
+  },
+  "deleted_test_paths": [
+    "unittest/sql/engine/expr/test_fts_membership_batch.cpp",
+    "unittest/sql/engine/expr/test_fts_token_batch.cpp"
+  ]
+}

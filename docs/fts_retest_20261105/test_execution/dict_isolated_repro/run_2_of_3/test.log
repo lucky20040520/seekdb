@@ -1,0 +1,14 @@
+exec ${PAGER:-/usr/bin/less} "$0" || exit 1
+Executing tests from //unittest/storage:storage_tests
+-----------------------------------------------------------------------------
+Note: Google Test filter = FtsDictViewTest.immutable_views_match_legacy_ranges_and_survive_allocator_reuse
+[==========] Running 1 test from 1 test case.
+[----------] Global test environment set-up.
+[----------] 1 test from FtsDictViewTest
+[ RUN      ] FtsDictViewTest.immutable_views_match_legacy_ranges_and_survive_allocator_reuse
+[       OK ] FtsDictViewTest.immutable_views_match_legacy_ranges_and_survive_allocator_reuse (162 ms)
+[----------] 1 test from FtsDictViewTest (162 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test case ran. (163 ms total)
+[  PASSED  ] 1 test.

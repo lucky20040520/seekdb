@@ -1,0 +1,26 @@
+{
+  "release": [
+    {
+      "output": "bazel-out/k8-opt/bin/src/observer/seekdb",
+      "jemalloc_arguments": []
+    },
+    {
+      "output": "bazel-out/k8-opt/bin/src/observer/liboceanbase.so",
+      "jemalloc_arguments": []
+    }
+  ],
+  "sanity": [
+    {
+      "output": "bazel-out/k8-opt/bin/src/observer/seekdb",
+      "jemalloc_arguments": [
+        "bazel-out/k8-opt/bin/deps/external/jemalloc/lib/libjemalloc_pic.a"
+      ]
+    },
+    {
+      "output": "bazel-out/k8-opt/bin/src/observer/liboceanbase.so",
+      "jemalloc_arguments": [
+        "bazel-out/k8-opt/bin/deps/external/jemalloc/lib/libjemalloc_pic.a"
+      ]
+    }
+  ]
+}
