@@ -77,29 +77,6 @@ int TokenizeContext::reset_resource()
   return OB_SUCCESS;
 }
 
-int TokenizeContext::current_char(const char *&ch, uint8_t &char_len)
-{
-  int ret = OB_SUCCESS;
-  if (cursor_ >= fulltext_len_) {
-    ret = OB_ITER_END;
-  } else {
-    ch = fulltext_ + cursor_;
-    char_len = next_char_len_;
-  }
-  return ret;
-}
-
-int TokenizeContext::current_char_type(ObFTCharUtil::CharType &type)
-{
-  int ret = OB_SUCCESS;
-  if (cursor_ >= fulltext_len_) {
-    ret = OB_ITER_END;
-  } else {
-    type = next_char_type_;
-  }
-  return ret;
-}
-
 int TokenizeContext::prepare_next_char()
 {
   int ret = OB_SUCCESS;
@@ -138,22 +115,6 @@ int TokenizeContext::step_next()
   }
   return ret;
 }
-
-ObCollationType TokenizeContext::collation() const { return coll_type_; }
-
-int64_t TokenizeContext::get_end_cursor() const { return cursor_ + next_char_len_; }
-
-const char *TokenizeContext::fulltext() const { return fulltext_; }
-
-int64_t TokenizeContext::fulltext_len() const { return fulltext_len_; }
-
-int64_t TokenizeContext::get_cursor() const { return cursor_; }
-
-bool TokenizeContext::is_last() const { return cursor_ + next_char_len_ >= fulltext_len_; }
-
-bool TokenizeContext::iter_end() const { return cursor_ >= fulltext_len_; }
-
-bool TokenizeContext::is_smart() const { return is_smart_; }
 
 int TokenizeContext::add_token(const char *fulltext,
                                int64_t offset,

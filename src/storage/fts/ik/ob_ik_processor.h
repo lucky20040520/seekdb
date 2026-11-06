@@ -45,21 +45,32 @@ public:
 
   int compound(ObIKToken &result);
 
-  int current_char(const char *&ch, uint8_t &char_len);
-  int current_char_type(ObFTCharUtil::CharType &type);
+  int current_char(const char *&ch, uint8_t &char_len)
+  {
+    if (cursor_ >= fulltext_len_) return OB_ITER_END;
+    ch = fulltext_ + cursor_;
+    char_len = next_char_len_;
+    return OB_SUCCESS;
+  }
+  int current_char_type(ObFTCharUtil::CharType &type)
+  {
+    if (cursor_ >= fulltext_len_) return OB_ITER_END;
+    type = next_char_type_;
+    return OB_SUCCESS;
+  }
 
   int step_next();
 
-  ObCollationType collation() const;
+  ObCollationType collation() const { return coll_type_; }
   ObCharsetType charset_type() const { return charset_type_; }
-  int64_t get_end_cursor() const;
-  const char *fulltext() const;
-  int64_t fulltext_len() const;
-  int64_t get_cursor() const;
+  int64_t get_end_cursor() const { return cursor_ + next_char_len_; }
+  const char *fulltext() const { return fulltext_; }
+  int64_t fulltext_len() const { return fulltext_len_; }
+  int64_t get_cursor() const { return cursor_; }
 
-  bool is_last() const;
-  bool iter_end() const;
-  bool is_smart() const;
+  bool is_last() const { return cursor_ + next_char_len_ >= fulltext_len_; }
+  bool iter_end() const { return cursor_ >= fulltext_len_; }
+  bool is_smart() const { return is_smart_; }
 
   int add_chain(ObIKTokenChain *chain);
   int add_token(const char *fulltext,

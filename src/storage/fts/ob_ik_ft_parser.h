@@ -31,6 +31,10 @@ namespace oceanbase
 namespace storage
 {
 class ObFTDictHub;
+class ObIKLetterProcessor;
+class ObIKQuantifierProcessor;
+class ObIKCJKProcessor;
+class ObIKSurrogateProcessor;
 
 class ObIKFTParser final : public ObITokenIterator
 {
@@ -41,7 +45,10 @@ public:
         coll_type_(ObCollationType::CS_TYPE_INVALID),
         ctx_(nullptr),
         hub_(hub),
-        segmenters_(allocator_),
+        letter_seg_(nullptr),
+        quantifier_seg_(nullptr),
+        cjk_seg_(nullptr),
+        surrogate_seg_(nullptr),
         dict_main_(nullptr),
         dict_quan_(nullptr),
         arb_()
@@ -88,7 +95,10 @@ private:
   ObCollationType coll_type_;
   TokenizeContext *ctx_;
   ObFTDictHub *hub_;
-  ObList<ObIIKProcessor *, ObIAllocator> segmenters_;
+  ObIKLetterProcessor *letter_seg_;
+  ObIKQuantifierProcessor *quantifier_seg_;
+  ObIKCJKProcessor *cjk_seg_;
+  ObIKSurrogateProcessor *surrogate_seg_;
 
   // The dictionaries are built once and owned by the dict hub, so they are
   // shared by all the parsers and stay valid for the whole lifetime of the

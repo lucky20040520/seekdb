@@ -1,0 +1,13 @@
+{
+  "sql_sha256": "ff3ae2b61f1cec7ce877a34489ab74e52e95b8d3c49abd6b41422d898d40867e",
+  "reference_matches": true,
+  "plan_checks": {
+    "membership": true,
+    "membership_rows": true,
+    "limited_membership": true,
+    "projection": true,
+    "numeric": true,
+    "order": true,
+    "boolean": true
+  }
+}

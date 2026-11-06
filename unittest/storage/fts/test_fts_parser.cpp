@@ -372,5 +372,43 @@ TEST(TestFtsWordGrouping, ungrouped_duplicate_still_returns_hash_exist)
   EXPECT_EQ(1, words.begin()->second);
 }
 
+
+TEST(TestFtsStopwords, collations_match_live_buffer_conversion_reference)
+{
+  ObStopWordChecker checker;
+  ASSERT_EQ(OB_SUCCESS, checker.init());
+  ObObjMeta target;
+  target.set_varchar();
+  target.set_collation_type(CS_TYPE_UTF8MB4_GENERAL_CI);
+  const std::vector<std::string> words = {
+      "the", "THE", "and", "database", "Database", "audit", "\xe4\xb8\xad\xe6\x96\x87",
+      "\xc3\x89" "cole", "\xef\xbc\xa1", std::string("a\0b", 3),
+      std::string(8192, 'a'),
+  };
+  for (ObCollationType coll : {CS_TYPE_UTF8MB4_BIN, CS_TYPE_UTF8MB4_GENERAL_CI,
+                              CS_TYPE_UTF8MB4_UNICODE_CI, CS_TYPE_BINARY}) {
+    ObObjMeta source = target;
+    source.set_collation_type(coll);
+    for (const auto &text : words) {
+      for (int pass = 0; pass < 3; ++pass) {
+        ObArenaAllocator allocator;
+        ObString converted;
+        const int conversion_ret = ObCharset::charset_convert(allocator,
+            ObString(text.size(), text.data()), coll, CS_TYPE_UTF8MB4_GENERAL_CI, converted);
+        bool expected = false;
+        int expected_ret = conversion_ret;
+        if (OB_SUCCESS == conversion_ret) {
+          expected_ret = checker.check_stopword(
+              ObFTWord(converted.length(), converted.ptr(), target), expected);
+        }
+        bool actual = false;
+        EXPECT_EQ(expected_ret, checker.check_stopword(
+            ObFTWord(text.size(), text.data(), source), actual));
+        if (OB_SUCCESS == expected_ret) EXPECT_EQ(expected, actual);
+      }
+    }
+  }
+}
+
 } // namespace storage
 } // namespace oceanbase

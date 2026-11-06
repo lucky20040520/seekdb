@@ -82,32 +82,35 @@ int ObStopWordChecker::check_stopword(const ObFTWord &word, bool &is_stopword)
   } else if (OB_UNLIKELY(word.empty())) {
     ret = OB_INVALID_ARGUMENT;
   } else {
-    common::ObString cmp_str;
+    // Compare with the stopword collation, but conversion is only necessary
+    // when the character encoding changes. Keep converted storage alive until
+    // the lookup completes.
+    auto lookup = [&](const ObString &text) {
+      ObFTWord converted(text.length(), text.ptr(), stopword_type_);
+      int lookup_ret = stopword_set_.exist_refactored(converted);
+      if (OB_HASH_NOT_EXIST == lookup_ret) {
+        is_stopword = false;
+        lookup_ret = OB_SUCCESS;
+      } else if (OB_HASH_EXIST == lookup_ret) {
+        is_stopword = true;
+        lookup_ret = OB_SUCCESS;
+      } else if (OB_SUCCESS == lookup_ret) {
+        lookup_ret = OB_ERR_UNEXPECTED;
+      }
+      return lookup_ret;
+    };
     const ObString &word_str = word.get_word().get_string();
-    if (word.get_collation_type() == stopword_type_.get_collation_type()) {
-      // The common path needs neither charset conversion nor an allocation.
-      cmp_str = word_str;
+    const ObCollationType source_collation = word.get_collation_type();
+    if (source_collation == stopword_type_.get_collation_type()
+        || CHARSET_UTF8MB4 == ObCharset::charset_type_by_coll(source_collation)) {
+      ret = lookup(word_str);
     } else {
       common::ObArenaAllocator allocator(lib::ObMemAttr("ChkStopWord"));
-      if (OB_FAIL(common::ObCharset::charset_convert(
-                                             allocator,
-                                             word_str,
-                                             word.get_collation_type(),
-                                             stopword_type_.get_collation_type(),
-                                             cmp_str))) {
-      }
-    }
-    if (OB_SUCC(ret)) {
-      ObFTWord converted(cmp_str.length(), cmp_str.ptr(), stopword_type_);
-      ret = stopword_set_.exist_refactored(converted);
-      if (OB_HASH_NOT_EXIST == ret) {
-        is_stopword = false;
-        ret = OB_SUCCESS;
-      } else if (OB_HASH_EXIST == ret) {
-        is_stopword = true;
-        ret = OB_SUCCESS;
-      } else if (OB_SUCC(ret)) {
-        ret = OB_ERR_UNEXPECTED;
+      ObString converted;
+      if (OB_FAIL(ObCharset::charset_convert(allocator, word_str, source_collation,
+                                            stopword_type_.get_collation_type(), converted))) {
+      } else {
+        ret = lookup(converted);
       }
     }
   }

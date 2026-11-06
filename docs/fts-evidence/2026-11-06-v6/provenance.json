@@ -1,0 +1,15 @@
+{
+  "baseline_commit": "bc1769a44d77978a760ef09421fbf64a711ddd52",
+  "preserved_best_commit": "9189661e292bd96416f9a607dab292df1b021bd6",
+  "baseline_binary_sha256": "8a2e377246550fd29625e64ac5d7b62dcf25b09c49fa7b9034732d67739ea8ff",
+  "candidate_binary_sha256": "78a7d2aea74f91973205beebcb4d4a8e68b3bec61a617de464ef6b2bea6c9865",
+  "prototype_binary_sha256": "251d556c919793399eedae6019336e615ca751e0034ef117c42d376622983d02",
+  "kernel_diff_from_baseline_sha256": "4cb2200171033a12702ebaaf9e33cbdd1a56f9cae1647f2128537293bbb646f7",
+  "pipeline_fixture_sha256": "475b5974d75291e4119228498e7fa08ef883f6a7287eb6babc848d73435b4f8a",
+  "native_tests_passed": 29,
+  "benchmark_scripts_modified": false,
+  "known_long_ik_error_count_per_binary": 6,
+  "negative_case_note": "Only ERROR 1210 at the six explicit long IK SQL lines is permitted; complete stdout and stderr match the reference.",
+  "plan_note": "Trailing spaces removed from plan text only; SQL result bytes unchanged.",
+  "runtime_note": "Same dedicated runtime reused, each process restarted before timing, original SKIP_LOAD=0 rebuilds the benchmark DB."
+}
