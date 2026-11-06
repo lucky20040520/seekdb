@@ -94,6 +94,9 @@ protected:
   virtual int cache_result(int64_t &count, const ObDatum &id_datum, const double relevance);
   virtual int project_results(const int64_t count);
   int init_merge_heap(const int64_t count);
+  template <typename Merger> int fill_merge_heap_impl(Merger &heap);
+  template <typename Merger> int collect_dims_by_id_impl(
+      Merger &heap, const ObDatum *&id_datum, double &relevance, bool &got_valid_id);
 protected:
   ObIAllocator *iter_allocator_;
   ObSparseRetrievalMergeParam *iter_param_;

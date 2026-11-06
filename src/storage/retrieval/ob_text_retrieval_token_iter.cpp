@@ -510,6 +510,8 @@ int ObTextRetrievalDaaTTokenIter::get_next_row_with_data(
       // Their storage remains owned by this iterator until the next refill.
       if (nullptr != relevance_expr_) {
         score = relevance_.get_data()[cur_idx_];
+      } else {
+        score = 1.0;
       }
       id_datum = &doc_id_.get_data()[cur_idx_].get_datum();
     }
@@ -605,6 +607,8 @@ int ObTextRetrievalDaaTTokenIter::get_curr_score(double &score) const
     ret = OB_ARRAY_OUT_OF_RANGE;
   } else if (relevance_expr_) {
     score = relevance_[cur_idx_];
+  } else {
+    score = 1.0;
   }
   return ret;
 }

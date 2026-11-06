@@ -1,0 +1,84 @@
+[==========] Running 26 tests from 9 test cases.
+[----------] Global test environment set-up.
+[----------] 9 tests from TestFtsCharClassify
+[ RUN      ] TestFtsCharClassify.ascii_characters
+[       OK ] TestFtsCharClassify.ascii_characters (0 ms)
+[ RUN      ] TestFtsCharClassify.cjk_characters
+[       OK ] TestFtsCharClassify.cjk_characters (0 ms)
+[ RUN      ] TestFtsCharClassify.full_width_characters
+[       OK ] TestFtsCharClassify.full_width_characters (0 ms)
+[ RUN      ] TestFtsCharClassify.utf8_fast_path_matches_charset_for_all_scalar_values
+[       OK ] TestFtsCharClassify.utf8_fast_path_matches_charset_for_all_scalar_values (77 ms)
+[ RUN      ] TestFtsCharClassify.utf8_fast_path_preserves_invalid_input_results
+[       OK ] TestFtsCharClassify.utf8_fast_path_preserves_invalid_input_results (0 ms)
+[ RUN      ] TestFtsCharClassify.unretained_charsets_preserve_generic_errors
+[       OK ] TestFtsCharClassify.unretained_charsets_preserve_generic_errors (0 ms)
+[ RUN      ] TestFtsCharClassify.cn_number_predicate
+[       OK ] TestFtsCharClassify.cn_number_predicate (0 ms)
+[ RUN      ] TestFtsCharClassify.connector_predicates
+[       OK ] TestFtsCharClassify.connector_predicates (0 ms)
+[ RUN      ] TestFtsCharClassify.ignore_single_cjk_predicate
+[       OK ] TestFtsCharClassify.ignore_single_cjk_predicate (0 ms)
+[----------] 9 tests from TestFtsCharClassify (77 ms total)
+
+[----------] 2 tests from TestFtsParserProperty
+[ RUN      ] TestFtsParserProperty.ik_properties
+[       OK ] TestFtsParserProperty.ik_properties (0 ms)
+[ RUN      ] TestFtsParserProperty.ik_max_word_mode
+[       OK ] TestFtsParserProperty.ik_max_word_mode (0 ms)
+[----------] 2 tests from TestFtsParserProperty (0 ms total)
+
+[----------] 2 tests from TestFtsIkArbitrator
+[ RUN      ] TestFtsIkArbitrator.document_local_chains_preserve_tokens_and_reset
+[       OK ] TestFtsIkArbitrator.document_local_chains_preserve_tokens_and_reset (0 ms)
+[ RUN      ] TestFtsIkArbitrator.uncovered_chinese_characters_and_punctuation
+[       OK ] TestFtsIkArbitrator.uncovered_chinese_characters_and_punctuation (0 ms)
+[----------] 2 tests from TestFtsIkArbitrator (0 ms total)
+
+[----------] 3 tests from TestFtsWordGrouping
+[ RUN      ] TestFtsWordGrouping.preserves_latest_collation_equal_key_and_frequency
+[       OK ] TestFtsWordGrouping.preserves_latest_collation_equal_key_and_frequency (0 ms)
+[ RUN      ] TestFtsWordGrouping.updates_colliding_keys_without_reordering
+[       OK ] TestFtsWordGrouping.updates_colliding_keys_without_reordering (0 ms)
+[ RUN      ] TestFtsWordGrouping.ungrouped_duplicate_still_returns_hash_exist
+[       OK ] TestFtsWordGrouping.ungrouped_duplicate_still_returns_hash_exist (0 ms)
+[----------] 3 tests from TestFtsWordGrouping (0 ms total)
+
+[----------] 2 tests from TestFtsDictionaryCache
+[ RUN      ] TestFtsDictionaryCache.reused_map_address_reads_current_dictionary
+[       OK ] TestFtsDictionaryCache.reused_map_address_reads_current_dictionary (0 ms)
+[ RUN      ] TestFtsDictionaryCache.rebuilt_map_with_different_probe_locations
+[       OK ] TestFtsDictionaryCache.rebuilt_map_with_different_probe_locations (0 ms)
+[----------] 2 tests from TestFtsDictionaryCache (0 ms total)
+
+[----------] 4 tests from TestFtsDaatComparison
+[ RUN      ] TestFtsDaatComparison.binary_strings_match_charset_reference
+[       OK ] TestFtsDaatComparison.binary_strings_match_charset_reference (0 ms)
+[ RUN      ] TestFtsDaatComparison.randomized_binary_strings_match_reference
+[       OK ] TestFtsDaatComparison.randomized_binary_strings_match_reference (1 ms)
+[ RUN      ] TestFtsDaatComparison.nulls_remain_first
+[       OK ] TestFtsDaatComparison.nulls_remain_first (0 ms)
+[ RUN      ] TestFtsDaatComparison.other_collations_and_integer_ids_keep_generic_order
+[       OK ] TestFtsDaatComparison.other_collations_and_integer_ids_keep_generic_order (0 ms)
+[----------] 4 tests from TestFtsDaatComparison (1 ms total)
+
+[----------] 1 test from TestFtsDaatDimension
+[ RUN      ] TestFtsDaatDimension.combined_fetch_advances_once_and_preserves_end
+[       OK ] TestFtsDaatDimension.combined_fetch_advances_once_and_preserves_end (0 ms)
+[----------] 1 test from TestFtsDaatDimension (0 ms total)
+
+[----------] 1 test from TestFtsDaatMerge
+[ RUN      ] TestFtsDaatMerge.short_and_loser_tree_merges_preserve_ids_scores_and_reuse
+[       OK ] TestFtsDaatMerge.short_and_loser_tree_merges_preserve_ids_scores_and_reuse (2 ms)
+[----------] 1 test from TestFtsDaatMerge (2 ms total)
+
+[----------] 2 tests from TestFtsEnglishNormalizer
+[ RUN      ] TestFtsEnglishNormalizer.ascii_and_unicode_match_generic_lowercase
+[       OK ] TestFtsEnglishNormalizer.ascii_and_unicode_match_generic_lowercase (1 ms)
+[ RUN      ] TestFtsEnglishNormalizer.all_ascii_bytes_and_random_tokens_match_reference
+[       OK ] TestFtsEnglishNormalizer.all_ascii_bytes_and_random_tokens_match_reference (1 ms)
+[----------] 2 tests from TestFtsEnglishNormalizer (2 ms total)
+
+[----------] Global test environment tear-down
+[==========] 26 tests from 9 test cases ran. (82 ms total)
+[  PASSED  ] 26 tests.

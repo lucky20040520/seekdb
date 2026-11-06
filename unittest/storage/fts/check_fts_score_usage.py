@@ -28,6 +28,8 @@ def main():
     parser.add_argument('--reference', type=Path)
     parser.add_argument('--expect-scored-membership', action='store_true',
                         help='Use for the original binary, which scores COUNT(*) MATCH.')
+    parser.add_argument('--expect-column-membership-scored', action='store_true',
+                        help='Use for v4, which still scores ID and LIMIT membership scans.')
     args = parser.parse_args()
     if args.output_directory.exists():
         parser.error('Use a new output directory; existing evidence is never overwritten.')
@@ -43,6 +45,8 @@ def main():
         raise RuntimeError('Complete SQL output differs from the reference')
     plans = {
         'membership': "SELECT COUNT(*) FROM docs WHERE MATCH(body) AGAINST('database audit')",
+        'membership_rows': "SELECT id FROM docs WHERE MATCH(body) AGAINST('database audit') ORDER BY id",
+        'limited_membership': "SELECT COUNT(*) FROM (SELECT id FROM docs WHERE MATCH(body) AGAINST('database audit') LIMIT 2) s",
         'projection': "SELECT id, MATCH(body) AGAINST('database audit') FROM docs WHERE MATCH(body) AGAINST('database audit')",
         'numeric': "SELECT id FROM docs WHERE MATCH(body) AGAINST('database audit') > 0.1",
         'order': "SELECT id FROM docs WHERE MATCH(body) AGAINST('database audit') ORDER BY MATCH(body) AGAINST('database audit') DESC LIMIT 2",
@@ -54,7 +58,11 @@ def main():
                                          'EXPLAIN EXTENDED ' + sql], capture_output=True, check=True)
         (args.output_directory / (name + '.plan.txt')).write_bytes(result.stdout)
         text = result.stdout.decode('utf-8')
-        expected = 'false' if name == 'membership' and not args.expect_scored_membership else 'true'
+        # Natural-language LIMIT adds an implicit relevance sort; preserve scoring.
+        membership_only = name in ('membership', 'membership_rows')
+        if args.expect_column_membership_scored and name != 'membership':
+            membership_only = False
+        expected = 'false' if membership_only and not args.expect_scored_membership else 'true'
         checks[name] = ('calc_relevance=' + expected in text
                         or (name == 'numeric' and 'has_functional_lookup=true' in text))
     summary = {'sql_sha256': hashlib.sha256((args.output_directory / 'results.out').read_bytes()).hexdigest(),

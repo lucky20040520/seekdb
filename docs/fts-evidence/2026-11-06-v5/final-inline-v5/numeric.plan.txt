@@ -1,0 +1,53 @@
+=================================================
+|ID|OPERATOR         |NAME|EST.ROWS|EST.TIME(us)|
+-------------------------------------------------
+|0 |SORT             |    |1       |981         |
+|1 |└─TABLE FULL SCAN|docs|1       |981         |
+=================================================
+Outputs & filters:
+-------------------------------------
+  0 - output([docs.id(0x7f6639cd2040)]), filter(nil), rowset=16
+      sort_keys([MATCH(docs.body(0x7f6639cd1800)) AGAINST('database audit'(0x7f6639cd1410))(0x7f6639cd0f90), DESC])
+  1 - output([docs.id(0x7f6639cd2040)], [MATCH(docs.body(0x7f6639cd1800)) AGAINST('database audit'(0x7f6639cd1410))(0x7f6639cd0f90)]), filter([MATCH(docs.body(0x7f6639cd1800))
+      AGAINST('database audit'(0x7f6639cd1410))(0x7f6639cd0f90) > cast(0.1(0x7f6639cd1560), DOUBLE(-1, -1))(0x7f6639cd1b00)(0x7f6639cd1690)]), rowset=16
+      access([docs.id(0x7f6639cd2040)]), partitions(p0)
+      is_index_back=false, is_global_index=false, filter_before_indexback[false],
+      range_key([docs.id(0x7f6639cd2040)]), range(MIN ; MAX)always true, has_functional_lookup=true
+Used Hint:
+-------------------------------------
+  /*+
+
+  */
+Qb name trace:
+-------------------------------------
+  stmt_id:0, stmt_type:T_EXPLAIN
+  stmt_id:1, SEL$1
+Outline Data:
+-------------------------------------
+  /*+
+      BEGIN_OUTLINE_DATA
+      FULL(@"SEL$1" "codex_fts_score_usage"."docs"@"SEL$1")
+      END_OUTLINE_DATA
+  */
+Optimization Info:
+-------------------------------------
+  docs:
+      table_rows:1
+      physical_range_rows:9
+      logical_range_rows:1
+      index_back_rows:0
+      output_rows:0
+      table_dop:1
+      dop_method:Table DOP
+      avaiable_index_name:[ft_beng, docs]
+      pruned_index_name:[ft_beng]
+      stats info:[version=1970-01-01 08:00:00.000000, is_locked=0, is_expired=0]
+      dynamic sampling level:0
+      estimation method:[DEFAULT, STORAGE]
+  Plan Type:
+      LOCAL
+  Parameters:
+      :0 => 'database audit'
+      :1 => 0.1
+  Note:
+      Degree of Parallelisim is 1 because of table property

@@ -17,6 +17,8 @@
 #include <gtest/gtest.h>
 #include <string>
 #include <vector>
+#include <map>
+#include <memory>
 #include "data_plane/access/ob_tablet_scan.h"
 #include "query/engine/expr/ob_expr.h"
 #include "storage/retrieval/ob_sparse_daat_iter.h"
@@ -149,6 +151,117 @@ TEST(TestFtsDaatDimension, combined_fetch_advances_once_and_preserves_end)
   EXPECT_EQ(2, iter.advances_);
   EXPECT_EQ(1, iter.score_reads_);
   EXPECT_EQ(1, iter.id_reads_);
+}
+
+
+class PostingFtsDimension final : public ObISRDaaTDimIter
+{
+public:
+  PostingFtsDimension(const std::vector<int64_t> &ids, double score)
+      : ids_(ids), score_(score), offset_(0), value_(0), datum_() {}
+  int get_next_row() override
+  {
+    if (offset_ == ids_.size()) return OB_ITER_END;
+    value_ = ids_[offset_++];
+    datum_.ptr_ = reinterpret_cast<const char *>(&value_);
+    datum_.set_int(value_);
+    return OB_SUCCESS;
+  }
+  int get_curr_score(double &score) const override { score = score_; return OB_SUCCESS; }
+  int get_curr_id(const ObDatum *&datum) const override { datum = &datum_; return OB_SUCCESS; }
+  void rewind() { offset_ = 0; }
+private:
+  std::vector<int64_t> ids_;
+  double score_;
+  size_t offset_;
+  int64_t value_;
+  ObDatum datum_;
+};
+
+class FtsMergeHarness : public ObSRDaaTIterImpl
+{
+public:
+  ~FtsMergeHarness() { reset(); }
+  int prepare(ObSparseRetrievalMergeParam &param, ObIArray<ObISRDaaTDimIter *> &dims,
+              ObIAllocator &allocator, ObSRDaaTRelevanceCollector &collector)
+  {
+    int ret = OB_SUCCESS;
+    iter_allocator_ = &allocator;
+    iter_param_ = &param;
+    dim_iters_ = &dims;
+    relevance_collector_ = &collector;
+    iter_domain_ids_.set_allocator(&allocator);
+    next_round_iter_idxes_.set_allocator(&allocator);
+    if (OB_FAIL(iter_domain_ids_.init(dims.count()))) {
+    } else if (OB_FAIL(iter_domain_ids_.prepare_allocate(dims.count()))) {
+    } else if (OB_FAIL(next_round_iter_idxes_.init(dims.count()))) {
+    } else if (OB_FAIL(next_round_iter_idxes_.prepare_allocate(dims.count()))) {
+    } else if (OB_FAIL(merge_cmp_.init(sql::ObDatumMeta(ObIntType, CS_TYPE_BINARY, -1), &iter_domain_ids_))) {
+    } else if (OB_FAIL(init_merge_heap(dims.count()))) {
+    } else {
+      next_round_cnt_ = dims.count();
+      for (int64_t i = 0; i < dims.count(); ++i) next_round_iter_idxes_[i] = i;
+    }
+    return ret;
+  }
+  int next(const ObDatum *&id, double &score, bool &valid)
+  {
+    int ret = OB_SUCCESS;
+    if (OB_FAIL(fill_merge_heap())) {
+    } else if (OB_FAIL(collect_dims_by_id(id, score, valid))) {
+    }
+    return ret;
+  }
+};
+
+TEST(TestFtsDaatMerge, short_and_loser_tree_merges_preserve_ids_scores_and_reuse)
+{
+  for (int dim_count = 1; dim_count <= 6; ++dim_count) {
+    for (int should_match = 1; should_match <= dim_count; ++should_match) {
+      ObArenaAllocator allocator;
+      ObSparseRetrievalMergeParam param;
+      ObSRDaaTInnerProductRelevanceCollector collector;
+      ASSERT_EQ(OB_SUCCESS, collector.init(should_match));
+      ObSEArray<ObISRDaaTDimIter *, 8> dims;
+      std::vector<std::unique_ptr<PostingFtsDimension>> owners;
+      std::map<int64_t, std::pair<double, int>> reference;
+      for (int dim = 0; dim < dim_count; ++dim) {
+        std::vector<int64_t> ids;
+        for (int64_t id = -20; id < 80; ++id) {
+          // Includes cross-stream equal IDs, negative IDs and exhausted streams.
+          if (dim != 2 && (id + 20) % (dim + 2) != 1) {
+            ids.push_back(id);
+            reference[id].first += 0.25 * (dim + 1);
+            ++reference[id].second;
+          }
+        }
+        owners.emplace_back(new PostingFtsDimension(ids, 0.25 * (dim + 1)));
+        ASSERT_EQ(OB_SUCCESS, dims.push_back(owners.back().get()));
+      }
+      FtsMergeHarness merge;
+      ASSERT_EQ(OB_SUCCESS, merge.prepare(param, dims, allocator, collector));
+      for (int round = 0; round < 2; ++round) {
+        if (round > 0) {
+          for (auto &dim : owners) dim->rewind();
+          merge.reuse();
+        }
+        for (const auto &expected : reference) {
+          const ObDatum *id = nullptr;
+          double score = -1;
+          bool valid = false;
+          ASSERT_EQ(OB_SUCCESS, merge.next(id, score, valid));
+          ASSERT_NE(nullptr, id);
+          EXPECT_EQ(expected.first, id->get_int());
+          EXPECT_DOUBLE_EQ(expected.second.first, score);
+          EXPECT_EQ(expected.second.second >= should_match, valid);
+        }
+        const ObDatum *id = nullptr;
+        double score = 0;
+        bool valid = false;
+        EXPECT_EQ(OB_ITER_END, merge.next(id, score, valid));
+      }
+    }
+  }
 }
 
 } // namespace storage

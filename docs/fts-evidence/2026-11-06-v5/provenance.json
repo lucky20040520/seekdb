@@ -1,0 +1,23 @@
+{
+  "baseline_commit": "9189661e292bd96416f9a607dab292df1b021bd6",
+  "baseline_binary_sha256": "5e739ecf0f11f7a424fee6ded6bb01dd48c70709fd1c0ed24a1236c6e6840610",
+  "candidate_binary_sha256": "8a2e377246550fd29625e64ac5d7b62dcf25b09c49fa7b9034732d67739ea8ff",
+  "presence_only_binary_sha256": "564eedd059bfbb20fc45528857c61756f7c85dfa1edd26f1d5cdbf61998bbec1",
+  "kernel_diff_from_baseline_sha256": "c5573004692c5bb3104a91a9c647e9cce83caddaaa9f09f269e702fdc2913a3c",
+  "sql_fixture_sha256": "580630d9ac798320d04b4e19fac8087d7f363376f12e642a89ddb1d9a1e563be",
+  "sql_output_sha256": "ff3ae2b61f1cec7ce877a34489ab74e52e95b8d3c49abd6b41422d898d40867e",
+  "benchmark_scripts_modified": false,
+  "native_tests_passed": 26,
+  "plan_note": "Plan text trailing spaces removed for git hygiene; result bytes untouched.",
+  "sequence": [
+    "baseline first",
+    "presence only",
+    "compile inline version",
+    "native tests and SQL",
+    "inline first",
+    "baseline repeat",
+    "inline repeat",
+    "final extended SQL on baseline and inline"
+  ],
+  "runtime_note": "All full runs reused the same dedicated runtime, restarted before timing; original SKIP_LOAD=0 rebuilds fts_large_bench each time."
+}

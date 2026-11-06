@@ -1,0 +1,3 @@
+mysql_exit: 0
+output_sha256: bfbd2901fc3c4d0ede7875ec7f902184a83c160971b4dacaaa469b5d6437b6ab
+PASS: all SQL output matches /home/wh-yin/seekdb-fts/evidence-before-presence-v5a/correctness.out

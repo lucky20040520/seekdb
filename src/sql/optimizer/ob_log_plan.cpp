@@ -12042,13 +12042,13 @@ int ObLogPlan::prepare_text_retrieval_scan(const ObIArray<ObRawExpr *> &scan_mat
     bool &need_calc_relevance = tr_info.need_calc_relevance_;
     // Natural-language postings have positive scores. A MATCH used solely as
     // a standalone WHERE truth test needs membership, not its numeric score.
-    // Initially enable only scans without column projection/lookup; auxiliary
-    // rowkey lookup still relies on the scored row layout.
-    // Keep scoring for projections, sorting, score predicates, boosts, other
+    // Rowkey lookup retains a presence projection without computing BM25.
+    // Keep scoring for score projections, sorting, score predicates, boosts, other
     // search modes and expressions we cannot prove to be this truth test.
     if (get_stmt()->is_select_stmt()
         && get_stmt()->get_table_size() == 1
         && get_stmt()->get_subquery_expr_size() == 0
+        && T_FUN_MATCH_AGAINST == match_against->get_expr_type()
         && NATURAL_LANGUAGE_MODE == match_against->get_mode_flag()
         && match_against->get_columns_boosts().empty()) {
       ObSEArray<ObRawExpr *, 16> relation_exprs;
@@ -12058,14 +12058,14 @@ int ObLogPlan::prepare_text_retrieval_scan(const ObIArray<ObRawExpr *> &scan_mat
       for (int64_t i = 0; i < select_stmt->get_select_item_size(); ++i) {
         const ObRawExpr *expr = select_stmt->get_select_item(i).expr_;
         has_other_match_use |= nullptr == expr || expr->has_flag(CNT_MATCH_EXPR)
-            || expr->has_flag(CNT_COLUMN) || T_FUN_MATCH_AGAINST == expr->get_expr_type();
+            || T_FUN_MATCH_AGAINST == expr->get_expr_type();
       }
       has_other_match_use |= select_stmt->get_group_expr_size() > 0
           || select_stmt->get_rollup_expr_size() > 0 || select_stmt->has_having();
       for (int64_t i = 0; i < select_stmt->get_order_item_size(); ++i) {
         const ObRawExpr *expr = select_stmt->get_order_item(i).expr_;
         has_other_match_use |= nullptr == expr || expr->has_flag(CNT_MATCH_EXPR)
-            || expr->has_flag(CNT_COLUMN) || T_FUN_MATCH_AGAINST == expr->get_expr_type();
+            || T_FUN_MATCH_AGAINST == expr->get_expr_type();
       }
       if (OB_FAIL(get_stmt()->get_relation_exprs(relation_exprs))) {
       }
@@ -12084,8 +12084,6 @@ int ObLogPlan::prepare_text_retrieval_scan(const ObIArray<ObRawExpr *> &scan_mat
           }
           found_truth_test |= is_where_truth_test;
           has_other_match_use |= !is_where_truth_test;
-        } else if (expr->has_flag(CNT_COLUMN)) {
-          has_other_match_use = true;
         }
       }
       if (OB_SUCC(ret) && found_truth_test && !has_other_match_use) {

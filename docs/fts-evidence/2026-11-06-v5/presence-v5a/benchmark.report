@@ -1,0 +1,44 @@
+========================================
+FTS Large Benchmark Report
+========================================
+timestamp:              2026-11-06 16:04:08
+label:                  presence-v5a
+git_head:               unknown
+git_dirty:              1
+rows:                   20000
+batch:                  500
+rounds:                 3000
+query_rounds:           200
+samples:                3
+warmup:                 30
+skip_load:              0
+----------------------------------------
+select1_avg_ms:         0.1400
+select1_stdev_ms:       0.0021
+raw_load_sec:           0.462
+raw_load_rows_per_sec:  43290.0
+build_ik_all_sec:       12.543
+build_ik_content_sec:   9.978
+build_beng_en_sec:      5.266
+build_total_sec:        27.798
+----------------------------------------
+tokenize_ik_avg_ms:     0.2075
+tokenize_ik_median_ms:  0.2061
+tokenize_ik_stdev_ms:   0.0027
+tokenize_beng_avg_ms:   0.1742
+tokenize_beng_median_ms:0.1688
+tokenize_beng_stdev_ms: 0.0105
+----------------------------------------
+query_cn_hits:          8001
+query_cn_avg_ms:        3.5152
+query_cn_stdev_ms:      0.0629
+query_beng_hits:        11000
+query_beng_avg_ms:      5.1263
+query_beng_stdev_ms:    0.0125
+query_mixed_hits:       7332
+query_mixed_avg_ms:     3.6905
+query_mixed_stdev_ms:   0.0255
+query_limit_hits:       20
+query_limit_avg_ms:     5.2897
+query_limit_stdev_ms:   0.0278
+========================================

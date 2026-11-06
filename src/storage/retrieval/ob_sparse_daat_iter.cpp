@@ -284,7 +284,44 @@ int ObSRDaaTIterImpl::do_one_merge_round(int64_t &count)
   return ret;
 }
 
+// Short queries use a concrete merger so its tiny operations can be inlined.
+// Keep the existing loser-tree dispatch for larger queries.
+namespace
+{
+struct SimpleFtsMergeAccess
+{
+  explicit SimpleFtsMergeAccess(ObSRSimpleMerger &heap) : heap_(heap) {}
+  int push(const ObSRMergeItem &item) { return heap_.ObSRSimpleMerger::push(item); }
+  bool empty() const { return heap_.ObSRSimpleMerger::empty(); }
+  int rebuild() { return heap_.ObSRSimpleMerger::rebuild(); }
+  bool is_unique_champion() const { return heap_.ObSRSimpleMerger::is_unique_champion(); }
+  int top(const ObSRMergeItem *&item) { return heap_.ObSRSimpleMerger::top(item); }
+  int pop() { return heap_.ObSRSimpleMerger::pop(); }
+  ObSRSimpleMerger &heap_;
+};
+}
+
 int ObSRDaaTIterImpl::fill_merge_heap()
+{
+  if (dim_iters_->count() <= ObSRSimpleMerger::USE_SIMPLE_MERGER_MAX_TABLE_CNT) {
+    SimpleFtsMergeAccess heap(*static_cast<ObSRSimpleMerger *>(merge_heap_));
+    return fill_merge_heap_impl(heap);
+  }
+  return fill_merge_heap_impl(*merge_heap_);
+}
+
+int ObSRDaaTIterImpl::collect_dims_by_id(
+    const ObDatum *&id_datum, double &relevance, bool &got_valid_id)
+{
+  if (dim_iters_->count() <= ObSRSimpleMerger::USE_SIMPLE_MERGER_MAX_TABLE_CNT) {
+    SimpleFtsMergeAccess heap(*static_cast<ObSRSimpleMerger *>(merge_heap_));
+    return collect_dims_by_id_impl(heap, id_datum, relevance, got_valid_id);
+  }
+  return collect_dims_by_id_impl(*merge_heap_, id_datum, relevance, got_valid_id);
+}
+
+template <typename Merger>
+int ObSRDaaTIterImpl::fill_merge_heap_impl(Merger &heap)
 {
   int ret = OB_SUCCESS;
   ObSRMergeItem item;
@@ -301,23 +338,25 @@ int ObSRDaaTIterImpl::fill_merge_heap()
       }
     } else if (OB_NOT_NULL(iter_param_->dim_weights_) && FALSE_IT(item.relevance_ = item.relevance_ * iter_param_->field_boost_ * iter_param_->dim_weights_->at(iter_idx))) {
     } else if (FALSE_IT(item.iter_idx_ = iter_idx)) {
-    } else if (OB_FAIL(merge_heap_->push(item))) {
+    } else if (OB_FAIL(heap.push(item))) {
     } else {
       LOG_DEBUG("push item to merge heap", K(ret), K(i), K(iter_idx), K(next_round_cnt_), K(item), K(iter_domain_ids_[iter_idx]));
     }
   }
 
   if (OB_FAIL(ret)) {
-  } else if (merge_heap_->empty()) {
+  } else if (heap.empty()) {
     ret = OB_ITER_END;
-  } else if (0 != next_round_cnt_ && OB_FAIL(merge_heap_->rebuild())) {
+  } else if (0 != next_round_cnt_ && OB_FAIL(heap.rebuild())) {
   } else {
     next_round_cnt_ = 0;
   }
   return ret;
 }
 
-int ObSRDaaTIterImpl::collect_dims_by_id(const ObDatum *&id_datum, double &relevance, bool &got_valid_id)
+template <typename Merger>
+int ObSRDaaTIterImpl::collect_dims_by_id_impl(
+    Merger &heap, const ObDatum *&id_datum, double &relevance, bool &got_valid_id)
 {
   int ret = OB_SUCCESS;
 
@@ -327,14 +366,14 @@ int ObSRDaaTIterImpl::collect_dims_by_id(const ObDatum *&id_datum, double &relev
   relevance = 0.0;
   got_valid_id = false;
 
-  while (OB_SUCC(ret) && !merge_heap_->empty() && !curr_doc_end) {
-    if (merge_heap_->is_unique_champion()) {
+  while (OB_SUCC(ret) && !heap.empty() && !curr_doc_end) {
+    if (heap.is_unique_champion()) {
       curr_doc_end = true;
     }
-    if (OB_FAIL(merge_heap_->top(top_item))) {
+    if (OB_FAIL(heap.top(top_item))) {
     } else if (OB_FAIL(relevance_collector_->collect_one_dim(top_item->iter_idx_, top_item->relevance_))) {
     } else if (FALSE_IT(iter_idx = top_item->iter_idx_)) {
-    } else if (OB_FAIL(merge_heap_->pop())) {
+    } else if (OB_FAIL(heap.pop())) {
     } else {
       next_round_iter_idxes_[next_round_cnt_++] = iter_idx;
     }
