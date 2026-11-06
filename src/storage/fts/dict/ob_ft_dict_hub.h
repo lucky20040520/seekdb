@@ -93,10 +93,17 @@ private:
 };
 
 class ObFTCacheRangeContainer;
+class ObIFTDict;
+
 class ObFTDictHub
 {
 public:
-  ObFTDictHub() : is_inited_(false), dict_map_(), rw_dict_lock_() {}
+  ObFTDictHub() : is_inited_(false), dict_map_(), rw_dict_lock_(), shared_dict_lock_()
+  {
+    for (int64_t i = 0; i < MAX_DICT_TYPE_NUM; ++i) {
+      shared_dicts_[i] = nullptr;
+    }
+  }
   ~ObFTDictHub() {}
 
   int init();
@@ -107,17 +114,24 @@ public:
 
   int load_cache(const ObFTDictDesc &desc, ObFTCacheRangeContainer &container);
 
+  int get_shared_dict(const ObFTDictDesc &desc, ObIFTDict *&dict);
+
 private:
   int get_dict_info(const ObFTDictInfoKey &key, ObFTDictInfo &info);
 
   int put_dict_info(const ObFTDictInfoKey &key, const ObFTDictInfo &info);
 
+  class ObFTSharedDict;
 
 private:
+  static constexpr int64_t MAX_DICT_TYPE_NUM = 4;
+
   bool is_inited_;
   // holds info of dict
   hash::ObHashMap<ObFTDictInfoKey, ObFTDictInfo> dict_map_;
   ObBucketLock rw_dict_lock_;
+  ObBucketLock shared_dict_lock_;
+  ObFTSharedDict *shared_dicts_[MAX_DICT_TYPE_NUM];
 };
 
 } //  namespace storage
