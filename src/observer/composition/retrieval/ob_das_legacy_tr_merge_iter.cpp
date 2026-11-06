@@ -380,7 +380,22 @@ int ObDASLegacyTRMergeIter::create_sparse_retrieval_iter()
   sr_iter_param_.id_proj_expr_ = ir_ctdef_->inv_scan_domain_id_col_;
   sr_iter_param_.relevance_expr_ = ir_ctdef_->relevance_expr_;
   sr_iter_param_.relevance_proj_expr_ = ir_ctdef_->relevance_proj_col_;
-  sr_iter_param_.filter_expr_ = ir_ctdef_->match_filter_;
+  bool match_filter_is_redundant = false;
+  if (!topk_mode_
+      && ObMatchAgainstMode::NATURAL_LANGUAGE_MODE == ir_ctdef_->mode_flag_
+      && nullptr != ir_ctdef_->match_filter_) {
+    const ObExpr *match_filter = ir_ctdef_->match_filter_;
+    if (T_FUN_MATCH_AGAINST == match_filter->type_) {
+      match_filter_is_redundant = true;
+    } else if (T_OP_BOOL == match_filter->type_
+               && 1 == match_filter->arg_cnt_
+               && nullptr != match_filter->args_[0]
+               && T_FUN_MATCH_AGAINST == match_filter->args_[0]->type_) {
+      match_filter_is_redundant = true;
+    }
+  }
+  sr_iter_param_.filter_expr_ =
+      match_filter_is_redundant ? nullptr : ir_ctdef_->match_filter_;
   sr_iter_param_.topk_limit_ = topk_limit_;
   if (OB_NOT_NULL(ir_ctdef_->field_boost_expr_)) {
     ObDatum *boost_datum = nullptr;
