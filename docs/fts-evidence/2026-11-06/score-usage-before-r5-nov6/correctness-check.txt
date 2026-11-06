@@ -1,0 +1,2 @@
+mysql_exit: 0
+output_sha256: 11c98a9b51f28c2896fc7d5aa04382dd26507ea9e11c6b8a1e5e1bee0fe018d8

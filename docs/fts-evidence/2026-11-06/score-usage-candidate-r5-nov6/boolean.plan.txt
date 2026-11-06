@@ -1,0 +1,52 @@
+==============================================================
+|ID|OPERATOR             |NAME         |EST.ROWS|EST.TIME(us)|
+--------------------------------------------------------------
+|0 |SORT                 |             |1       |457         |
+|1 |└─TEXT RETRIEVAL SCAN|docs(ft_beng)|1       |457         |
+==============================================================
+Outputs & filters:
+-------------------------------------
+  0 - output([docs.id(0x7f63b1d3a800)]), filter(nil), rowset=16
+      sort_keys([MATCH(docs.body(0x7f63b1d3a280)) AGAINST('+database -audit'(0x7f63b1d3a110) IN BOOLEAN MODE)(0x7f63b1d39c90), DESC])
+  1 - output([docs.id(0x7f63b1d3a800)], [MATCH(docs.body(0x7f63b1d3a280)) AGAINST('+database -audit'(0x7f63b1d3a110) IN BOOLEAN MODE)(0x7f63b1d39c90)]), filter(nil), rowset=16
+      access([docs.id(0x7f63b1d3a800)]), partitions(p0)
+      is_index_back=true, is_global_index=false,
+      calc_relevance=true, match_expr(MATCH(docs.body(0x7f63b1d3a280)) AGAINST('+database -audit'(0x7f63b1d3a110) IN BOOLEAN MODE)(0x7f63b1d39c90)),
+      pushdown_match_filter(BOOL(MATCH(docs.body(0x7f63b1d3a280)) AGAINST('+database -audit'(0x7f63b1d3a110) IN BOOLEAN MODE)(0x7f63b1d39c90))(0x7f63b1d3a450))
+Used Hint:
+-------------------------------------
+  /*+
+
+  */
+Qb name trace:
+-------------------------------------
+  stmt_id:0, stmt_type:T_EXPLAIN
+  stmt_id:1, SEL$1
+Outline Data:
+-------------------------------------
+  /*+
+      BEGIN_OUTLINE_DATA
+      INDEX(@"SEL$1" "codex_fts_score_usage"."docs"@"SEL$1" "ft_beng")
+      END_OUTLINE_DATA
+  */
+Optimization Info:
+-------------------------------------
+  docs:
+      table_rows:1
+      physical_range_rows:15
+      logical_range_rows:1
+      index_back_rows:1
+      output_rows:1
+      table_dop:1
+      dop_method:Table DOP
+      avaiable_index_name:[ft_beng, docs]
+      pruned_index_name:[docs]
+      stats info:[version=1970-01-01 08:00:00.000000, is_locked=0, is_expired=0]
+      dynamic sampling level:0
+      estimation method:[DEFAULT, STORAGE]
+  Plan Type:
+      LOCAL
+  Parameters:
+      :0 => '+database -audit'
+  Note:
+      Degree of Parallelisim is 1 because of table property

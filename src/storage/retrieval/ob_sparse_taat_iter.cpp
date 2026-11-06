@@ -406,6 +406,9 @@ int ObSRTaaTIterImpl::load_next_hash_map()
           }
         } else {
           if (OB_FAIL(map->set_refactored(id, 1.0, 0 /* overwrite */))) {
+            if (OB_HASH_EXIST == ret) {
+              ret = OB_SUCCESS;
+            }
           }
         }
       }

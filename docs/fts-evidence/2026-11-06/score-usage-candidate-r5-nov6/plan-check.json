@@ -1,0 +1,7 @@
+{
+  "membership": true,
+  "projection": true,
+  "numeric": true,
+  "order": true,
+  "boolean": true
+}
