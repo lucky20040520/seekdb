@@ -290,6 +290,62 @@ TEST(FtsBengTest, descriptor_allocation_failures_allow_retry_without_releasing_t
     EXPECT_FALSE(allocator.invalid_free());
   }
 }
+TEST(FtsBengTest, normalization_matches_independent_charset_reference)
+{
+  for (ObCollationType coll : {CS_TYPE_UTF8MB4_BIN, CS_TYPE_UTF8MB4_GENERAL_CI,
+      CS_TYPE_UTF8MB4_UNICODE_CI, CS_TYPE_LATIN1_BIN, CS_TYPE_GBK_BIN, CS_TYPE_BINARY}) {
+    const ObCharsetInfo *cs = ObCharset::get_charset(coll);
+    if (coll == CS_TYPE_LATIN1_BIN || coll == CS_TYPE_GBK_BIN) {
+      // These collations already have no backing charset in this base branch.
+      ASSERT_EQ(nullptr, cs);
+      share::ObTextWhitespaceTokenizer stream;
+      share::ObBasicEnglishNormalizer normalizer;
+      EXPECT_EQ(OB_INVALID_ARGUMENT, normalizer.init(cs, stream));
+      continue;
+    }
+    ASSERT_NE(nullptr, cs);
+    ObArenaAllocator allocator;
+    share::ObTextWhitespaceTokenizer stream;
+    share::ObTextWhitespaceTokenizer reference;
+    share::ObBasicEnglishNormalizer normalizer;
+    ASSERT_EQ(OB_SUCCESS, normalizer.init(cs, stream));
+    normalizer.set_token_allocator(&allocator);
+    for (int value = 0; value < 65536; ++value) {
+      const char input[] = {'A', static_cast<char>(value >> 8), static_cast<char>(value), 'Z'};
+      ObDatum document;
+      document.set_string(input, sizeof(input));
+      normalizer.reuse();
+      reference.reuse();
+      ASSERT_EQ(OB_SUCCESS, stream.open(document, cs));
+      ASSERT_EQ(OB_SUCCESS, reference.open(document, cs));
+      std::vector<std::string> expected;
+      int expected_ret = OB_SUCCESS;
+      ObDatum raw;
+      int64_t frequency = 0;
+      while (OB_SUCCESS == (expected_ret = reference.get_next(raw, frequency))) {
+        uint32_t first = 0;
+        while (first < raw.len_ && !ob_isalnum(cs, raw.ptr_[first])) ++first;
+        if (first == raw.len_) continue;
+        uint32_t end = raw.len_;
+        while (end > first && !ob_isalnum(cs, raw.ptr_[end - 1])) --end;
+        ObString lower;
+        ASSERT_EQ(OB_SUCCESS, ObCharset::tolower(cs,
+            ObString(end - first, raw.ptr_ + first), lower, allocator));
+        expected.emplace_back(lower.ptr(), lower.length());
+      }
+      std::vector<std::string> actual;
+      ObDatum token;
+      int actual_ret = OB_SUCCESS;
+      while (OB_SUCCESS == (actual_ret = normalizer.get_next(token, frequency))) {
+        actual.emplace_back(token.ptr_, static_cast<size_t>(token.len_));
+        EXPECT_EQ(1, frequency);
+      }
+      ASSERT_EQ(expected_ret, actual_ret) << coll << ":" << value;
+      ASSERT_EQ(expected, actual) << coll << ":" << value;
+      allocator.reuse();
+    }
+  }
+}
 } // namespace
 } // namespace storage
 } // namespace oceanbase

@@ -298,8 +298,27 @@ int ObBasicEnglishNormalizer::get_next(ObDatum &next_token, int64_t &token_freq)
       ObString norm_alnum_token(norm_token_len, norm_token_ptr);
       ObString norm_lower_token;
       ObIAllocator &allocator = nullptr == token_allocator_ ? norm_allocator_ : *token_allocator_;
-      if (OB_FAIL(ObCharset::tolower(cs_, norm_alnum_token, norm_lower_token, allocator))) {
+      bool ascii = cs_->number == CS_TYPE_UTF8MB4_BIN
+          || cs_->number == CS_TYPE_UTF8MB4_GENERAL_CI
+          || cs_->number == CS_TYPE_UTF8MB4_UNICODE_CI;
+      for (uint32_t i = 0; ascii && i < norm_token_len; ++i) {
+        ascii = static_cast<unsigned char>(norm_token_ptr[i]) < 0x80;
+      }
+      if (ascii) {
+        char *data = static_cast<char *>(allocator.alloc(norm_token_len));
+        if (OB_ISNULL(data)) {
+          ret = OB_ALLOCATE_MEMORY_FAILED;
+        } else {
+          for (uint32_t i = 0; i < norm_token_len; ++i) {
+            const unsigned char c = norm_token_ptr[i];
+            data[i] = c >= 'A' && c <= 'Z' ? c + ('a' - 'A') : c;
+          }
+          norm_lower_token.assign_ptr(data, norm_token_len);
+        }
       } else {
+        ret = ObCharset::tolower(cs_, norm_alnum_token, norm_lower_token, allocator);
+      }
+      if (OB_SUCC(ret)) {
         next_token.set_string(norm_lower_token);
       }
     }

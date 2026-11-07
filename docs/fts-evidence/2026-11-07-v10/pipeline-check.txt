@@ -1,0 +1,6 @@
+{
+  "stdout_sha256": "519943256df7212e26c83e5e64c6d7291dd2ee6a9d82a2342917dceb801f68a6",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "sql_error_count": 0,
+  "reference_matches": true
+}

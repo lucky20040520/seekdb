@@ -1,0 +1,197 @@
+[==========] Running 72 tests from 16 test cases.
+[----------] Global test environment set-up.
+[----------] 5 tests from FtsBengTest
+[ RUN      ] FtsBengTest.normalized_tokens_keep_caller_lifetime_and_match_original_pipeline
+[       OK ] FtsBengTest.normalized_tokens_keep_caller_lifetime_and_match_original_pipeline (0 ms)
+[ RUN      ] FtsBengTest.explicit_normalizer_reuse_retains_output_allocator
+[       OK ] FtsBengTest.explicit_normalizer_reuse_retains_output_allocator (0 ms)
+[ RUN      ] FtsBengTest.parser_reset_and_invalid_initialization_preserve_caller_tokens
+[       OK ] FtsBengTest.parser_reset_and_invalid_initialization_preserve_caller_tokens (0 ms)
+[ RUN      ] FtsBengTest.descriptor_allocation_failures_allow_retry_without_releasing_tokens
+[       OK ] FtsBengTest.descriptor_allocation_failures_allow_retry_without_releasing_tokens (0 ms)
+[ RUN      ] FtsBengTest.normalization_matches_independent_charset_reference
+[       OK ] FtsBengTest.normalization_matches_independent_charset_reference (90 ms)
+[----------] 5 tests from FtsBengTest (90 ms total)
+
+[----------] 5 tests from FtsDatCodeMap
+[ RUN      ] FtsDatCodeMap.collision_and_wrap_probes_keep_original_layout_and_lookup
+[       OK ] FtsDatCodeMap.collision_and_wrap_probes_keep_original_layout_and_lookup (0 ms)
+[ RUN      ] FtsDatCodeMap.three_byte_utf8_uses_original_buckets_and_codes
+[       OK ] FtsDatCodeMap.three_byte_utf8_uses_original_buckets_and_codes (13 ms)
+[ RUN      ] FtsDatCodeMap.three_byte_collisions_wrap_and_support_full_cycle_hits
+[       OK ] FtsDatCodeMap.three_byte_collisions_wrap_and_support_full_cycle_hits (0 ms)
+[ RUN      ] FtsDatCodeMap.three_byte_prefixes_and_other_lengths_remain_distinct
+[       OK ] FtsDatCodeMap.three_byte_prefixes_and_other_lengths_remain_distinct (0 ms)
+[ RUN      ] FtsDatCodeMap.three_byte_lookup_needs_no_bytes_outside_packed_objects
+[       OK ] FtsDatCodeMap.three_byte_lookup_needs_no_bytes_outside_packed_objects (0 ms)
+[----------] 5 tests from FtsDatCodeMap (13 ms total)
+
+[----------] 7 tests from FtsDictViewTest
+[ RUN      ] FtsDictViewTest.fixed_ik_pipeline_matches_virtual_dispatch_in_both_modes
+[       OK ] FtsDictViewTest.fixed_ik_pipeline_matches_virtual_dispatch_in_both_modes (134 ms)
+[ RUN      ] FtsDictViewTest.fixed_ik_pipeline_initialization_failures_release_memory_and_retry
+[       OK ] FtsDictViewTest.fixed_ik_pipeline_initialization_failures_release_memory_and_retry (107 ms)
+[ RUN      ] FtsDictViewTest.range_lookup_preserves_binary_boundaries_and_first_match_order
+[       OK ] FtsDictViewTest.range_lookup_preserves_binary_boundaries_and_first_match_order (1 ms)
+[ RUN      ] FtsDictViewTest.range_lookup_preserves_empty_and_reversed_range_behavior
+[       OK ] FtsDictViewTest.range_lookup_preserves_empty_and_reversed_range_behavior (0 ms)
+[ RUN      ] FtsDictViewTest.immutable_views_match_legacy_ranges_and_survive_allocator_reuse
+[       OK ] FtsDictViewTest.immutable_views_match_legacy_ranges_and_survive_allocator_reuse (206 ms)
+[ RUN      ] FtsDictViewTest.concurrent_first_use_publishes_one_complete_view
+[       OK ] FtsDictViewTest.concurrent_first_use_publishes_one_complete_view (1 ms)
+[ RUN      ] FtsDictViewTest.failed_view_initialization_does_not_publish_or_prevent_retry
+[       OK ] FtsDictViewTest.failed_view_initialization_does_not_publish_or_prevent_retry (0 ms)
+[----------] 7 tests from FtsDictViewTest (450 ms total)
+
+[----------] 1 test from FtsDictCacheKey
+[ RUN      ] FtsDictCacheKey.equality_includes_range_id
+[       OK ] FtsDictCacheKey.equality_includes_range_id (0 ms)
+[----------] 1 test from FtsDictCacheKey (1 ms total)
+
+[----------] 1 test from FtsDictCacheEvictionTest
+[ RUN      ] FtsDictCacheEvictionTest.pinned_view_survives_cache_miss_and_rebuild
+[       OK ] FtsDictCacheEvictionTest.pinned_view_survives_cache_miss_and_rebuild (200 ms)
+[----------] 1 test from FtsDictCacheEvictionTest (200 ms total)
+
+[----------] 1 test from FtsDicLoader
+[ RUN      ] FtsDicLoader.concurrent_first_lookup_and_shared_lookups_pin_one_loader
+[       OK ] FtsDicLoader.concurrent_first_lookup_and_shared_lookups_pin_one_loader (7 ms)
+[----------] 1 test from FtsDicLoader (7 ms total)
+
+[----------] 6 tests from FtsDomainIdCmp
+[ RUN      ] FtsDomainIdCmp.owned_id_copy_matches_datum_deep_copy_at_width_boundaries
+[       OK ] FtsDomainIdCmp.owned_id_copy_matches_datum_deep_copy_at_width_boundaries (0 ms)
+[ RUN      ] FtsDomainIdCmp.binary_ids_match_generic_collation
+[       OK ] FtsDomainIdCmp.binary_ids_match_generic_collation (19 ms)
+[ RUN      ] FtsDomainIdCmp.unaligned_binary_ids_compare_every_byte
+[       OK ] FtsDomainIdCmp.unaligned_binary_ids_compare_every_byte (0 ms)
+[ RUN      ] FtsDomainIdCmp.other_types_and_collations_keep_generic_comparison
+[       OK ] FtsDomainIdCmp.other_types_and_collations_keep_generic_comparison (0 ms)
+[ RUN      ] FtsDomainIdCmp.block_boundaries_keep_min_max_and_null_ordering
+[       OK ] FtsDomainIdCmp.block_boundaries_keep_min_max_and_null_ordering (0 ms)
+[ RUN      ] FtsDomainIdCmp.merge_comparison_observes_live_slots_and_reinitialization
+[       OK ] FtsDomainIdCmp.merge_comparison_observes_live_slots_and_reinitialization (0 ms)
+[----------] 6 tests from FtsDomainIdCmp (19 ms total)
+
+[----------] 7 tests from FtsIKTest
+[ RUN      ] FtsIKTest.utf8_category_ranges_and_precedence
+[       OK ] FtsIKTest.utf8_category_ranges_and_precedence (23 ms)
+[ RUN      ] FtsIKTest.malformed_utf8_and_unsupported_charset
+[       OK ] FtsIKTest.malformed_utf8_and_unsupported_charset (0 ms)
+[ RUN      ] FtsIKTest.fused_character_validation_matches_all_utf8_scalars
+[       OK ] FtsIKTest.fused_character_validation_matches_all_utf8_scalars (89 ms)
+[ RUN      ] FtsIKTest.fused_character_validation_preserves_errors_and_other_charsets
+[       OK ] FtsIKTest.fused_character_validation_preserves_errors_and_other_charsets (1 ms)
+[ RUN      ] FtsIKTest.fused_character_validation_respects_input_boundaries
+[       OK ] FtsIKTest.fused_character_validation_respects_input_boundaries (0 ms)
+[ RUN      ] FtsIKTest.shared_character_dispatch_preserves_processor_state_and_tokens
+[       OK ] FtsIKTest.shared_character_dispatch_preserves_processor_state_and_tokens (0 ms)
+[ RUN      ] FtsIKTest.arbitrator_single_output_matches_legacy_decode
+[       OK ] FtsIKTest.arbitrator_single_output_matches_legacy_decode (64 ms)
+[----------] 7 tests from FtsIKTest (178 ms total)
+
+[----------] 1 test from FtsMembershipBatchProjection
+[ RUN      ] FtsMembershipBatchProjection.real_get_next_rows_projects_and_paginates_complete_results
+[       OK ] FtsMembershipBatchProjection.real_get_next_rows_projects_and_paginates_complete_results (1 ms)
+[----------] 1 test from FtsMembershipBatchProjection (1 ms total)
+
+[----------] 4 tests from FtsStopWordTest
+[ RUN      ] FtsStopWordTest.utf8_input_always_uses_stopword_collation
+[       OK ] FtsStopWordTest.utf8_input_always_uses_stopword_collation (0 ms)
+[ RUN      ] FtsStopWordTest.binary_conversion_and_unsupported_collations
+[       OK ] FtsStopWordTest.binary_conversion_and_unsupported_collations (0 ms)
+[ RUN      ] FtsStopWordTest.initialization_empty_input_and_reinitialization
+[       OK ] FtsStopWordTest.initialization_empty_input_and_reinitialization (0 ms)
+[ RUN      ] FtsStopWordTest.published_set_supports_concurrent_readers_and_reinitialization
+[       OK ] FtsStopWordTest.published_set_supports_concurrent_readers_and_reinitialization (5 ms)
+[----------] 4 tests from FtsStopWordTest (5 ms total)
+
+[----------] 6 tests from FtsAddWordTest
+[ RUN      ] FtsAddWordTest.grouping_preserves_last_collation_equivalent_key_and_frequencies
+[       OK ] FtsAddWordTest.grouping_preserves_last_collation_equivalent_key_and_frequencies (0 ms)
+[ RUN      ] FtsAddWordTest.non_grouping_duplicate_errors_and_casedown_are_unchanged
+[       OK ] FtsAddWordTest.non_grouping_duplicate_errors_and_casedown_are_unchanged (0 ms)
+[ RUN      ] FtsAddWordTest.independent_document_maps_can_group_and_reuse_concurrently
+[       OK ] FtsAddWordTest.independent_document_maps_can_group_and_reuse_concurrently (1 ms)
+[ RUN      ] FtsAddWordTest.utf8_casefold_matches_charset_for_every_bmp_codepoint
+[       OK ] FtsAddWordTest.utf8_casefold_matches_charset_for_every_bmp_codepoint (75 ms)
+[ RUN      ] FtsAddWordTest.malformed_casefold_matches_charset
+[       OK ] FtsAddWordTest.malformed_casefold_matches_charset (20 ms)
+[ RUN      ] FtsAddWordTest.casefold_allocation_failure_leaves_map_empty
+[       OK ] FtsAddWordTest.casefold_allocation_failure_leaves_map_empty (0 ms)
+[----------] 6 tests from FtsAddWordTest (96 ms total)
+
+[----------] 5 tests from FtsTextMembershipUnion
+[ RUN      ] FtsTextMembershipUnion.complete_ids_match_heap_with_one_two_and_three_dimensions
+[       OK ] FtsTextMembershipUnion.complete_ids_match_heap_with_one_two_and_three_dimensions (1 ms)
+[ RUN      ] FtsTextMembershipUnion.binary_prefixes_unsigned_ids_and_buffer_overwrite
+[       OK ] FtsTextMembershipUnion.binary_prefixes_unsigned_ids_and_buffer_overwrite (0 ms)
+[ RUN      ] FtsTextMembershipUnion.batching_offset_limit_and_reuse_match_heap
+[       OK ] FtsTextMembershipUnion.batching_offset_limit_and_reuse_match_heap (3 ms)
+[ RUN      ] FtsTextMembershipUnion.init_reset_empty_eof_and_highest_equal_head
+[       OK ] FtsTextMembershipUnion.init_reset_empty_eof_and_highest_equal_head (0 ms)
+[ RUN      ] FtsTextMembershipUnion.advance_id_and_comparison_errors_do_not_emit_a_partial_id
+[       OK ] FtsTextMembershipUnion.advance_id_and_comparison_errors_do_not_emit_a_partial_id (0 ms)
+[----------] 5 tests from FtsTextMembershipUnion (4 ms total)
+
+[----------] 11 tests from FtsTextMembershipBatchUnion
+[ RUN      ] FtsTextMembershipBatchUnion.complete_ids_match_heap_and_row_union_across_buffer_boundaries
+[       OK ] FtsTextMembershipBatchUnion.complete_ids_match_heap_and_row_union_across_buffer_boundaries (23 ms)
+[ RUN      ] FtsTextMembershipBatchUnion.binary_ids_unsigned_extremes_and_partial_batches_keep_borrowed_bytes
+[       OK ] FtsTextMembershipBatchUnion.binary_ids_unsigned_extremes_and_partial_batches_keep_borrowed_bytes (1 ms)
+[ RUN      ] FtsTextMembershipBatchUnion.generated_sorted_postings_match_reference_with_asymmetric_batches
+[       OK ] FtsTextMembershipBatchUnion.generated_sorted_postings_match_reference_with_asymmetric_batches (7 ms)
+[ RUN      ] FtsTextMembershipBatchUnion.all_three_tie_masks_choose_last_source_and_bulk_tail_keeps_bytes
+[       OK ] FtsTextMembershipBatchUnion.all_three_tie_masks_choose_last_source_and_bulk_tail_keeps_bytes (0 ms)
+[ RUN      ] FtsTextMembershipBatchUnion.fixed_two_and_three_way_comparison_errors_publish_no_rows
+[       OK ] FtsTextMembershipBatchUnion.fixed_two_and_three_way_comparison_errors_publish_no_rows (0 ms)
+[ RUN      ] FtsTextMembershipBatchUnion.initialization_eof_with_rows_and_errors
+[       OK ] FtsTextMembershipBatchUnion.initialization_eof_with_rows_and_errors (0 ms)
+[ RUN      ] FtsTextMembershipBatchUnion.fixed16_proven_and_fallback_spans_match_registered_comparison
+[       OK ] FtsTextMembershipBatchUnion.fixed16_proven_and_fallback_spans_match_registered_comparison (5 ms)
+[ RUN      ] FtsTextMembershipBatchUnion.fixed16_proof_is_cleared_before_refill_errors
+[       OK ] FtsTextMembershipBatchUnion.fixed16_proof_is_cleared_before_refill_errors (0 ms)
+[ RUN      ] FtsTextMembershipBatchUnion.shared_prefix8_keeps_complete_ids_and_dynamic_fallback
+[       OK ] FtsTextMembershipBatchUnion.shared_prefix8_keeps_complete_ids_and_dynamic_fallback (2 ms)
+[ RUN      ] FtsTextMembershipBatchUnion.three_way_shared_prefix_scalar_keys_match_full_binary_reference
+[       OK ] FtsTextMembershipBatchUnion.three_way_shared_prefix_scalar_keys_match_full_binary_reference (5 ms)
+[ RUN      ] FtsTextMembershipBatchUnion.from_obj_fixed16_default_and_false_proofs_preserve_full_payload
+[       OK ] FtsTextMembershipBatchUnion.from_obj_fixed16_default_and_false_proofs_preserve_full_payload (1 ms)
+[----------] 11 tests from FtsTextMembershipBatchUnion (44 ms total)
+
+[----------] 3 tests from FtsTokenAdvance
+[ RUN      ] FtsTokenAdvance.unsigned_ids_match_linear_search
+[       OK ] FtsTokenAdvance.unsigned_ids_match_linear_search (12 ms)
+[ RUN      ] FtsTokenAdvance.binary_and_collation_order_match_the_original_comparator
+[       OK ] FtsTokenAdvance.binary_and_collation_order_match_the_original_comparator (1 ms)
+[ RUN      ] FtsTokenAdvance.nearby_advances_stay_cheap_and_far_advances_are_bounded
+[       OK ] FtsTokenAdvance.nearby_advances_stay_cheap_and_far_advances_are_bounded (0 ms)
+[----------] 3 tests from FtsTokenAdvance (13 ms total)
+
+[----------] 6 tests from FtsRealTokenBatch
+[ RUN      ] FtsRealTokenBatch.returns_cached_unsigned_and_binary_spans_then_refills
+[       OK ] FtsRealTokenBatch.returns_cached_unsigned_and_binary_spans_then_refills (0 ms)
+[ RUN      ] FtsRealTokenBatch.empty_and_already_consumed_cache_clear_outputs_on_refill_error
+[       OK ] FtsRealTokenBatch.empty_and_already_consumed_cache_clear_outputs_on_refill_error (0 ms)
+[ RUN      ] FtsRealTokenBatch.scoring_iterator_rejects_the_membership_api_without_consuming_cache
+[       OK ] FtsRealTokenBatch.scoring_iterator_rejects_the_membership_api_without_consuming_cache (0 ms)
+[ RUN      ] FtsRealTokenBatch.save_docids_preserves_skip_scalar_and_partial_batch_semantics
+[       OK ] FtsRealTokenBatch.save_docids_preserves_skip_scalar_and_partial_batch_semantics (1 ms)
+[ RUN      ] FtsRealTokenBatch.fixed16_proof_tracks_complete_owned_copies_and_load_lifetime
+[       OK ] FtsRealTokenBatch.fixed16_proof_tracks_complete_owned_copies_and_load_lifetime (0 ms)
+[ RUN      ] FtsRealTokenBatch.fixed16_inline_payload_survives_copy_assignment_and_source_overwrite
+[       OK ] FtsRealTokenBatch.fixed16_inline_payload_survives_copy_assignment_and_source_overwrite (0 ms)
+[----------] 6 tests from FtsRealTokenBatch (1 ms total)
+
+[----------] 3 tests from FtsCjkHits
+[ RUN      ] FtsCjkHits.expired_nodes_match_reference_with_freeing_allocator
+[       OK ] FtsCjkHits.expired_nodes_match_reference_with_freeing_allocator (0 ms)
+[ RUN      ] FtsCjkHits.overlapping_prefixes_match_reference_after_erasure
+[       OK ] FtsCjkHits.overlapping_prefixes_match_reference_after_erasure (1 ms)
+[ RUN      ] FtsCjkHits.allocation_failure_is_reported_and_state_cleared
+[       OK ] FtsCjkHits.allocation_failure_is_reported_and_state_cleared (0 ms)
+[----------] 3 tests from FtsCjkHits (1 ms total)
+
+[----------] Global test environment tear-down
+[==========] 72 tests from 16 test cases ran. (1123 ms total)
+[  PASSED  ] 72 tests.

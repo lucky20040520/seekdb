@@ -1,0 +1,3 @@
+mysql_exit: 0
+output_sha256: ff3ae2b61f1cec7ce877a34489ab74e52e95b8d3c49abd6b41422d898d40867e
+PASS: all SQL output matches /home/wh-yin/seekdb-fts/score-usage-before-v7-verified/fts_score_usage.out
