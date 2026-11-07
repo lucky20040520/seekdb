@@ -94,7 +94,9 @@ int ObIKQuantifierProcessor::process_CN_count(TokenizeContext &ctx,
     if (ObFTCharUtil::CharType::CHINESE == type) {
       // handle existing
       if (!count_hits_.empty()) {
-        for (ObDATrieHit &hit : count_hits_) {
+        for (auto iter = count_hits_.begin(); iter != count_hits_.end();) {
+          auto current = iter++;
+          ObDATrieHit &hit = *current;
           if (OB_FAIL(ret)) {
             break;
           } else if (OB_FAIL(quan_dict_.match({char_len, ch}, hit))) {
@@ -110,7 +112,7 @@ int ObIKQuantifierProcessor::process_CN_count(TokenizeContext &ctx,
           } else if (hit.is_prefix()) {
             // wait another match
           } else if (hit.is_unmatch()) {
-            count_hits_.erase(hit);
+            count_hits_.erase(current);
           } else {
             ret = OB_UNEXPECT_INTERNAL_ERROR;
             LOG_WARN("Reached an imposible state.");

@@ -40,8 +40,9 @@ int ObIKCJKProcessor::do_process(TokenizeContext &ctx,
     // handle previous hits_ first and then check from this char
     for (ObList<ObDATrieHit, ObIAllocator>::iterator iter = hits_.begin();
          OB_SUCC(ret) && iter != hits_.end();
-         iter++) {
-      ObDATrieHit &hit = *iter;
+         /* advanced before erasing the current node */) {
+      auto current = iter++;
+      ObDATrieHit &hit = *current;
       if (OB_FAIL(dict_main_.match_with_hit({char_len, ch}, hit, hit))) {
       } else if (hit.is_match()) {
         if (OB_FAIL(ctx.add_token(ctx.fulltext(),
@@ -55,7 +56,7 @@ int ObIKCJKProcessor::do_process(TokenizeContext &ctx,
       } else if (hit.is_prefix()) {
         // nothing
       } else if (hit.is_unmatch()) {
-        hits_.erase(hit);
+        hits_.erase(current);
       } else {
         ret = OB_UNEXPECT_INTERNAL_ERROR;
       }
@@ -67,14 +68,16 @@ int ObIKCJKProcessor::do_process(TokenizeContext &ctx,
       if (OB_FAIL(dict_main_.match({char_len, ch}, hit))) {
       } else if (hit.is_match()) {
         // output token
-        hits_.push_back(hit);
-        ctx.add_token(ctx.fulltext(),
+        if (OB_FAIL(hits_.push_back(hit))) {
+        } else if (OB_FAIL(ctx.add_token(ctx.fulltext(),
                       ctx.get_cursor(),
                       char_len,
                       1,
-                      ObIKTokenType::IK_CHINESE_TOKEN);
+                      ObIKTokenType::IK_CHINESE_TOKEN))) {
+        }
       } else if (hit.is_prefix()) {
-        hits_.push_back(hit);
+        if (OB_FAIL(hits_.push_back(hit))) {
+        }
       } else {
         // ignore mismatch
       }
