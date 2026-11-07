@@ -170,11 +170,41 @@ int ObAddWord::casedown_word(const ObFTWord &src, ObFTWord &dst)
     ret = OB_INVALID_ARGUMENT;
   } else if (flag_.casedown()) {
     ObString dst_str;
-    if (OB_FAIL(ObCharset::tolower(
-                    word_meta_.get_collation_type(),
-                    src.get_word().get_string(),
-                    dst_str,
-                    allocator_))) {
+    const ObCollationType coll = word_meta_.get_collation_type();
+    const ObString input = src.get_word().get_string();
+    bool simple = coll == CS_TYPE_UTF8MB4_BIN || coll == CS_TYPE_UTF8MB4_GENERAL_CI
+        || coll == CS_TYPE_UTF8MB4_UNICODE_CI;
+    // ASCII and U+4E00..U+9FFF have length-preserving lowercase mappings in
+    // these collations. Validate complete UTF-8 sequences before using them.
+    for (int64_t i = 0; simple && i < input.length();) {
+      const unsigned char c = input.ptr()[i];
+      if (c < 0x80) {
+        ++i;
+      } else if (i + 2 < input.length()
+          && c >= 0xe4 && c <= 0xe9
+          && static_cast<unsigned char>(input.ptr()[i + 1]) >= (c == 0xe4 ? 0xb8 : 0x80)
+          && static_cast<unsigned char>(input.ptr()[i + 1]) <= 0xbf
+          && (static_cast<unsigned char>(input.ptr()[i + 2]) & 0xc0) == 0x80) {
+        i += 3;
+      } else {
+        simple = false;
+      }
+    }
+    if (simple) {
+      char *data = static_cast<char *>(allocator_.alloc(input.length()));
+      if (OB_ISNULL(data)) {
+        ret = OB_ALLOCATE_MEMORY_FAILED;
+      } else {
+        for (int64_t i = 0; i < input.length(); ++i) {
+          const unsigned char c = input.ptr()[i];
+          data[i] = c >= 'A' && c <= 'Z' ? c + ('a' - 'A') : c;
+        }
+        dst_str.assign_ptr(data, input.length());
+      }
+    } else {
+      ret = ObCharset::tolower(coll, input, dst_str, allocator_);
+    }
+    if (OB_FAIL(ret)) {
     } else {
       ObFTWord tmp(dst_str.length(), dst_str.ptr(), word_meta_);
       dst = tmp;

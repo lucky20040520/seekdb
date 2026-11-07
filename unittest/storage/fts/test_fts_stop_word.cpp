@@ -272,6 +272,91 @@ TEST(FtsAddWordTest, independent_document_maps_can_group_and_reuse_concurrently)
     EXPECT_EQ(200, frequencies[thread]);
   }
 }
+TEST(FtsAddWordTest, utf8_casefold_matches_charset_for_every_bmp_codepoint)
+{
+  for (ObCollationType coll : {CS_TYPE_UTF8MB4_BIN, CS_TYPE_UTF8MB4_GENERAL_CI,
+                               CS_TYPE_UTF8MB4_UNICODE_CI}) {
+    ObArenaAllocator allocator;
+    ObFTWordMap words;
+    ASSERT_EQ(OB_SUCCESS, words.create(16, "FtCaseTest"));
+    ObFTParserProperty property;
+    ObObjMeta meta;
+    meta.set_varchar();
+    meta.set_collation_type(coll);
+    ObAddWordFlag flag;
+    flag.set_casedown();
+    for (uint32_t cp = 0; cp <= 0xffff; ++cp) {
+      std::string input("A");
+      if (cp < 0x80) input.push_back(cp);
+      else if (cp < 0x800) {
+        input.push_back(0xc0 | (cp >> 6)); input.push_back(0x80 | (cp & 63));
+      } else {
+        input.push_back(0xe0 | (cp >> 12)); input.push_back(0x80 | ((cp >> 6) & 63));
+        input.push_back(0x80 | (cp & 63));
+      }
+      input += "Z";
+      ObString expected;
+      ASSERT_EQ(OB_SUCCESS, ObCharset::tolower(coll,
+          ObString(input.size(), input.data()), expected, allocator));
+      ObAddWord add_word(property, meta, flag, allocator, words);
+      ASSERT_EQ(OB_SUCCESS, add_word.process_word(input.data(), input.size(), 3, 1));
+      ASSERT_EQ(1, words.size());
+      EXPECT_EQ(expected, words.begin()->first.get_word().get_string()) << cp << ":" << coll;
+      input.assign(input.size(), '!');
+      EXPECT_EQ(expected, words.begin()->first.get_word().get_string());
+      ASSERT_EQ(OB_SUCCESS, words.reuse());
+      allocator.reuse();
+    }
+  }
+}
+
+TEST(FtsAddWordTest, malformed_casefold_matches_charset)
+{
+  ObArenaAllocator allocator;
+  ObFTWordMap words;
+  ASSERT_EQ(OB_SUCCESS, words.create(16, "FtCaseTest"));
+  ObFTParserProperty property;
+  ObObjMeta meta;
+  meta.set_varchar(); meta.set_collation_type(CS_TYPE_UTF8MB4_BIN);
+  ObAddWordFlag flag; flag.set_casedown();
+  for (int a = 0; a < 256; ++a) {
+    for (int b = 0; b < 256; ++b) {
+      char input[] = {'A', static_cast<char>(a), static_cast<char>(b), 'Z'};
+      ObString expected;
+      ASSERT_EQ(OB_SUCCESS, ObCharset::tolower(CS_TYPE_UTF8MB4_BIN,
+          ObString(sizeof(input), input), expected, allocator));
+      ObAddWord add_word(property, meta, flag, allocator, words);
+      ASSERT_EQ(OB_SUCCESS, add_word.process_word(input, sizeof(input), 4, 1));
+      ASSERT_EQ(1, words.size());
+      EXPECT_EQ(expected, words.begin()->first.get_word().get_string()) << a << ":" << b;
+      ASSERT_EQ(OB_SUCCESS, words.reuse()); allocator.reuse();
+    }
+  }
+}
+class RejectTokenAllocator final : public ObIAllocator
+{
+public:
+  void *alloc(int64_t) override { return nullptr; }
+  void *alloc(int64_t, const ObMemAttr &) override { return nullptr; }
+  void free(void *) override {}
+};
+
+TEST(FtsAddWordTest, casefold_allocation_failure_leaves_map_empty)
+{
+  RejectTokenAllocator allocator;
+  ObFTWordMap words;
+  ASSERT_EQ(OB_SUCCESS, words.create(16, "FtCaseTest"));
+  ObFTParserProperty property;
+  ObObjMeta meta;
+  meta.set_varchar(); meta.set_collation_type(CS_TYPE_UTF8MB4_BIN);
+  ObAddWordFlag flag; flag.set_casedown();
+  ObAddWord add_word(property, meta, flag, allocator, words);
+  for (const char *input : {"ABC", "\xe4\xb8\xad", "\xf0\x9f\x98\x80"}) {
+    EXPECT_EQ(OB_ALLOCATE_MEMORY_FAILED, add_word.process_word(input, STRLEN(input), 1, 1));
+    EXPECT_EQ(0, words.size());
+    EXPECT_EQ(0, add_word.get_add_word_count());
+  }
+}
 } // namespace
 } // namespace storage
 } // namespace oceanbase
