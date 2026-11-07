@@ -10,7 +10,7 @@ Previously every word was copied, decoded as UTF8, case-mapped, and encoded agai
 
 ## Correctness
 
-Release build passed. Native regression compares all BMP code points in all three collations and all 65,536 two-byte combinations against ObCharset::tolower, including NUL, malformed UTF8 and surrogate encodings. It overwrites source strings to check independent output lifetime. Allocation failure is checked for the fast and fallback paths. Existing FTS and v7 erasure/reuse tests run together; final native output is included in the evidence directory.
+Release build and all 70 native tests passed. Native regression compares all BMP code points in all three collations and all 65,536 two-byte combinations against ObCharset::tolower, including NUL, malformed UTF8 and surrogate encodings. It overwrites source strings to check independent output lifetime. Allocation failure is checked for the fast and fallback paths. Existing FTS and v7 erasure/reuse tests run together; final native output is included in the evidence directory.
 
 Complete SQL output matches the base, with empty stderr: SMART/MAX_WORD/BENG TOKENIZE, long inputs, shared parsers, FTS builds, actual MATCH scores and consumers, projections/filters/sorting/aggregation/joins, LIMIT/OFFSET, string and composite primary keys, prepared statements, DML, rollback and rebuilding. Hits 8001/11000/7332/20 are auxiliary checks only. ASan and full repository tests were not run.
 
