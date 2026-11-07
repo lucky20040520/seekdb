@@ -113,17 +113,22 @@ int ObIKArbitrator::output_result(TokenizeContext &ctx)
 
   int64_t char_len = 0;
   ObIKTokenChain *chain = nullptr;
+  const bool utf8mb4 = CHARSET_UTF8MB4 == ObCharset::charset_type_by_coll(ctx.collation());
   for (int64_t current = 0; OB_SUCC(ret) && current < ctx.fulltext_len();) {
     ObFTCharUtil::CharType type;
-    // maybe not so good to keep single, check it later
-    if (OB_FAIL(ObCharset::first_valid_char(ctx.collation(),
-                                            ctx.fulltext() + current,
-                                            ctx.fulltext_len() - current,
-                                            char_len))) {
-    } else if (OB_FAIL(ObFTCharUtil::classify_first_char(ctx.collation(),
-                                                         ctx.fulltext() + current,
-                                                         char_len,
-                                                         type))) {
+    const char *input = ctx.fulltext() + current;
+    const int64_t remaining = ctx.fulltext_len() - current;
+    ob_wc_t unicode = 0;
+    const auto *begin = reinterpret_cast<const unsigned char *>(input);
+    const int length = utf8mb4
+        ? common::ob_charset_decode_unicode<CHARSET_UTF8MB4>(begin, begin + remaining, unicode) : 0;
+    if (length > 0) {
+      char_len = length;
+      type = ObFTCharUtil::classify_unicode<CHARSET_UTF8MB4>(unicode);
+    } else if (OB_FAIL(ObCharset::first_valid_char(ctx.collation(), input, remaining, char_len))) {
+    } else if (OB_FAIL(ObFTCharUtil::classify_first_char(ctx.collation(), input, char_len, type))) {
+    }
+    if (OB_FAIL(ret)) {
     } else if (ObFTCharUtil::CharType::USELESS == type) {
       current += char_len; // skip useless char
     } else if (OB_FAIL(chains_.get_refactored(current, chain)) && OB_HASH_NOT_EXIST != ret) {

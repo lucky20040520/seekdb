@@ -15,6 +15,8 @@
  */
 #include <gtest/gtest.h>
 #include <cstring>
+#include <array>
+#include "storage/fts/ik/ob_ik_arbitrator.h"
 #include <string>
 #include <vector>
 #if defined(__linux__)
@@ -289,6 +291,61 @@ TEST(FtsIKTest, shared_character_dispatch_preserves_processor_state_and_tokens)
   EXPECT_EQ(shared.token_list().tokens().end(), shared_token);
 }
 
+void compare_arbitrator_singles(const ObCollationType coll, const std::string &input)
+{
+  ObArenaAllocator allocator;
+  TokenizeContext ctx(coll, allocator, input.data(), input.size(), false);
+  ObIKArbitrator arbitrator;
+  ASSERT_EQ(OB_SUCCESS, arbitrator.process(ctx));
+  std::vector<std::array<int64_t, 3>> expected;
+  int ret = OB_SUCCESS;
+  for (int64_t cursor = 0; ret == OB_SUCCESS && cursor < input.size();) {
+    int64_t length = 0;
+    CharType type;
+    ret = ObCharset::first_valid_char(coll, input.data() + cursor, input.size() - cursor, length);
+    if (ret != OB_SUCCESS) break;
+    ret = ObFTCharUtil::classify_first_char(coll, input.data() + cursor, length, type);
+    if (ret != OB_SUCCESS) break;
+    ASSERT_GT(length, 0);
+    if (type == CharType::CHINESE) {
+      expected.push_back({cursor, length, static_cast<int64_t>(ObIKTokenType::IK_CHINESE_TOKEN)});
+    } else if (type == CharType::OTHER_CJK) {
+      bool ignored = false;
+      ret = ObFTCharUtil::is_ignore_single_cjk(coll, input.data() + cursor, length, ignored);
+      if (ret != OB_SUCCESS) break;
+      if (!ignored) expected.push_back({cursor, length, static_cast<int64_t>(ObIKTokenType::IK_OTHER_CJK_TOKEN)});
+    }
+    cursor += length;
+  }
+  EXPECT_EQ(ret, arbitrator.output_result(ctx));
+  std::vector<std::array<int64_t, 3>> actual;
+  for (const ObIKToken &token : ctx.result_list()) {
+    actual.push_back({token.offset_, token.length_, static_cast<int64_t>(token.type_)});
+  }
+  EXPECT_EQ(expected, actual);
+}
+
+TEST(FtsIKTest, arbitrator_single_output_matches_legacy_decode)
+{
+  std::string unicode;
+  unsigned char bytes[4];
+  for (ob_wc_t cp = 0; cp <= 0x10ffff; ++cp) {
+    if (cp >= 0xd800 && cp <= 0xdfff) continue;
+    int length = ob_charset_encode_unicode<CHARSET_UTF8MB4>(cp, bytes, bytes + sizeof(bytes));
+    ASSERT_GT(length, 0);
+    unicode.append(reinterpret_cast<char *>(bytes), length);
+  }
+  compare_arbitrator_singles(CS_TYPE_UTF8MB4_BIN, unicode);
+  for (int value = 0; value < 256; ++value) {
+    compare_arbitrator_singles(CS_TYPE_UTF8MB4_BIN,
+        std::string("A") + static_cast<char>(value) + "abc");
+    compare_arbitrator_singles(CS_TYPE_GBK_BIN,
+        std::string("A") + static_cast<char>(value) + "abc");
+  }
+  for (const char *bad : {"\xe4\xb8", "\xed\xa0\x80", "\xf4\x90\x80\x80"}) {
+    compare_arbitrator_singles(CS_TYPE_UTF8MB4_BIN, bad);
+  }
+}
 } // namespace
 } // namespace storage
 } // namespace oceanbase

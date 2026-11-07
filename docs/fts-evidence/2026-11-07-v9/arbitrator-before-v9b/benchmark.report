@@ -1,0 +1,44 @@
+========================================
+FTS Large Benchmark Report
+========================================
+timestamp:              2026-11-07 12:33:00
+label:                  arbitrator-before-v9b
+git_head:               unknown
+git_dirty:              1
+rows:                   20000
+batch:                  500
+rounds:                 3000
+query_rounds:           200
+samples:                3
+warmup:                 30
+skip_load:              0
+----------------------------------------
+select1_avg_ms:         0.2690
+select1_stdev_ms:       0.0206
+raw_load_sec:           0.753
+raw_load_rows_per_sec:  26560.4
+build_ik_all_sec:       12.321
+build_ik_content_sec:   9.090
+build_beng_en_sec:      4.663
+build_total_sec:        26.090
+----------------------------------------
+tokenize_ik_avg_ms:     0.2801
+tokenize_ik_median_ms:  0.2757
+tokenize_ik_stdev_ms:   0.0068
+tokenize_beng_avg_ms:   0.2819
+tokenize_beng_median_ms:0.2998
+tokenize_beng_stdev_ms: 0.0372
+----------------------------------------
+query_cn_hits:          8001
+query_cn_avg_ms:        0.9244
+query_cn_stdev_ms:      0.0096
+query_beng_hits:        11000
+query_beng_avg_ms:      1.1177
+query_beng_stdev_ms:    0.0193
+query_mixed_hits:       7332
+query_mixed_avg_ms:     0.9498
+query_mixed_stdev_ms:   0.0056
+query_limit_hits:       20
+query_limit_avg_ms:     0.6152
+query_limit_stdev_ms:   0.0112
+========================================
