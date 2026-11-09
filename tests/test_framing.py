@@ -1,4 +1,5 @@
 import io
+import json
 import os
 import queue
 import subprocess
@@ -12,6 +13,21 @@ from minivector.__main__ import statements
 
 
 class InputFraming(unittest.TestCase):
+    def test_utf8_pipe_overrides_non_utf8_host_default(self):
+        with tempfile.TemporaryDirectory() as directory:
+            text = '\u4e2d\u6587\U0001f600'
+            sql = ("CREATE TABLE t(id BIGINT PRIMARY KEY,s VARCHAR(3));"
+                   "INSERT INTO t VALUES (1,'" + text + "');SELECT s FROM t;")
+            result = subprocess.run(
+                [sys.executable, '-u', '-m', 'minivector', '--data-dir', directory],
+                input=sql, capture_output=True, text=True, encoding='utf-8', timeout=15,
+                cwd=str(Path(__file__).resolve().parents[1]),
+                env=dict(os.environ, PYTHONIOENCODING='cp1252'))
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual(['LOCAL_READY', 'OK 0', 'OK 1', 's',
+                              json.dumps(text, ensure_ascii=False), 'END'],
+                             result.stdout.splitlines())
+
     def test_request_without_newline_gets_response(self):
         root = Path(__file__).resolve().parents[1]
         with tempfile.TemporaryDirectory() as directory:

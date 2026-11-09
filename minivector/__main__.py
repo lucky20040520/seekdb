@@ -62,6 +62,11 @@ def statements(stream):
 
 
 def main():
+    # Diagnostic wire bytes are UTF-8 regardless of host locale/environment.
+    # The parent's Popen(encoding=...) does not configure the child's streams.
+    sys.stdin.reconfigure(encoding="utf-8", errors="strict")
+    sys.stdout.reconfigure(encoding="utf-8", errors="strict")
+    sys.stderr.reconfigure(encoding="utf-8", errors="backslashreplace")
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data-dir", default="/data")
     parser.add_argument("--mode", choices=("exact", "ann"), default="exact")
