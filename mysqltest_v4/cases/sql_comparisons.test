@@ -1,0 +1,4 @@
+CREATE TABLE docs (id BIGINT PRIMARY KEY, value BIGINT);
+INSERT INTO docs VALUES (1, 10), (2, 20), (3, 30);
+SELECT id FROM docs WHERE value >= 20 AND value < 30;
+SELECT id FROM docs WHERE value = 10;

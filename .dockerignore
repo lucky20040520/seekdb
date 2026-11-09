@@ -1,0 +1,4 @@
+*
+!minivectordb/
+!minivectordb/**
+minivectordb/__pycache__/
