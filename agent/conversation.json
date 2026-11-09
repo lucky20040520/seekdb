@@ -1,0 +1,147 @@
+{
+  "rule_version": "agent-learning-evidence-v3-unbounded",
+  "synthetic": false,
+  "status": "in_progress",
+  "scope": "2026-11-09 开发过程真实摘录；包含用户原话、Agent提议及实际工具结果。已有正确性和性能改进基线，未运行官方公开或正式用例。",
+  "conversations": [
+    {
+      "id": "student-001",
+      "role": "student",
+      "source": "本次聊天首条任务，原文开头；后接用户粘贴的评价说明与题面链接",
+      "content": "新题目做一下，要总结上次powercontext的经验，以广度做题的思路，要把所有的必测先做完：Agent Prompt 评价"
+    },
+    {
+      "id": "agent-001",
+      "role": "agent",
+      "source": "本次聊天 commentary 原文",
+      "content": "题面里有个关键前提：MySQL 正式用例必须全部通过，Agent Prompt 材料才进入排名。因此我会把功能必测、性能评测和学习材料分别跟踪，避免只完善材料却漏掉准入条件。链接暂时无法由网页检索工具读取，我会使用 computer-use 技能尝试从浏览器查看完整题包。"
+    },
+    {
+      "id": "student-002",
+      "role": "student",
+      "source": "本次聊天用户对题包位置问题的回复",
+      "content": "这个在哪找呀"
+    },
+    {
+      "id": "student-003",
+      "role": "student",
+      "source": "本次聊天用户询问功能实现与评价关系的原文开头；后接任务说明与题面链接",
+      "content": "### 这个是性能评测的任务，我需要做完这道题才可以做上面的题么？：实现 MiniVectorDB"
+    },
+    {
+      "id": "student-004",
+      "role": "student",
+      "source": "本轮用户原文",
+      "content": "好的，按照你的分析继续做题"
+    },
+    {
+      "id": "student-005",
+      "role": "student",
+      "source": "用户在目标字段明确提供的原文",
+      "content": "我的目标是拿到80分"
+    },
+    {
+      "id": "student-006",
+      "role": "student",
+      "source": "用户补充的规则摘录；属于提供的题目资料，不自动证明自主技术理解",
+      "content": "平台按当前榜比较同队的新旧整条成绩，只有两项排名分之和提高才替换；不拼接不同提交，也不用手动选版本。比赛期间为暂定榜。"
+    },
+    {
+      "id": "student-007",
+      "role": "student",
+      "source": "用户对报名登记仓库问题的原始回复",
+      "content": "[https://github.com/lucky20040520/seekdb](https://github.com/lucky20040520/seekdb)"
+    }
+  ],
+  "experiments": [
+    {
+      "id": "repository-inspection-001",
+      "actor": "agent_with_tools",
+      "status": "executed",
+      "command": "git ls-remote https://github.com/oceanbase/seekdb.git refs/heads/2026-competition-round2",
+      "output": "c842a368c3394748d0499386c18f6b465242e141\trefs/heads/2026-competition-round2",
+      "interpretation": "已获得官方分支版本；这不是数据库功能测试结果。"
+    },
+    {
+      "id": "repository-inspection-002",
+      "actor": "agent_with_tools",
+      "status": "executed",
+      "command": "git clone --depth 1 --single-branch --branch 2026-competition-round2 https://github.com/oceanbase/seekdb.git minivectordb",
+      "output": "Cloning into 'minivectordb'...",
+      "interpretation": "克隆退出码为 0，后续读取 HEAD 为 c842a368c3394748d0499386c18f6b465242e141；检查文件树没有发现本题专用协议与公开测试，Dockerfile 和根目录 conversation.json 为空。此结论限定于该版本。"
+    },
+    {
+      "id": "baseline-tests-001",
+      "actor": "agent_with_tools",
+      "status": "executed",
+      "command": "python -m unittest discover -s tests -v",
+      "output": "Ran 13 tests in 0.949s\nFAILED (failures=1)\ntest_crud_filter_and_projection: expected [[2]], actual [] for WHERE tag > '甲' with row tag='乙'.",
+      "interpretation": "Agent 写错了独立测试的预期：U+4E59 乙小于 U+7532 甲。仅将测试比较改成 <，未改动数据库码点排序。此解释为 Agent 所作，不冒充学生解释。"
+    },
+    {
+      "id": "baseline-tests-002",
+      "actor": "agent_with_tools",
+      "status": "executed",
+      "command": "python -m unittest discover -s tests -v",
+      "output": "Windows / Python 3.8.8: Ran 17 tests in 1.731s\nOK\nLinux Ubuntu / Python 3.8.10 final run: Ran 17 tests in 1.380s\nOK",
+      "interpretation": "自建检查覆盖 SQL、float32、过滤 TopK、事务回滚、双表提交边界强杀、恢复清理中强杀、随机 180 步独立参考状态和流式读写。不是官方公开或正式测试。"
+    },
+    {
+      "id": "resource-probe-001",
+      "actor": "agent_with_tools",
+      "status": "executed",
+      "command": "python3 tools/verify_resources.py --data-dir /tmp/minivector-resource-20261109-v1",
+      "output": "{\"status\": \"PASS\", \"rows\": 80000, \"table_bytes\": 82788890, \"address_space_limit_bytes\": 67108864, \"peak_rss_kib\": 16252, \"verified\": \"write, external descending sort, restart, streaming count\", \"limitations\": \"RLIMIT_AS and RSS are not cgroup memory.peak; no formal I/O or latency limits\"}",
+      "interpretation": "通过流式写入、外部排序及重启计数处理了超过 64 MiB 进程地址空间上限的数据；不证明通过平台容器内存/I/O/时限约束，也不证明超长 SQL 可同样处理。"
+    },
+    {
+      "id": "optimized-regression-001",
+      "actor": "agent_with_tools",
+      "status": "executed",
+      "command": "python3 -m unittest discover -s tests -v",
+      "output": "Locked NumPy 1.24.4, Ubuntu Python 3.8.10: Ran 22 tests in 2.080s\nOK",
+      "interpretation": "原17项检查及追加写入、缓存失效/预算、缓存与scalar路径交叉、别名、提交同步错误检查通过。不是官方准入。"
+    },
+    {
+      "id": "paired-performance-001",
+      "actor": "agent_with_tools",
+      "status": "executed",
+      "command": "python3 tools/benchmark.py --rows 2000 --queries 60 --rounds 3 (baseline and optimized code roots)",
+      "output": "{\"paired_environment\": \"Ubuntu Python 3.8.10 / NumPy 1.17.4\", \"paired_before\": {\"rows\": 2000, \"queries\": 60, \"dimensions\": 128, \"rounds\": [{\"write_seconds\": 5.987782073993003, \"query_seconds\": 7.773620429972652, \"prepare_seconds\": 0.158416942023905, \"data_bytes\": 5081898, \"cache_bytes\": 0, \"source_sha256\": \"0a6d53f261876edd386258eb5539e61ae5c3a42034fd36e6d2e2dca1829f5754\"}, {\"write_seconds\": 6.032646272011334, \"query_seconds\": 7.793057252012659, \"prepare_seconds\": 0.1617541300074663, \"data_bytes\": 5081898, \"cache_bytes\": 0, \"source_sha256\": \"0a6d53f261876edd386258eb5539e61ae5c3a42034fd36e6d2e2dca1829f5754\"}, {\"write_seconds\": 6.031603356997948, \"query_seconds\": 7.670813311997335, \"prepare_seconds\": 0.16130966300261207, \"data_bytes\": 5081898, \"cache_bytes\": 0, \"source_sha256\": \"0a6d53f261876edd386258eb5539e61ae5c3a42034fd36e6d2e2dca1829f5754\"}], \"median_write_seconds\": 6.031603356997948, \"median_query_seconds\": 7.773620429972652}, \"paired_after\": {\"rows\": 2000, \"queries\": 60, \"dimensions\": 128, \"rounds\": [{\"write_seconds\": 2.9335505419876426, \"query_seconds\": 0.22059687101864256, \"prepare_seconds\": 0.22992650998639874, \"data_bytes\": 5098787, \"cache_bytes\": 1359452, \"source_sha256\": \"3833bb176dddcac537204a9beb55753c36e5a25aadc9968cf2efb6fb4cad8656\", \"oracle_queries\": 20}, {\"write_seconds\": 2.9434281649882905, \"query_seconds\": 0.23655942900222726, \"prepare_seconds\": 0.24419795698486269, \"data_bytes\": 5098787, \"cache_bytes\": 1359452, \"source_sha256\": \"3833bb176dddcac537204a9beb55753c36e5a25aadc9968cf2efb6fb4cad8656\", \"oracle_queries\": 20}, {\"write_seconds\": 2.929929483012529, \"query_seconds\": 0.23428829401382245, \"prepare_seconds\": 0.2349496080132667, \"data_bytes\": 5098787, \"cache_bytes\": 1359452, \"source_sha256\": \"3833bb176dddcac537204a9beb55753c36e5a25aadc9968cf2efb6fb4cad8656\", \"oracle_queries\": 20}], \"median_write_seconds\": 2.9335505419876426, \"median_query_seconds\": 0.23428829401382245}, \"paired_exact_results\": \"All 3 x 60 query result ID lists and distances exactly equal\", \"paired_write_speedup\": 2.056076167997843, \"paired_query_speedup\": 33.17972185803712}",
+      "interpretation": "三轮同数据同查询输出完全相同。比较的是本题自建旧基线，不是平台参考实现，不能换算官方指标或排名。"
+    },
+    {
+      "id": "full-workload-001",
+      "actor": "agent_with_tools",
+      "status": "executed",
+      "command": "python3 tools/benchmark.py --rows 10000 --queries 1000 --rounds 3 --verify-samples 20",
+      "output": "{\"rows\": 10000, \"queries\": 1000, \"dimensions\": 128, \"rounds\": [{\"write_seconds\": 14.937663735996466, \"query_seconds\": 4.9883834939973895, \"prepare_seconds\": 0.6482930489873979, \"data_bytes\": 25496502, \"cache_bytes\": 6796252, \"source_sha256\": \"e2eaf9aa4400c8b429d63d84066f39f4fbb272a7694f796c42828e8b1f479999\", \"oracle_queries\": 20}, {\"write_seconds\": 15.019500877009705, \"query_seconds\": 4.943775513005676, \"prepare_seconds\": 0.6903848639922217, \"data_bytes\": 25496502, \"cache_bytes\": 6796252, \"source_sha256\": \"e2eaf9aa4400c8b429d63d84066f39f4fbb272a7694f796c42828e8b1f479999\", \"oracle_queries\": 20}, {\"write_seconds\": 14.992660904012155, \"query_seconds\": 5.006799686991144, \"prepare_seconds\": 0.6300650890043471, \"data_bytes\": 25496502, \"cache_bytes\": 6796252, \"source_sha256\": \"e2eaf9aa4400c8b429d63d84066f39f4fbb272a7694f796c42828e8b1f479999\", \"oracle_queries\": 20}], \"median_write_seconds\": 14.992660904012155, \"median_query_seconds\": 4.9883834939973895}",
+      "interpretation": "最终源码、锁定NumPy，三轮独立数据目录各完成10000行和1000查询；每轮计时外以独立scalar暴力真值核查20条查询。未验证每条正式隐藏查询，未测正式B/M。"
+    },
+    {
+      "id": "resource-probe-002",
+      "actor": "agent_with_tools",
+      "status": "executed",
+      "command": "python3 tools/verify_resources.py --data-dir /tmp/minivector-resource-20261109-v2",
+      "output": "{\"status\": \"PASS\", \"rows\": 80000, \"table_bytes\": 82788890, \"address_space_limit_bytes\": 67108864, \"peak_rss_kib\": 16096, \"verified\": \"write, external descending sort, restart, streaming count\", \"limitations\": \"RLIMIT_AS and RSS are not cgroup memory.peak; no formal I/O or latency limits\"}",
+      "interpretation": "优化后的大表流式路径仍通过独立进程地址空间限制；此探测先于两个别名/同步错误修复，不能代替最终源码的全部资源验收。"
+    }
+  ],
+  "retrospective": {
+    "author": "agent",
+    "content": "旧题复盘提示：不能将发现真实缺陷等同于找到零分主因；先遍历必测，再做组合边界测试和独立真值交叉检查。该段为 Agent 总结，不能当作学生自身技术理解。"
+  },
+  "plans": [
+    "拿到配套题包后固定协议、错误码、资源限制与依赖，对齐现有核心并逐类运行官方测试。",
+    "全部功能类别形成闭环后再优化性能；公开和自建通过不代替正式全部通过。",
+    "继续记录真实用户判断及工具结果，不编造学生反思或运行结果。"
+  ],
+  "limitations": [
+    "已有数据库正确性基线及 22 项自建测试结果；无官方准入结果、无性能排名或官方得分。",
+    "Docker 镜像尚未构建；没有近似加速算法；UPDATE/DELETE仍重写表，存在性能与临时磁盘开销。",
+    "当前学生贡献仅限已记录原话，尚无学生解释实验结果的记录。",
+    "旧聊天仅用于方法复盘，不将旧题成功结果作为本题已验证证据。",
+    "材料为持续维护的阶段性摘录，尚不是可提测的最终交付。未包含密钥、访问令牌或隐藏思维链。",
+    "学生尚未亲自解释本轮实验和技术结果；Agent设计、测试、修复与解释均不能冒充学生贡献，不自评学习得分。"
+  ]
+}

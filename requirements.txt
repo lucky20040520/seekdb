@@ -1,0 +1,3 @@
+# Arithmetic only: storage, SQL execution, transaction and index logic are ours.
+numpy==1.24.4; python_version < "3.9"
+numpy==1.26.4; python_version >= "3.9"

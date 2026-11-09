@@ -1,0 +1,116 @@
+{
+  "date": "2026-11-09",
+  "paired_environment": "Ubuntu Python 3.8.10 / NumPy 1.17.4",
+  "final_environment": "Ubuntu Python 3.8.10 / locked NumPy 1.24.4",
+  "paired_before": {
+    "rows": 2000,
+    "queries": 60,
+    "dimensions": 128,
+    "rounds": [
+      {
+        "write_seconds": 5.987782073993003,
+        "query_seconds": 7.773620429972652,
+        "prepare_seconds": 0.158416942023905,
+        "data_bytes": 5081898,
+        "cache_bytes": 0,
+        "source_sha256": "0a6d53f261876edd386258eb5539e61ae5c3a42034fd36e6d2e2dca1829f5754"
+      },
+      {
+        "write_seconds": 6.032646272011334,
+        "query_seconds": 7.793057252012659,
+        "prepare_seconds": 0.1617541300074663,
+        "data_bytes": 5081898,
+        "cache_bytes": 0,
+        "source_sha256": "0a6d53f261876edd386258eb5539e61ae5c3a42034fd36e6d2e2dca1829f5754"
+      },
+      {
+        "write_seconds": 6.031603356997948,
+        "query_seconds": 7.670813311997335,
+        "prepare_seconds": 0.16130966300261207,
+        "data_bytes": 5081898,
+        "cache_bytes": 0,
+        "source_sha256": "0a6d53f261876edd386258eb5539e61ae5c3a42034fd36e6d2e2dca1829f5754"
+      }
+    ],
+    "median_write_seconds": 6.031603356997948,
+    "median_query_seconds": 7.773620429972652
+  },
+  "paired_after": {
+    "rows": 2000,
+    "queries": 60,
+    "dimensions": 128,
+    "rounds": [
+      {
+        "write_seconds": 2.9335505419876426,
+        "query_seconds": 0.22059687101864256,
+        "prepare_seconds": 0.22992650998639874,
+        "data_bytes": 5098787,
+        "cache_bytes": 1359452,
+        "source_sha256": "3833bb176dddcac537204a9beb55753c36e5a25aadc9968cf2efb6fb4cad8656",
+        "oracle_queries": 20
+      },
+      {
+        "write_seconds": 2.9434281649882905,
+        "query_seconds": 0.23655942900222726,
+        "prepare_seconds": 0.24419795698486269,
+        "data_bytes": 5098787,
+        "cache_bytes": 1359452,
+        "source_sha256": "3833bb176dddcac537204a9beb55753c36e5a25aadc9968cf2efb6fb4cad8656",
+        "oracle_queries": 20
+      },
+      {
+        "write_seconds": 2.929929483012529,
+        "query_seconds": 0.23428829401382245,
+        "prepare_seconds": 0.2349496080132667,
+        "data_bytes": 5098787,
+        "cache_bytes": 1359452,
+        "source_sha256": "3833bb176dddcac537204a9beb55753c36e5a25aadc9968cf2efb6fb4cad8656",
+        "oracle_queries": 20
+      }
+    ],
+    "median_write_seconds": 2.9335505419876426,
+    "median_query_seconds": 0.23428829401382245
+  },
+  "final_locked": {
+    "rows": 10000,
+    "queries": 1000,
+    "dimensions": 128,
+    "rounds": [
+      {
+        "write_seconds": 14.937663735996466,
+        "query_seconds": 4.9883834939973895,
+        "prepare_seconds": 0.6482930489873979,
+        "data_bytes": 25496502,
+        "cache_bytes": 6796252,
+        "source_sha256": "e2eaf9aa4400c8b429d63d84066f39f4fbb272a7694f796c42828e8b1f479999",
+        "oracle_queries": 20
+      },
+      {
+        "write_seconds": 15.019500877009705,
+        "query_seconds": 4.943775513005676,
+        "prepare_seconds": 0.6903848639922217,
+        "data_bytes": 25496502,
+        "cache_bytes": 6796252,
+        "source_sha256": "e2eaf9aa4400c8b429d63d84066f39f4fbb272a7694f796c42828e8b1f479999",
+        "oracle_queries": 20
+      },
+      {
+        "write_seconds": 14.992660904012155,
+        "query_seconds": 5.006799686991144,
+        "prepare_seconds": 0.6300650890043471,
+        "data_bytes": 25496502,
+        "cache_bytes": 6796252,
+        "source_sha256": "e2eaf9aa4400c8b429d63d84066f39f4fbb272a7694f796c42828e8b1f479999",
+        "oracle_queries": 20
+      }
+    ],
+    "median_write_seconds": 14.992660904012155,
+    "median_query_seconds": 4.9883834939973895
+  },
+  "paired_exact_results": "All 3 x 60 query result ID lists and distances exactly equal",
+  "final_oracle": "20 independent scalar oracle queries checked per round, both filtered and unfiltered",
+  "limitations": "Self-generated deterministic workload, no official protocol, cgroup B/M or platform baseline; no official score",
+  "paired_write_speedup": 2.056076167997843,
+  "paired_query_speedup": 33.17972185803712,
+  "repository_source_sha256_after_newline_normalization": "e2eaf9aa4400c8b429d63d84066f39f4fbb272a7694f796c42828e8b1f479999"
+}

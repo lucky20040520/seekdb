@@ -1,4 +1,7 @@
 ############# root #############
+/.artifacts/
+/data/
+__pycache__/
 *.a
 *.bak
 *.gcda
