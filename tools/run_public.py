@@ -46,13 +46,13 @@ def check(actual, expected):
         assert same_value(rows, expected['rows']), 'ordered rows mismatch'
 
 
-def run(package):
+def run(package, session_factory=None, fixed_mode=None):
     manifest = json.loads((package/'manifest.json').read_text(encoding='utf-8'))
     results, total = [], 0
     with tempfile.TemporaryDirectory(prefix='minivector-public-') as root:
         for case in manifest['cases']:
             data = Path(root)/case['id']
-            db = Database(data)
+            db = session_factory(data) if session_factory else Database(data)
             mode, index, errors = 'exact', 0, []
             sql_path, result_path = package/case['test'], package/case['result']
             expected = json.loads(result_path.read_text(encoding='utf-8'))
@@ -63,7 +63,7 @@ def run(package):
                         continue
                     if line == '--restart':
                         db.close()
-                        db = Database(data)
+                        db = session_factory(data) if session_factory else Database(data)
                         continue
                     if line in ('--mode ann', '--mode exact'):
                         mode = line.split()[-1]
@@ -71,7 +71,8 @@ def run(package):
                     if line.startswith('--'):
                         raise ValueError('unknown public directive: '+line)
                     try:
-                        value = execute(db, line, mode=mode)
+                        value = (db.execute(line) if session_factory else
+                                 execute(db, line, mode=fixed_mode or mode))
                         if isinstance(value, tuple):
                             columns, rows = value
                             actual = {'columns': columns, 'rows': list(rows)}
