@@ -207,6 +207,7 @@ class Acceptance(unittest.TestCase):
 
     def test_commit_interruption_two_tables(self):
         execute(self.db, "CREATE TABLE b(id BIGINT PRIMARY KEY);")
+        execute(self.db, "CREATE VECTOR INDEX idx ON t(v);")
         for stage in ('before', 'after'):
             script = '''
 import sys
@@ -236,6 +237,7 @@ execute(db,'COMMIT;')
             self.db = Database(self.temp.name)
             expected = [] if stage == 'before' else [[5]]
             self.assertEqual(expected, self.rows('SELECT id FROM t;'))
+            self.assertEqual(expected,self.rows('SELECT id FROM t ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10;'))
             self.assertEqual(expected, self.rows('SELECT id FROM b;'))
 
     def test_recovery_interrupted_during_cleanup(self):

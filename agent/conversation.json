@@ -117,6 +117,12 @@
       "role": "student",
       "source": "本轮用户原话",
       "content": "好的，请继续主线"
+    },
+    {
+      "id": "student-017",
+      "role": "student",
+      "source": "本轮用户原话，督促补全功能主线；不自动当作学生提出了索引设计或实验方法",
+      "content": "为什么没补全，继续功能主线"
     }
   ],
   "experiments": [
@@ -288,6 +294,22 @@
       "command": "Check official round2 HEAD; merge new mysqltest fixtures unchanged; run tools/run_public.py before and after VECTOR literal correction; run unittest suite",
       "output": "{\"official_commit\": \"9f6df2ba5acf871376e22b64a3d0724e4b575044\", \"package_version\": \"minivectordb-public-v4\", \"cases\": 20, \"sql\": 95, \"before_passed\": 13, \"after_passed\": 20, \"before_failed_cases\": [\"vector_euclidean\", \"storage_mutations\", \"vector_ties_and_filter\", \"vector_float32\", \"vector_index_maintenance\", \"transaction_failed_insert\", \"transaction_autocommit_atomic\"], \"unchanged_fixture_hashes\": true, \"execution_scope\": \"self-written core API runner over actual official public fixtures, not official wire driver\"}\nRan 40 tests in 5.467s\nOK",
       "interpretation": "继续功能主线时发现官方更新并获取20例95条SQL。先遍历全部样例，13/20通过，7例因合法带引号向量被拒绝及后续状态连锁失败；在VECTOR类型边界解码数组字符串，VARCHAR不受影响，非法向量和float32规则仍保留。修复后20/20断言匹配，40项回归通过；错误码按公开README非空码最低规则，未冻结正式映射。此为Agent实施与分析，非学生自设计实验；公开样例核心层通过不等于正式29例准入，包内仍无完整通信驱动。"
+    },
+    {
+      "id": "disk-flat-index-001",
+      "actor": "agent_with_tools",
+      "status": "executed",
+      "command": "Implement immutable disk Flat L2 index and integrate catalog publication/recovery; python -m unittest discover -s tests -v; python tools/run_public.py",
+      "output": "Ran 48 tests in 8.927s\nOK\n20/20 public cases, 95 SQL. Physical index tests verify file headers/records, index query path without generic scan/cache, transaction maintenance/rollback/commit, legacy/missing rebuild, kill during maintenance, and two kills during rebuild before readiness.",
+      "interpretation": "之前CREATE只保存描述，现实际保存主键/向量/行位置，读索引计算距离并回查。数据和索引同一清单提交，重建在READY之前完成。exact与ann入口使用精确Flat，未声称实现近似加速或正式准入。设计及测试由Agent实施，用户贡献为要求继续功能主线，不能将这些设计归为学生原创。"
+    },
+    {
+      "id": "indexed-memory-probe-001",
+      "actor": "agent",
+      "status": "planned_container_verification",
+      "command": "tools/verify_resources.py --load-via-sql --with-vector-index",
+      "output": "Configured new indexed resource path: 80000 rows, VECTOR(8), SQL batches of 100, 64MiB process address-space cap; create disk index, exact/ann queries, vector update/rollback, delete/commit and reopen. Not yet observed at this record time.",
+      "interpretation": "旧的SQL大表结果未包含物理向量索引，不能直接拿来证明新索引的资源行为。本次另行验证，尚未记录为通过。"
     }
   ],
   "retrospective": {
@@ -300,8 +322,8 @@
     "功能覆盖和接口兼容具备证据后再继续性能优化；持续保留真实用户贡献与结果，不编造学习表现。"
   ],
   "limitations": [
-    "已有数据库正确性基线及 40 项自建测试结果；无官方准入结果、无性能排名或官方得分。",
-    "Docker 构建和离线容器自建检查已通过；没有近似加速算法；UPDATE/DELETE仍重写表，存在性能与临时磁盘开销。",
+    "已有数据库正确性基线及 48 项自建测试结果；无官方准入结果、无性能排名或官方得分。",
+    "Docker 构建和离线容器自建检查已通过；已有磁盘精确Flat索引，但没有近似剪枝加速算法；UPDATE/DELETE仍重写表，存在性能与临时磁盘开销。",
     "当前学生贡献仅限已记录原话，尚无学生解释实验结果的记录。",
     "旧聊天仅用于方法复盘，不将旧题成功结果作为本题已验证证据。",
     "材料为持续维护的阶段性摘录，尚不是可提测的最终交付。未包含密钥、访问令牌或隐藏思维链。",

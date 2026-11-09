@@ -37,4 +37,4 @@ jobs:
           docker run --rm --network none --cpus 1 --memory 256m --memory-swap 256m
           --entrypoint python
           -v "$GITHUB_WORKSPACE/tools:/app/tools:ro"
-          minivector-local tools/verify_resources.py --data-dir /data/resource-probe --load-via-sql
+          minivector-local tools/verify_resources.py --data-dir /data/resource-probe --load-via-sql --with-vector-index

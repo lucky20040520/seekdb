@@ -52,6 +52,12 @@ class Database:
         # Recovery only reads the last atomically published catalog. File deletion
         # is restartable: a crash during cleanup cannot change the committed set.
         self.collect()
+        # Derived indexes may be rebuilt, but construction and durable publication
+        # finish before this constructor returns and the CLI emits readiness.
+        recovered = copy.deepcopy(self.catalog)
+        if self.prepare_indexes(recovered):
+            self.publish(recovered)
+            self.collect()
 
     @property
     def visible(self):
@@ -65,7 +71,12 @@ class Database:
             if any(file not in live for file in signature):
                 self.query_cache_bytes -= self.query_cache.pop(signature).size
         live.update(file + ".keys" for file in list(live))
-        for pattern in ("rows-*.jsonl", "rows-*.keys", "sort-*.jsonl", "catalog-*.tmp"):
+        catalogs = [self.catalog] + ([] if self.transaction is None else [self.transaction])
+        for catalog in catalogs:
+            for table in catalog.values():
+                for descriptor in table['indexes'].values():
+                    live.update(descriptor.get('segments',{}).values())
+        for pattern in ("rows-*.jsonl", "rows-*.keys", "index-*.flat", "sort-*.jsonl", "catalog-*.tmp"):
             for file in self.path.glob(pattern):
                 if file.name not in live:
                     file.unlink()
@@ -228,6 +239,12 @@ class Database:
         else:
             catalog[name].pop("files", None)
             catalog[name]["file"] = filename
+        try:
+            self.prepare_indexes(catalog, only=name)
+        except BaseException:
+            target.unlink(missing_ok=True)
+            key_target.unlink(missing_ok=True)
+            raise
         self.accept(catalog)
 
     def insert(self, name, values, column_names=None):
@@ -309,9 +326,57 @@ class Database:
         if not any(c["name"] == column and c["kind"] == "VECTOR" for c in table["columns"]):
             fail("index requires VECTOR column", "SCHEMA")
         catalog = copy.deepcopy(self.visible)
-        # Exact scan index baseline: no stale derived state on update or rollback.
-        catalog[table_name]["indexes"][name] = {"column": column, "algorithm": "exact_scan"}
+        catalog[table_name]["indexes"][name] = {"column": column}
+        self.prepare_indexes(catalog, only=table_name)
         self.accept(catalog)
+
+    def prepare_indexes(self, catalog, only=None):
+        from . import flat_index
+        changed, created = False, []
+        try:
+            for name,table in catalog.items():
+                if only is not None and name != only:
+                    continue
+                for descriptor in table['indexes'].values():
+                    segments = {}
+                    old = descriptor.get('segments',{}) if descriptor.get('algorithm')==flat_index.ALGORITHM else {}
+                    for row_file in self.files(table):
+                        index_file = old.get(row_file)
+                        if not flat_index.valid(self.path,row_file,index_file,table,descriptor['column']):
+                            index_file = flat_index.build(self.path,row_file,table,descriptor['column'])
+                            created.append(index_file)
+                        segments[row_file] = index_file
+                    if descriptor.get('algorithm')!=flat_index.ALGORITHM or descriptor.get('segments')!=segments:
+                        changed = True
+                    descriptor['algorithm'] = flat_index.ALGORITHM
+                    descriptor['segments'] = segments
+            return changed
+        except BaseException:
+            for filename in created:
+                (self.path/filename).unlink(missing_ok=True)
+            raise
+
+    def indexed_rows(self, table, descriptor, query, matches, conditions, limit, descending):
+        from . import flat_index
+        if limit == 0:
+            return
+        candidates = flat_index.candidates(self.path,table,descriptor,query,matches,bool(conditions))
+        key = lambda value: (-value[0] if descending else value[0],value[1])
+        if limit is not None and limit <= 4096:
+            locations = iter(heapq.nsmallest(limit,candidates,key=key))
+        else:
+            locations = self.external_sort(candidates,key)
+        count = 0
+        try:
+            for location in locations:
+                yield flat_index.read_row(self.path,location)
+                count += 1
+                if limit is not None and count >= limit:
+                    break
+        finally:
+            if hasattr(locations,'close'):
+                locations.close()
+            candidates.close()
 
     def cached_vectors(self, table):
         signature = tuple(self.files(table))
@@ -429,7 +494,11 @@ class Database:
                 aliases[alias] = fn
         if limit is not None and (type(limit) is not int or limit < 0):
             fail("nonnegative integer LIMIT required")
-        source = (row for row in self.rows(table) if matches(row))
+        def filtered_rows():
+            for row in self.rows(table):
+                if matches(row):
+                    yield row
+        source = filtered_rows()
         if order is not None:
             expr, descending = order
             # Heap candidates retain full decoded rows, not just ordering keys.
@@ -453,7 +522,9 @@ class Database:
             if distance_expr[0] == "column" and distance_expr[1] in columns and columns[distance_expr[1]][1]["kind"] == "VECTOR":
                 fail("ordering VECTOR unsupported")
             cache = None
-            if distance_expr[0] == "distance" and not descending and bounded_candidates:
+            descriptor = next((index for index in table['indexes'].values()
+                               if distance_expr[0]=='distance' and index['column']==distance_expr[1]),None)
+            if descriptor is None and distance_expr[0] == "distance" and not descending and bounded_candidates:
                 cache = self.cached_vectors(table)
             class Desc:
                 def __init__(self, value): self.value = value
@@ -464,7 +535,10 @@ class Database:
                 if isinstance(value, list):
                     fail("ordering VECTOR unsupported")
                 return (Desc(value) if descending else value, row[pk])
-            if cache is not None:
+            if descriptor is not None:
+                query = self.validate(columns[distance_expr[1]][1],distance_expr[2])
+                source = self.indexed_rows(table,descriptor,query,matches,conditions,limit,descending)
+            elif cache is not None:
                 query_column = columns[distance_expr[1]][1]
                 query = self.validate(query_column, distance_expr[2])
                 source = iter(cache.topk(conditions, query, limit))

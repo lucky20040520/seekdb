@@ -30,6 +30,9 @@ class RequiredContracts(unittest.TestCase):
                 execute(db,'INSERT INTO '+table+' VALUES ('+','.join(values[n] for n in names)+');')
                 self.assertEqual([[1,'ab',5.0]],list(execute(db,
                     'SELECT id,tag,L2_DISTANCE(v,[0,0]) AS d FROM '+table+" WHERE tag='ab' ORDER BY d LIMIT 10;")[1]))
+                execute(db,'CREATE VECTOR INDEX idx%d ON %s(v);'%(i,table))
+                self.assertEqual([[1,'ab',5.0]],list(execute(db,
+                    'SELECT id,tag,L2_DISTANCE(v,[0,0]) AS d FROM '+table+" WHERE tag='ab' ORDER BY d LIMIT 10;")[1]))
 
     def test_extreme_finite_float32_distance_and_zero_ties(self):
         with tempfile.TemporaryDirectory() as directory:
