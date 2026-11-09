@@ -7,42 +7,56 @@ from .sql import execute
 
 
 def statements(stream):
-    buffer, state = [], "normal"
-    # Incremental lexer ensures quoted semicolons and comment semicolons are data.
-    for line in stream:
-        i = 0
-        while i < len(line):
-            char = line[i]
-            following = line[i + 1] if i + 1 < len(line) else ""
-            buffer.append(char)
-            if state == "line":
-                if char == "\n": state = "normal"
-            elif state == "block":
-                if char == "*" and following == "/":
-                    buffer.append(following)
-                    i += 1
-                    state = "normal"
-            elif state in ("'", "`"):
-                if char == state:
-                    if following == state:
-                        buffer.append(following)
-                        i += 1
-                    else:
-                        state = "normal"
-            elif char in ("'", "`"):
-                state = char
-            elif char == "-" and following == "-":
-                buffer.append(following)
-                i += 1
-                state = "line"
-            elif char == "/" and following == "*":
-                buffer.append(following)
-                i += 1
+    buffer, state, delimiter = [], "normal", None
+    # Read only the next character needed for framing. readline()/line iteration
+    # waits for a newline even after the driver has flushed a complete SQL;.
+    while True:
+        char = stream.read(1)
+        if not char:
+            break
+        buffer.append(char)
+        if state == "line":
+            if char == "\n":
+                state = "normal"
+            continue
+        if state == "block":
+            if char == "*":
+                state = "block_star"
+            continue
+        if state == "block_star":
+            if char == "/":
+                state = "normal"
+            elif char != "*":
                 state = "block"
-            elif char == ";":
-                yield "".join(buffer)
-                buffer = []
-            i += 1
+            continue
+        if state == "quoted":
+            if char == delimiter:
+                state = "quote_end"
+            continue
+        if state == "quote_end":
+            if char == delimiter:
+                state = "quoted"
+                continue
+            state = "normal"
+        elif state == "hyphen":
+            if char == "-":
+                state = "line"
+                continue
+            state = "normal"
+        elif state == "slash":
+            if char == "*":
+                state = "block"
+                continue
+            state = "normal"
+        if char in ("'", "`"):
+            delimiter, state = char, "quoted"
+        elif char == "-":
+            state = "hyphen"
+        elif char == "/":
+            state = "slash"
+        elif char == ";":
+            yield "".join(buffer)
+            buffer = []
     if "".join(buffer).strip():
         yield "".join(buffer)
 

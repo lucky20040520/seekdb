@@ -1,6 +1,6 @@
 # MiniVectorDB correctness baseline
 
-当前阶段：数据库核心和本地诊断入口已实现；Windows / Python 3.8.8 与 Ubuntu / Python 3.8.10 各 22 项自建检查通过，Linux 已使用锁定 NumPy 1.24.4 复测。官方题包未取得，**不能作为已完成正式兼容的提交**。核心使用 Python 标准库，NumPy 仅用于可选的向量数学运算，未使用现成数据库或向量索引引擎。Python 3.8+ 可运行，容器定义使用 Python 3.12.8 / NumPy 1.26.4；正式镜像及依赖须待题包对齐。
+当前阶段：数据库核心和本地诊断入口已实现；当前包含24项自建功能检查，Windows已全部通过；此前22项已在Ubuntu锁定依赖及离线容器中通过，当前提交的容器结果以GitHub Actions为准。官方题包未取得，**不能作为已完成正式兼容的提交**。核心使用 Python 标准库，NumPy 仅用于可选的向量数学运算，未使用现成数据库或向量索引引擎。Python 3.8+ 可运行，容器定义使用 Python 3.12.8 / NumPy 1.26.4；正式镜像及依赖须待题包对齐。
 
 ```powershell
 python -m unittest discover -s tests -v
@@ -8,7 +8,7 @@ python -m minivector --data-dir ./data
 python tools/validate_material.py
 ```
 
-诊断入口按分号分隔 SQL，支持跨行、引号及注释中的分号。启动输出 `LOCAL_READY`；修改输出 `OK n`，错误输出 `ERROR code message`；查询输出 TSV、以 `END` 结束。字符串与向量字段用 JSON 字面量转义。**这些是本地诊断约定，不是官方协议，不使用 JSON 请求封装。** 所有语法和错误码仍须按题包校准。
+诊断入口按分号分隔 SQL，不要求分号之后额外换行，支持跨行、引号及注释中的分号。启动输出 `LOCAL_READY`；修改输出 `OK n`，错误输出 `ERROR code message`；查询输出 TSV、以 `END` 结束。字符串与向量字段用 JSON 字面量转义。**这些是本地诊断约定，不是官方协议，不使用 JSON 请求封装。** 所有语法和错误码仍须按题包校准。
 
 ```sql
 CREATE TABLE docs(id BIGINT PRIMARY KEY, tag VARCHAR(20), embedding VECTOR(2));

@@ -163,6 +163,15 @@
       "command": "git ls-remote official round2; read official Yuque visible text/links; inspect MiniVectorDB task list/details; inspect recent 5 official GitHub releases",
       "output": "Official round2 HEAD=c842a368c3394748d0499386c18f6b465242e141, unchanged. Official task list contains performance item 800517 and Agent Prompt item 800518. Performance detail links to the same Yuque article; no public driver/download found there. Recent 5 releases show seekdb product assets; no MiniVectorDB package found.",
       "interpretation": "按用户选择，将优先级调整为官方协议兼容并暂停性能扩展。当前LOCAL_READY、TSV/END和自建错误码尚无官方一致性证据，不能宣称通过；未点击正式提测。用户只表达了优先选择，未表达技术原因，不捏造其理解。"
+    },
+    {
+      "id": "semicolon-no-newline-001",
+      "actor": "agent_with_tools",
+      "status": "executed",
+      "related_student_record": "student-008",
+      "command": "python -m unittest discover -s tests -p test_framing.py -v (before); python -m unittest discover -s tests -v (after)",
+      "output": "Before: Ran 2 tests in 2.138s; FAILED (failures=1). test_request_without_newline_gets_response: SQL terminator received, but response waits for newline. After: Ran 24 tests in 2.816s; OK.",
+      "interpretation": "按用户指定的协议兼容方向，Agent发现按行读取stdin会在SQL分号后仍等待换行。独立子进程只发送SQL;并flush，保留stdin打开以复现等待。修复为逐字符状态机，保持引号/转义/注释边界，复测连续无换行请求正常。该诊断协议修复不是官方协议验收；用户没有提出具体复现方法，不把Agent发现或解释记为学生原创。"
     }
   ],
   "retrospective": {
