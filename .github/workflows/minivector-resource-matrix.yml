@@ -1,0 +1,28 @@
+name: MiniVectorDB over-container-memory probe
+on:
+  push:
+    branches: [2026-competition-round2]
+    paths: [.github/workflows/minivector-resource-matrix.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  streaming:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --platform linux/amd64 -t minivector-resource .
+      - name: SQL data exceeds both process and container memory
+        run: |
+          mkdir -p resource-output
+          docker run --rm --network none --cpus 1 --memory 128m --memory-swap 128m \
+            --entrypoint python -v "$GITHUB_WORKSPACE/tools:/app/tools:ro" \
+            minivector-resource tools/verify_resources.py --data-dir /data/probe \
+            --load-via-sql --with-vector-index --rows 150000 \
+            --minimum-data-bytes 134217728 | tee resource-output/result.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: minivector-over-container-memory
+          path: resource-output/

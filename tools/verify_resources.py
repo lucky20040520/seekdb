@@ -17,6 +17,8 @@ def main():
                         help='exercise SQL parsing and 100-row autocommit INSERT batches')
     parser.add_argument('--with-vector-index', action='store_true',
                         help='build, query, maintain and reopen the disk vector index')
+    parser.add_argument('--rows', type=int, default=80000)
+    parser.add_argument('--minimum-data-bytes', type=int, default=64*1024*1024)
     args = parser.parse_args()
     root = Path(args.data_dir)
     if root.exists():
@@ -26,7 +28,9 @@ def main():
     db = Database(root)
     extra=',v VECTOR(8)' if args.with_vector_index else ''
     execute(db, 'CREATE TABLE t(id BIGINT PRIMARY KEY,payload VARCHAR(1024)'+extra+');')
-    count = 80000
+    count = args.rows
+    if count < 20:
+        raise SystemExit('resource probe requires at least20 rows')
     if args.load_via_sql:
         payload = "'" + 'x'*1024 + "'"
         for start in range(0, count, 100):
@@ -37,6 +41,7 @@ def main():
         db.rewrite('t', ([i, 'x'*1024]+([[0.0]*8] if args.with_vector_index else []) for i in range(count)))
     data_bytes = sum((root/file).stat().st_size for file in db.files(db.table('t')))
     assert data_bytes > cap
+    assert data_bytes > args.minimum_data_bytes
     vector_query="SELECT id FROM t ORDER BY L2_DISTANCE(v,'[0,0,0,0,0,0,0,0]') LIMIT 10;"
     if args.with_vector_index:
         execute(db,'CREATE VECTOR INDEX probe_idx ON t(v);')
