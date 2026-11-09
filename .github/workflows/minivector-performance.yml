@@ -23,7 +23,7 @@ jobs:
             -v "$GITHUB_WORKSPACE/benchmark-output:/results" \
             minivector-benchmark tools/benchmark.py \
             --rows 10000 --dimensions 128 --queries 1000 --rounds 3 \
-            --verify-samples 30 --data-root /data/full-exact --output /results/full-exact.json
+            --verify-all --data-root /data/full-exact --output /results/full-exact.json
       - name: Publish raw local benchmark evidence
         if: always()
         uses: actions/upload-artifact@v4

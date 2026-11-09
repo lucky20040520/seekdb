@@ -378,6 +378,13 @@
       "status": "executed",
       "output": "GitHub Actions run42650910619,head_sha=deea79efb1b403a53e3428336430b0da0ee8f9e4,status=completed,conclusion=success. Every step succeeded:locked Docker build,49 self-tests,20 public core cases,40 diagnostic pipe replays/190 SQL,and indexed SQL-loaded greater-than-memory resource probe.",
       "interpretation": "Actual Linux follow-up to Windows evidence,not official wire compatibility,formal29-case admission or score."
+    },
+    {
+      "id": "full-oracle-plan-001",
+      "actor": "agent_with_tools",
+      "status": "partial_execution_full_scale_pending",
+      "output": "Added --verify-all. Independent fixed-seed float32 regeneration validates every stored row before close and after restart. Independent scalar L2/PK oracle validates every query when requested. Two validator fault-injection tests passed;200 rows,8 dimensions,20 queries smoke:verified_all_queries=true,verified_records_before_and_after_restart=200. Full10000/128/1000 three-round CI not observed yet.",
+      "interpretation": "Validator tests reject vector corruption,missing/duplicate records,wrong distance,wrong tie order andmissing/duplicate query results. Verification remains outside timed phases. This is Agent work,not student-designed evidence;full-scale plan is not a completed result."
     }
   ],
   "retrospective": {

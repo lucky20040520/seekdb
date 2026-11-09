@@ -10,6 +10,34 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from struct import pack, unpack
+
+
+def reference_records(count, dimensions):
+    rng = random.Random(19017)
+    return [[i, i % 10, [unpack('<f', pack('<f', rng.uniform(-1, 1)))[0]
+                         for _ in range(dimensions)]] for i in range(count)]
+
+
+def verify_records(actual, reference):
+    seen = set()
+    for row in actual:
+        key = row[0]
+        assert type(key) is int and 0 <= key < len(reference), 'invalid stored ID'
+        assert key not in seen, 'duplicate stored ID'
+        assert row == reference[key], 'stored content mismatch at ID %d' % key
+        seen.add(key)
+    assert len(seen) == len(reference), 'missing stored records'
+
+
+def verify_answer(answer, records, vector):
+    query = [unpack('<f', pack('<f', value))[0] for value in vector]
+    expected = heapq.nsmallest(10, (
+        (math.sqrt(math.fsum((a-b)**2 for a,b in zip(row[2], query))), row[0])
+        for row in records))
+    assert [key for distance,key in expected] == [row[0] for row in answer], 'oracle IDs mismatch'
+    for (distance,key), row in zip(expected, answer):
+        assert math.isclose(distance, row[1], rel_tol=1e-12, abs_tol=1e-12), 'oracle distance mismatch'
 
 
 def worker(args):
@@ -30,10 +58,12 @@ def worker(args):
             values.append('(%d,%d,[%s])'%(i,i%10,','.join(map(repr,vector))))
         execute(db,'INSERT INTO t VALUES '+','.join(values)+';')
     write_seconds=time.perf_counter()-write_started
+    # Independent deterministic regeneration: do not derive truth from DB output.
+    reference = reference_records(args.rows, args.dimensions)
+    verify_records(db.rows(db.table('t')), reference)
     db.close()
     db=Database(data)
-    if sum(1 for row in db.rows(db.table('t'))) != args.rows:
-        raise AssertionError('restart row count mismatch')
+    verify_records(db.rows(db.table('t')), reference)
     queries=[]
     specifications=[]
     for i in range(args.queries):
@@ -56,20 +86,18 @@ def worker(args):
     query_seconds=time.perf_counter()-query_started
     # Independent scalar oracle outside the timed sequence. Check a deterministic
     # spread of filtered and unfiltered queries, including both endpoints.
-    indexes=sorted(set(round(i*(len(queries)-1)/max(1,args.verify_samples-1))
-                       for i in range(min(args.verify_samples,len(queries)))))
-    from struct import pack, unpack
+    indexes=(list(range(len(queries))) if args.verify_all else
+             sorted(set(round(i*(len(queries)-1)/max(1,args.verify_samples-1))
+                        for i in range(min(args.verify_samples,len(queries))))))
+    groups = {tag: [row for row in reference if row[1] == tag] for tag in range(10)}
+    verify_started = time.perf_counter()
     for index in indexes:
         vector,tag=specifications[index]
-        query=[unpack('<f',pack('<f',value))[0] for value in vector]
-        def candidates():
-            for key,actual_tag,stored in db.rows(db.table('t')):
-                if tag is None or actual_tag==tag:
-                    yield (math.sqrt(math.fsum((a-b)**2 for a,b in zip(stored,query))),key)
-        expected=heapq.nsmallest(10,candidates())
-        assert [key for distance,key in expected]==[row[0] for row in answers[index]], 'oracle IDs mismatch'
-        for (distance,key),row in zip(expected,answers[index]):
-            assert math.isclose(distance,row[1],rel_tol=1e-12,abs_tol=1e-12), 'oracle distance mismatch'
+        verify_answer(answers[index], reference if tag is None else groups[tag], vector)
+        if args.verify_all and (index+1) % 100 == 0:
+            print('Independent oracle verified %d/%d queries' % (index+1, len(queries)),
+                  file=sys.stderr, flush=True)
+    verification_seconds = time.perf_counter() - verify_started
     cache_bytes=getattr(db,'query_cache_bytes',0)
     db.close()
     source_root=Path(args.code_root)/'minivector'
@@ -77,6 +105,9 @@ def worker(args):
     return dict(write_seconds=write_seconds,query_seconds=query_seconds,prepare_seconds=prepare_seconds,
                 data_bytes=sum(path.stat().st_size for path in data.iterdir() if path.is_file()),
                 cache_bytes=cache_bytes,source_sha256=source_hash,oracle_queries=len(indexes),
+                verified_all_queries=len(indexes)==args.queries,
+                verified_records_before_and_after_restart=args.rows,
+                verification_seconds=verification_seconds,
                 with_vector_index=args.with_vector_index,answers=answers)
 
 
@@ -87,6 +118,7 @@ def main():
     parser.add_argument('--dimensions',type=int,default=128)
     parser.add_argument('--rounds',type=int,default=3)
     parser.add_argument('--verify-samples',type=int,default=20)
+    parser.add_argument('--verify-all',action='store_true')
     parser.add_argument('--code-root',default=str(Path(__file__).resolve().parents[1]))
     parser.add_argument('--data-root',required=True)
     parser.add_argument('--output',required=True)
@@ -105,6 +137,8 @@ def main():
                  '--output',args.output]
         if args.with_vector_index:
             command.append('--with-vector-index')
+        if args.verify_all:
+            command.append('--verify-all')
         env=dict(os.environ,OPENBLAS_NUM_THREADS='1',OMP_NUM_THREADS='1',PYTHONIOENCODING='utf-8')
         result=subprocess.run(command,capture_output=True,text=True,env=env)
         if result.returncode:
