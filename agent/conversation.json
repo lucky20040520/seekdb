@@ -123,6 +123,12 @@
       "role": "student",
       "source": "本轮用户原话，督促补全功能主线；不自动当作学生提出了索引设计或实验方法",
       "content": "为什么没补全，继续功能主线"
+    },
+    {
+      "id": "student-018",
+      "role": "student",
+      "source": "本轮用户原话，不扩写为学生实验设计",
+      "content": "继续核查官方驱动及接口约定，并补齐性能验证和真实学习材料。"
     }
   ],
   "experiments": [
@@ -310,6 +316,27 @@
       "command": "tools/verify_resources.py --load-via-sql --with-vector-index",
       "output": "Configured new indexed resource path: 80000 rows, VECTOR(8), SQL batches of 100, 64MiB process address-space cap; create disk index, exact/ann queries, vector update/rollback, delete/commit and reopen. Not yet observed at this record time.",
       "interpretation": "旧的SQL大表结果未包含物理向量索引，不能直接拿来证明新索引的资源行为。本次另行验证，尚未记录为通过。"
+    },
+    {
+      "id": "indexed-container-observed-001",
+      "actor": "agent_with_tools",
+      "status": "executed",
+      "output": "GitHub Actions run 42607770911: head_sha=2fbf553f04c82db64ce892d09ca57dd0dbbf9ee7,status=completed,conclusion=success. All steps success, including 48 self-tests, public 20/95 core assertions and SQL-loaded indexed resource probe (80000 rows,64MiB process address-space cap).",
+      "interpretation": "这是此前planned记录的后续实际结果。容器检查不代替正式29例、冻结资源或排名。"
+    },
+    {
+      "id": "official-driver-recheck-001",
+      "actor": "agent_with_tools",
+      "status": "executed",
+      "output": "git ls-remote official round2=9f6df2ba5acf871376e22b64a3d0724e4b575044. mysqltest/README.md states: 本包本身不变更运行协议，也不包含完整运行驱动。 Existing .github/script/seekdb/mysqltest_for_seekdb.py uses host/port and obclient, not this stdin/stdout database driver. Authenticated platform submission dialog shows registered lucky20040520/seekdb, commit and branch fields, reset and submit; no precheck control visible there. No submission performed.",
+      "interpretation": "官方公开SQL断言存在，不能说没有题包；缺失的是完整进程通信合同。已确认右侧浏览器登录，纠正旧判断。只报告检查到的入口，不声称整个平台没有预检。"
+    },
+    {
+      "id": "current-index-performance-001",
+      "actor": "agent_with_tools",
+      "status": "executed",
+      "output": "{\"source_commit\": \"2fbf553f04c82db64ce892d09ca57dd0dbbf9ee7\", \"environment\": \"Windows local Python, same source and fixed seed, separate worker processes; sequential groups, not randomized interleaving\", \"workload\": \"2000 rows,128 dimensions,60 queries,K10,half equality filtered,three rounds each;20 scalar oracle query checks per round;restart count checked\", \"reports\": {\"flat\": {\"rows\": 2000, \"queries\": 60, \"dimensions\": 128, \"rounds\": [{\"write_seconds\": 3.5531856000000004, \"query_seconds\": 8.386219, \"prepare_seconds\": 0.2926732000000003, \"data_bytes\": 6157011, \"cache_bytes\": 0, \"source_sha256\": \"0f28a75a4e4cad331daf15f9d7e159dc7bdfb82bfe9740083a14bc6607117ef7\", \"oracle_queries\": 20, \"with_vector_index\": true}, {\"write_seconds\": 3.6750230999999998, \"query_seconds\": 8.3556469, \"prepare_seconds\": 0.32784619999999975, \"data_bytes\": 6157011, \"cache_bytes\": 0, \"source_sha256\": \"0f28a75a4e4cad331daf15f9d7e159dc7bdfb82bfe9740083a14bc6607117ef7\", \"oracle_queries\": 20, \"with_vector_index\": true}, {\"write_seconds\": 3.6628653, \"query_seconds\": 8.321245900000001, \"prepare_seconds\": 0.34247700000000014, \"data_bytes\": 6157011, \"cache_bytes\": 0, \"source_sha256\": \"0f28a75a4e4cad331daf15f9d7e159dc7bdfb82bfe9740083a14bc6607117ef7\", \"oracle_queries\": 20, \"with_vector_index\": true}], \"limitations\": \"Local engine workload, not official protocol/cgroup T/B/M or platform score\", \"median_write_seconds\": 3.6628653, \"median_query_seconds\": 8.3556469}, \"scan\": {\"rows\": 2000, \"queries\": 60, \"dimensions\": 128, \"rounds\": [{\"write_seconds\": 3.5816776999999997, \"query_seconds\": 0.25260769999999955, \"prepare_seconds\": 0.5947846000000001, \"data_bytes\": 5098787, \"cache_bytes\": 1359452, \"source_sha256\": \"0f28a75a4e4cad331daf15f9d7e159dc7bdfb82bfe9740083a14bc6607117ef7\", \"oracle_queries\": 20, \"with_vector_index\": false}, {\"write_seconds\": 3.5995079, \"query_seconds\": 0.2247722999999997, \"prepare_seconds\": 0.36231179999999963, \"data_bytes\": 5098787, \"cache_bytes\": 1359452, \"source_sha256\": \"0f28a75a4e4cad331daf15f9d7e159dc7bdfb82bfe9740083a14bc6607117ef7\", \"oracle_queries\": 20, \"with_vector_index\": false}, {\"write_seconds\": 3.5627806, \"query_seconds\": 0.2525808999999999, \"prepare_seconds\": 0.35984550000000004, \"data_bytes\": 5098787, \"cache_bytes\": 1359452, \"source_sha256\": \"0f28a75a4e4cad331daf15f9d7e159dc7bdfb82bfe9740083a14bc6607117ef7\", \"oracle_queries\": 20, \"with_vector_index\": false}], \"limitations\": \"Local engine workload, not official protocol/cgroup T/B/M or platform score\", \"median_write_seconds\": 3.5816776999999997, \"median_query_seconds\": 0.2525808999999999}}, \"limitations\": \"Core API times include Python data generation for writes, omit wire output; not official 10000/1000 workload, cgroup memory/I/O or score. Host disk filled between groups; failed attempt excluded and temporary test databases removed before retry. Cache-state and host-pressure bias possible.\"}",
+      "interpretation": "Agent完成测量与解释，不冒充学生理解。小规模查询中Flat约8.356秒，缓存扫描约0.253秒；建索引并不自动变快。写入阶段尚未建索引，不能据此声称索引维护写入速度相同。后续需完整规模、Linux资源口径和进程端到端验证。磁盘满失败不算数据库正确性失败，也不能隐藏这一环境干扰。"
     }
   ],
   "retrospective": {

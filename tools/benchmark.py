@@ -45,6 +45,8 @@ def worker(args):
     # Warmup is explicitly separate from timed queries; cache build is not hidden
     # in resource accounting (we report it separately, no synthetic B/M score).
     prepare_started=time.perf_counter()
+    if args.with_vector_index:
+        execute(db,'CREATE VECTOR INDEX bench_idx ON t(v);')
     list(execute(db,queries[0])[1])
     prepare_seconds=time.perf_counter()-prepare_started
     answers=[]
@@ -74,7 +76,8 @@ def worker(args):
     source_hash=hashlib.sha256(b''.join(path.read_bytes() for path in sorted(source_root.glob('*.py')))).hexdigest()
     return dict(write_seconds=write_seconds,query_seconds=query_seconds,prepare_seconds=prepare_seconds,
                 data_bytes=sum(path.stat().st_size for path in data.iterdir() if path.is_file()),
-                cache_bytes=cache_bytes,source_sha256=source_hash,oracle_queries=len(indexes),answers=answers)
+                cache_bytes=cache_bytes,source_sha256=source_hash,oracle_queries=len(indexes),
+                with_vector_index=args.with_vector_index,answers=answers)
 
 
 def main():
@@ -88,6 +91,7 @@ def main():
     parser.add_argument('--data-root',required=True)
     parser.add_argument('--output',required=True)
     parser.add_argument('--worker',action='store_true')
+    parser.add_argument('--with-vector-index',action='store_true')
     args=parser.parse_args()
     if args.worker:
         print(json.dumps(worker(args),allow_nan=False))
@@ -99,8 +103,13 @@ def main():
                  '--verify-samples',str(args.verify_samples),
                  '--code-root',args.code_root,'--data-root',args.data_root+'-r'+str(i),
                  '--output',args.output]
+        if args.with_vector_index:
+            command.append('--with-vector-index')
         env=dict(os.environ,OPENBLAS_NUM_THREADS='1',OMP_NUM_THREADS='1',PYTHONIOENCODING='utf-8')
-        result=subprocess.run(command,check=True,capture_output=True,text=True,env=env)
+        result=subprocess.run(command,capture_output=True,text=True,env=env)
+        if result.returncode:
+            sys.stderr.write(result.stderr)
+            raise SystemExit('benchmark worker failed; incomplete round excluded')
         record=json.loads(result.stdout)
         records.append(record)
         summary={key:value for key,value in record.items() if key!='answers'}

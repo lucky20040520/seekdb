@@ -1,0 +1,88 @@
+{
+  "source_commit": "2fbf553f04c82db64ce892d09ca57dd0dbbf9ee7",
+  "environment": "Windows local Python, same source and fixed seed, separate worker processes; sequential groups, not randomized interleaving",
+  "workload": "2000 rows,128 dimensions,60 queries,K10,half equality filtered,three rounds each;20 scalar oracle query checks per round;restart count checked",
+  "reports": {
+    "flat": {
+      "rows": 2000,
+      "queries": 60,
+      "dimensions": 128,
+      "rounds": [
+        {
+          "write_seconds": 3.5531856000000004,
+          "query_seconds": 8.386219,
+          "prepare_seconds": 0.2926732000000003,
+          "data_bytes": 6157011,
+          "cache_bytes": 0,
+          "source_sha256": "0f28a75a4e4cad331daf15f9d7e159dc7bdfb82bfe9740083a14bc6607117ef7",
+          "oracle_queries": 20,
+          "with_vector_index": true
+        },
+        {
+          "write_seconds": 3.6750230999999998,
+          "query_seconds": 8.3556469,
+          "prepare_seconds": 0.32784619999999975,
+          "data_bytes": 6157011,
+          "cache_bytes": 0,
+          "source_sha256": "0f28a75a4e4cad331daf15f9d7e159dc7bdfb82bfe9740083a14bc6607117ef7",
+          "oracle_queries": 20,
+          "with_vector_index": true
+        },
+        {
+          "write_seconds": 3.6628653,
+          "query_seconds": 8.321245900000001,
+          "prepare_seconds": 0.34247700000000014,
+          "data_bytes": 6157011,
+          "cache_bytes": 0,
+          "source_sha256": "0f28a75a4e4cad331daf15f9d7e159dc7bdfb82bfe9740083a14bc6607117ef7",
+          "oracle_queries": 20,
+          "with_vector_index": true
+        }
+      ],
+      "limitations": "Local engine workload, not official protocol/cgroup T/B/M or platform score",
+      "median_write_seconds": 3.6628653,
+      "median_query_seconds": 8.3556469
+    },
+    "scan": {
+      "rows": 2000,
+      "queries": 60,
+      "dimensions": 128,
+      "rounds": [
+        {
+          "write_seconds": 3.5816776999999997,
+          "query_seconds": 0.25260769999999955,
+          "prepare_seconds": 0.5947846000000001,
+          "data_bytes": 5098787,
+          "cache_bytes": 1359452,
+          "source_sha256": "0f28a75a4e4cad331daf15f9d7e159dc7bdfb82bfe9740083a14bc6607117ef7",
+          "oracle_queries": 20,
+          "with_vector_index": false
+        },
+        {
+          "write_seconds": 3.5995079,
+          "query_seconds": 0.2247722999999997,
+          "prepare_seconds": 0.36231179999999963,
+          "data_bytes": 5098787,
+          "cache_bytes": 1359452,
+          "source_sha256": "0f28a75a4e4cad331daf15f9d7e159dc7bdfb82bfe9740083a14bc6607117ef7",
+          "oracle_queries": 20,
+          "with_vector_index": false
+        },
+        {
+          "write_seconds": 3.5627806,
+          "query_seconds": 0.2525808999999999,
+          "prepare_seconds": 0.35984550000000004,
+          "data_bytes": 5098787,
+          "cache_bytes": 1359452,
+          "source_sha256": "0f28a75a4e4cad331daf15f9d7e159dc7bdfb82bfe9740083a14bc6607117ef7",
+          "oracle_queries": 20,
+          "with_vector_index": false
+        }
+      ],
+      "limitations": "Local engine workload, not official protocol/cgroup T/B/M or platform score",
+      "median_write_seconds": 3.5816776999999997,
+      "median_query_seconds": 0.2525808999999999
+    }
+  },
+  "limitations": "Core API times include Python data generation for writes, omit wire output; not official 10000/1000 workload, cgroup memory/I/O or score. Host disk filled between groups; failed attempt excluded and temporary test databases removed before retry. Cache-state and host-pressure bias possible."
+}
