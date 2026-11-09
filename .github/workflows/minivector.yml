@@ -2,7 +2,7 @@ name: MiniVectorDB local acceptance
 on:
   push:
     branches: [2026-competition-round2]
-    paths: [minivector/**, tests/**, tools/**, agent/**, Dockerfile, requirements.txt, .github/workflows/minivector.yml]
+    paths: [minivector/**, tests/**, tools/**, mysqltest/**, agent/**, Dockerfile, requirements.txt, .github/workflows/minivector.yml]
   workflow_dispatch:
 permissions:
   contents: read
@@ -21,7 +21,15 @@ jobs:
           docker run --rm --network none --cpus 1 --memory 256m --memory-swap 256m
           --entrypoint python -e TMPDIR=/data
           -v "$GITHUB_WORKSPACE/tests:/app/tests:ro"
+          -v "$GITHUB_WORKSPACE/tools:/app/tools:ro"
           minivector-local -m unittest discover -s tests -v
+      - name: Check published SQL assertions through core API
+        run: >-
+          docker run --rm --network none --cpus 1 --memory 256m --memory-swap 256m
+          --entrypoint python -e TMPDIR=/data
+          -v "$GITHUB_WORKSPACE/tools:/app/tools:ro"
+          -v "$GITHUB_WORKSPACE/mysqltest:/app/mysqltest:ro"
+          minivector-local tools/run_public.py
       - name: Explain scope
         run: echo 'These are self-tests, not official MySQL admission or platform scores.'
       - name: Verify data larger than process memory with transactions

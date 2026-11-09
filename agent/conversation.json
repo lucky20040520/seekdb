@@ -2,7 +2,7 @@
   "rule_version": "agent-learning-evidence-v3-unbounded",
   "synthetic": false,
   "status": "in_progress",
-  "scope": "开发过程的阶段性真实摘录，包含用户原话、必要Agent回应及实际工具结果；不是完整聊天导出。最近问答按原文补录，原消息先后以记录来源说明为准。未取得官方功能准入或两榜成绩。",
+  "scope": "开发过程阶段性真实摘录。包含用户原话、必要Agent回应和实际工具结果；非完整导出。已运行官方9f6df2b公开题包的20例/95条SQL（自建核心API执行器），未取得正式29例准入或两榜成绩。",
   "conversations": [
     {
       "id": "student-001",
@@ -105,6 +105,18 @@
       "role": "student",
       "source": "用户要求保留该修正的原话；该要求不自动证明完整技术理解",
       "content": "欧克，记住你刚才的修正"
+    },
+    {
+      "id": "student-015",
+      "role": "student",
+      "source": "用户之前对下一步的理解原话；后续Agent区分了已知功能补齐和待题包接口，不把本句当作已参与实验",
+      "content": "我的理解是，现在需要题目包来补足确实的功能，同时还需要进行性能优化"
+    },
+    {
+      "id": "student-016",
+      "role": "student",
+      "source": "本轮用户原话",
+      "content": "好的，请继续主线"
     }
   ],
   "experiments": [
@@ -268,6 +280,14 @@
       "command": "Run examples/first-run.sql and examples/after-restart.sql through two separate python -m minivector processes using the same initially empty directory",
       "output": "PASS: two separate CLI processes share an initially empty data directory\nPASS: committed delete, rolled-back vector update, and uncommitted insert verified after restart\nLOCAL_READY\nid\ttitle\tembedding\n1\t\"alpha\"\t[3.0, 4.0]\nEND\nid\tdistance\n1\t5.0\nEND\nid\nEND\n",
       "interpretation": "按4.2补齐可复现重启示例：第一次自动提交插入、向量更新后回滚、删除后提交，最后插入但未提交即EOF。第二个进程验证仅余主键1和原向量，距离5，主键2/3不可见。已验证本地CLI；Docker构建本身已有CI证据，新增两次docker run示例的完整命令未在本地主机执行，不冒称正式协议通过。"
+    },
+    {
+      "id": "published-cases-alignment-001",
+      "actor": "agent_with_tools",
+      "status": "executed",
+      "command": "Check official round2 HEAD; merge new mysqltest fixtures unchanged; run tools/run_public.py before and after VECTOR literal correction; run unittest suite",
+      "output": "{\"official_commit\": \"9f6df2ba5acf871376e22b64a3d0724e4b575044\", \"package_version\": \"minivectordb-public-v4\", \"cases\": 20, \"sql\": 95, \"before_passed\": 13, \"after_passed\": 20, \"before_failed_cases\": [\"vector_euclidean\", \"storage_mutations\", \"vector_ties_and_filter\", \"vector_float32\", \"vector_index_maintenance\", \"transaction_failed_insert\", \"transaction_autocommit_atomic\"], \"unchanged_fixture_hashes\": true, \"execution_scope\": \"self-written core API runner over actual official public fixtures, not official wire driver\"}\nRan 40 tests in 5.467s\nOK",
+      "interpretation": "继续功能主线时发现官方更新并获取20例95条SQL。先遍历全部样例，13/20通过，7例因合法带引号向量被拒绝及后续状态连锁失败；在VECTOR类型边界解码数组字符串，VARCHAR不受影响，非法向量和float32规则仍保留。修复后20/20断言匹配，40项回归通过；错误码按公开README非空码最低规则，未冻结正式映射。此为Agent实施与分析，非学生自设计实验；公开样例核心层通过不等于正式29例准入，包内仍无完整通信驱动。"
     }
   ],
   "retrospective": {
@@ -280,7 +300,7 @@
     "功能覆盖和接口兼容具备证据后再继续性能优化；持续保留真实用户贡献与结果，不编造学习表现。"
   ],
   "limitations": [
-    "已有数据库正确性基线及 34 项自建测试结果；无官方准入结果、无性能排名或官方得分。",
+    "已有数据库正确性基线及 40 项自建测试结果；无官方准入结果、无性能排名或官方得分。",
     "Docker 构建和离线容器自建检查已通过；没有近似加速算法；UPDATE/DELETE仍重写表，存在性能与临时磁盘开销。",
     "当前学生贡献仅限已记录原话，尚无学生解释实验结果的记录。",
     "旧聊天仅用于方法复盘，不将旧题成功结果作为本题已验证证据。",

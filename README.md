@@ -1,14 +1,15 @@
 # MiniVectorDB correctness baseline
 
-当前阶段：数据库核心和本地诊断入口已实现；当前34项自建功能检查已在Windows及Linux离线容器通过，SQL批量载入的大表事务检查亦通过，记录见已知必测审计。官方题包未取得，**不能作为已完成正式兼容的提交**。核心使用 Python 标准库，NumPy 仅用于可选的向量数学运算，未使用现成数据库或向量索引引擎。已验证Python 3.8.8、3.8.10及容器Python 3.12.8，容器定义使用 Python 3.12.8 / NumPy 1.26.4；正式镜像及依赖须待题包对齐。
+当前阶段：数据库核心和本地诊断入口已实现；当前Windows40项自建检查及官方公开20例/95条SQL的核心API层断言已通过；此前版本已通过离线容器和SQL大表事务检查，本次容器结果见CI。已取得官方mysqltest公开题包，但完整进程驱动及冻结配置仍未取得，**不能作为已完成正式兼容的提交**。核心使用 Python 标准库，NumPy 仅用于可选的向量数学运算，未使用现成数据库或向量索引引擎。已验证Python 3.8.8、3.8.10及容器Python 3.12.8，容器定义使用 Python 3.12.8 / NumPy 1.26.4；正式镜像及依赖须待题包对齐。
 
 ```powershell
 python -m unittest discover -s tests -v
 python -m minivector --data-dir ./data
 python tools/validate_material.py
+python tools/run_public.py
 ```
 
-诊断入口按分号分隔 SQL，不要求分号之后额外换行，支持跨行、引号及注释中的分号。启动输出 `LOCAL_READY`；修改输出 `OK n`，错误输出 `ERROR code message`；查询输出 TSV、以 `END` 结束。字符串与向量字段用 JSON 字面量转义。**这些是本地诊断约定，不是官方协议，不使用 JSON 请求封装。** 所有语法和错误码仍须按题包校准。
+诊断入口按分号分隔 SQL，不要求分号之后额外换行，支持跨行、引号及注释中的分号。启动输出 `LOCAL_READY`；修改输出 `OK n`，错误输出 `ERROR code message`；查询输出 TSV、以 `END` 结束。字符串与向量字段用 JSON 字面量转义。**这些是本地诊断约定，不是官方协议，不使用 JSON 请求封装。** 公开样例的部分语法已对齐；完整语法、正式通信格式和错误码映射仍须对齐。
 
 ```sql
 CREATE TABLE docs(id BIGINT PRIMARY KEY, tag VARCHAR(20), embedding VECTOR(2));
@@ -51,8 +52,10 @@ docker run --rm -i --network none -v "$demo_data:/data" minivector-local < examp
 
 CREATE VECTOR INDEX 当前登记精确扫描索引；ann 模式也执行精确扫描，因此结果正确但**没有实现近似加速，不能据此宣称满足正式近似索引要求或性能达标**。INSERT 已改成数据段追加，主键查重不再解析向量；UPDATE/DELETE 仍重写表，数据段数量增长与元数据/I/O 开销尚需按正式限制验证。当前不把本地加速比换算成平台排名。
 
-SQL 支持建表、增删改查、AND 比较、单项 ORDER BY、LIMIT、L2_DISTANCE、事务和索引描述；引号、命名、向量字面量以本地语法为准，等待官方完整语法。未支持的 JOIN、聚合、NULL、子查询、主键更新等明确报错。
+SQL 支持建表、增删改查、AND 比较、单项 ORDER BY、LIMIT、L2_DISTANCE、事务和索引描述；VECTOR支持公开样例的带引号数组字面量（如'[3,4]'），同时保留裸数组输入。完整语法边界仍待官方冻结。未支持的 JOIN、聚合、NULL、子查询、主键更新等明确报错。
 
 详见 [必测矩阵](docs/必测矩阵.md)、[验证记录](docs/验证记录.md) 和 [上次经验](docs/powercontext经验复盘.md)。学习材料在 `agent/conversation.json`，不把 Agent 自动实现当作学生独立理解。
 
 逐项实现/证据/缺口对应关系见 [已知必测审计](docs/已知必测审计.md)。宽行候选预算只限制估算量，不是总进程内存承诺。
+
+官方公开样例来源与前后验证范围见 [公开题包验证](docs/公开题包验证.md)。包不包含完整运行驱动；自建核心API执行器不会改变正式通信约定。

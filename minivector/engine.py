@@ -180,6 +180,14 @@ class Database:
             if any(0xD800 <= ord(c) <= 0xDFFF for c in value):
                 fail("invalid Unicode string", "TYPE")
             return value
+        # The published SQL samples encode VECTOR literals as quoted JSON
+        # arrays. Decode only at a VECTOR-typed boundary so VARCHAR text such
+        # as '[3,4]' remains an ordinary string.
+        if isinstance(value, str):
+            try:
+                value = json.loads(value)
+            except ValueError:
+                fail("invalid VECTOR array literal", "TYPE")
         if not isinstance(value, list) or len(value) != column["size"]:
             fail("VECTOR dimension mismatch", "TYPE")
         result = []
