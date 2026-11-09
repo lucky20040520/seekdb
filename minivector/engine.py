@@ -167,14 +167,14 @@ class Database:
                         yield json.loads(line)[pk]
 
     @staticmethod
-    def validate(column, value):
+    def validate(column, value, for_storage=True):
         kind = column["kind"]
         if kind == "BIGINT":
             if type(value) is not int or not -(2**63) <= value < 2**63:
                 fail("BIGINT value out of range or wrong type", "TYPE")
             return value
         if kind == "VARCHAR":
-            if not isinstance(value, str) or len(value) > column["size"]:
+            if not isinstance(value, str) or (for_storage and len(value) > column["size"]):
                 fail("VARCHAR type or length mismatch", "TYPE")
             # Surrogate code points are not valid Unicode scalar values.
             if any(0xD800 <= ord(c) <= 0xDFFF for c in value):
@@ -255,7 +255,9 @@ class Database:
             i, column = columns[name]
             if column["kind"] == "VECTOR":
                 fail("vector comparison unsupported")
-            compiled.append((i, operator, self.validate(column, value)))
+            # VARCHAR(n) constrains stored values, not a comparison literal.
+            # For example a VARCHAR(2) value 'ab' can be compared with 'abc'.
+            compiled.append((i, operator, self.validate(column, value, for_storage=False)))
         def matches(row):
             for i, operator, value in compiled:
                 actual = row[i]
@@ -305,6 +307,10 @@ class Database:
 
     def cached_vectors(self, table):
         signature = tuple(self.files(table))
+        # Empty tables all have signature (). They need no arithmetic cache;
+        # reusing it across distinct schemas would mix filter-column metadata.
+        if not signature:
+            return None
         if signature in self.query_cache:
             value = self.query_cache.pop(signature)
             self.query_cache[signature] = value
@@ -418,6 +424,18 @@ class Database:
         source = (row for row in self.rows(table) if matches(row))
         if order is not None:
             expr, descending = order
+            # Heap candidates retain full decoded rows, not just ordering keys.
+            # Bound their declared worst-case size rather than only counting K.
+            row_bytes = 64 + 8 * len(table["columns"])
+            for column in table["columns"]:
+                if column["kind"] == "VARCHAR":
+                    row_bytes += 64 + 4 * column["size"]
+                elif column["kind"] == "VECTOR":
+                    row_bytes += 64 + 32 * column["size"]
+                else:
+                    row_bytes += 32
+            bounded_candidates = (limit is not None and limit <= 4096
+                                  and limit * row_bytes <= 2 * 1024 * 1024)
             if expr[0] == "column" and expr[1] not in aliases and expr[1] in columns and columns[expr[1]][1]["kind"] == "VECTOR":
                 fail("ordering VECTOR unsupported")
             order_fn = expression(expr, resolve_alias=True)
@@ -427,7 +445,7 @@ class Database:
             if distance_expr[0] == "column" and distance_expr[1] in columns and columns[distance_expr[1]][1]["kind"] == "VECTOR":
                 fail("ordering VECTOR unsupported")
             cache = None
-            if distance_expr[0] == "distance" and not descending and limit is not None and limit <= 4096:
+            if distance_expr[0] == "distance" and not descending and bounded_candidates:
                 cache = self.cached_vectors(table)
             class Desc:
                 def __init__(self, value): self.value = value
@@ -443,7 +461,7 @@ class Database:
                 query = self.validate(query_column, distance_expr[2])
                 source = iter(cache.topk(conditions, query, limit))
             else:
-                source = (iter(heapq.nsmallest(limit, source, key=key)) if limit is not None and limit <= 4096
+                source = (iter(heapq.nsmallest(limit, source, key=key)) if bounded_candidates
                           else self.external_sort(source, key))
         def projected():
             try:

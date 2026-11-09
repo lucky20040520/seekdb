@@ -13,6 +13,8 @@ from minivector.sql import execute
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data-dir', required=True, help='new isolated directory')
+    parser.add_argument('--load-via-sql', action='store_true',
+                        help='exercise SQL parsing and 100-row autocommit INSERT batches')
     args = parser.parse_args()
     root = Path(args.data_dir)
     if root.exists():
@@ -22,8 +24,14 @@ def main():
     db = Database(root)
     execute(db, 'CREATE TABLE t(id BIGINT PRIMARY KEY,payload VARCHAR(1024));')
     count = 80000
-    db.rewrite('t', ([i, 'x'*1024] for i in range(count)))
-    data_bytes = (root/db.table('t')['file']).stat().st_size
+    if args.load_via_sql:
+        payload = "'" + 'x'*1024 + "'"
+        for start in range(0, count, 100):
+            values = ','.join('(%d,%s)' % (i, payload) for i in range(start, min(start+100, count)))
+            execute(db, 'INSERT INTO t VALUES ' + values + ';')
+    else:
+        db.rewrite('t', ([i, 'x'*1024] for i in range(count)))
+    data_bytes = sum((root/file).stat().st_size for file in db.files(db.table('t')))
     assert data_bytes > cap
     headers, rows = execute(db, 'SELECT id FROM t ORDER BY id DESC;')
     actual = 0
@@ -44,6 +52,7 @@ def main():
     assert sum(1 for row in db.rows(db.table('t'))) == count-4
     db.close()
     print(json.dumps({'status': 'PASS', 'rows': count, 'table_bytes': data_bytes,
+                      'load_path': 'SQL batch INSERT' if args.load_via_sql else 'internal streaming rewrite',
                       'address_space_limit_bytes': cap,
                       'peak_rss_kib': resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
                       'remaining_rows': count-4,

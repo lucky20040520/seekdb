@@ -57,6 +57,24 @@
       "role": "student",
       "source": "用户回答后续验证优先级的原话，保留原始字词；未提供原因，Agent不补写为学生推理",
       "content": "官方协议兼容 把"
+    },
+    {
+      "id": "student-009",
+      "role": "student",
+      "source": "用户本轮原话，指出应先核清题目要求",
+      "content": "题目中有对这些内容的说明么？你需要先理清一下题目要求，然后再做题"
+    },
+    {
+      "id": "student-010",
+      "role": "student",
+      "source": "用户本轮请求末尾的原文摘录，另提供完整题面附件、训练营说明及算分规则；第三方规则内容不当作学生自主技术贡献",
+      "content": "题目要求再加深一遍"
+    },
+    {
+      "id": "student-011",
+      "role": "student",
+      "source": "用户本轮原话，授权在厘清主次后继续实施",
+      "content": "好的，分清主次后可以继续做题了"
     }
   ],
   "experiments": [
@@ -172,6 +190,38 @@
       "command": "python -m unittest discover -s tests -p test_framing.py -v (before); python -m unittest discover -s tests -v (after)",
       "output": "Before: Ran 2 tests in 2.138s; FAILED (failures=1). test_request_without_newline_gets_response: SQL terminator received, but response waits for newline. After: Ran 24 tests in 2.816s; OK.",
       "interpretation": "按用户指定的协议兼容方向，Agent发现按行读取stdin会在SQL分号后仍等待换行。独立子进程只发送SQL;并flush，保留stdin打开以复现等待。修复为逐字符状态机，保持引号/转义/注释边界，复测连续无换行请求正常。该诊断协议修复不是官方协议验收；用户没有提出具体复现方法，不把Agent发现或解释记为学生原创。"
+    },
+    {
+      "id": "requirements-review-001",
+      "actor": "agent_with_tools",
+      "status": "executed",
+      "command": "Re-read original task sections 2.1, 3.1, 3.2, 4.4 in browser and compare local matrix/README",
+      "output": "Section 2.1 explicitly defines SQL/types, vector constraints and implementation restrictions. Section 3.1 assigns framing/results/errors/readiness/mode/exit and frozen limits to the companion driver/package. Section 3.2 defines full admission and crash semantics. Section 4.4 defines one learning JSON and explicitly says companion assets are separately provided. Created a requirement table distinguishing known requirements, deferred details and self-chosen diagnostic settings.",
+      "interpretation": "用户质疑促使Agent重审执行顺序。Agent此前把部分接口细节未确认扩大为整题停工条件，并在必测覆盖证据未核齐时继续性能工作，表述与优先级不准确。本轮只重新梳理要求，未新增功能或性能优化；后续先审全部已知必测，不把自建通过当成官方准入。此解释为Agent总结，不冒充学生原话。"
+    },
+    {
+      "id": "requirements-deepening-001",
+      "actor": "agent_with_tools",
+      "status": "executed",
+      "command": "Read the complete pasted text attachment and compare with user-provided training page and overall scoring rules",
+      "output": "Read complete attachment (SHA256 5f161a46d011c6a8a82304a1980c317d17f45c6bea5070edcc9ba6dddd29f56e). Identified two conflicts: four vs five learning dimensions; automatic total-score replacement vs manual final-version selection, with best-passed vs latest-passed defaults. Common rules agree on all-case admission, two independent rankings, same-commit binding and no cross-version score splicing.",
+      "interpretation": "Agent重新区分已明确的功能语义、保留给配套文件的接口细节和自选诊断设置。完整说明覆盖SQL/类型、过滤TopK、float32、语句原子性、事务可见性、强杀/重复恢复、大于内存的数据和资源统计。80分需要两榜各40而非仅功能完成。规则差异不擅自消除，本轮未新增功能或性能优化。该分析为Agent产出，不冒充学生理解。"
+    },
+    {
+      "id": "contract-audit-fixes-001",
+      "actor": "agent_with_tools",
+      "status": "executed",
+      "command": "python -m unittest discover -s tests -p test_required_contracts.py -v (before); python -m unittest discover -s tests -v (after)",
+      "output": "Before: Ran 3 tests in 0.365s; FAILED (failures=1, errors=2). VARCHAR comparison with longer literal raised TYPE; second empty table filter raised KeyError category; wide-record LIMIT had tracemalloc peak 19884495 bytes, exceeding the 12582912-byte test threshold. After fixes and combination/boundary additions: Ran 34 tests in 3.907s; OK.",
+      "interpretation": "按用户要求先补准入缺口，Agent修复空表缓存跨schema串用、比较错误套用写入长度限制、仅按K判断堆内存。补了跨表提交/失败语句/强杀/重启的普通与向量查询核对。学生要求了优先顺序，具体反例和实现为Agent产出，不冒充学生设计。"
+    },
+    {
+      "id": "resource-load-path-audit-001",
+      "actor": "agent",
+      "status": "planned_container_verification",
+      "command": "tools/verify_resources.py --load-via-sql; updated CI configuration",
+      "output": "Previous resource probe loaded 80000 rows through internal rewrite, bypassing SQL INSERT. Added --load-via-sql to load 100-row autocommit batches through Parser/execute/insert; resource CI now requests that path. Result not yet observed at record time.",
+      "interpretation": "这是已识别的验证覆盖缺口，不是已通过结果。现有内部加载结果仍保留为历史证据，不再代替SQL批量载入验证。"
     }
   ],
   "retrospective": {
@@ -179,9 +229,9 @@
     "content": "旧题复盘提示：不能将发现真实缺陷等同于找到零分主因；先遍历必测，再做组合边界测试和独立真值交叉检查。该段为 Agent 总结，不能当作学生自身技术理解。"
   },
   "plans": [
-    "先取得官方协议/驱动/冻结环境，逐项对齐适配层和语法，执行官方预检与公开用例，再正式提测。",
-    "保留已通过的自建容器检查和逐轮性能数据；不把它们替代正式功能、资源、排名证据。",
-    "继续记录用户实际参与的判断与工具结果，不能编造学生解释、实验或得分。"
+    "先按重新核对的要求审查全部已明确必测，记录实现位置、验证证据和实际缺口；不以缺少完整题包为整题停工条件。",
+    "官方接口未知项单列，不把诊断约定当作正式协议；取得正式约定后对接并验证。",
+    "功能覆盖和接口兼容具备证据后再继续性能优化；持续保留真实用户贡献与结果，不编造学习表现。"
   ],
   "limitations": [
     "已有数据库正确性基线及 22 项自建测试结果；无官方准入结果、无性能排名或官方得分。",
