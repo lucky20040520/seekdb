@@ -1,0 +1,27 @@
+name: MiniVectorDB diagnostic pipe benchmark
+on:
+  push:
+    branches: [2026-competition-round2]
+    paths: [.github/workflows/minivector-stdio-performance.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build delivered source for Linux x86_64
+        run: docker build --platform linux/amd64 -t minivector-pipe .
+      - name: Full workload over process pipes with independent driver
+        run: >-
+          python3 tools/benchmark_stdio.py --image minivector-pipe
+          --rows 10000 --dimensions 128 --queries 1000 --rounds 3
+          --output benchmark-output/stdio-full.json
+      - name: Publish actual results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: minivector-stdio-full
+          path: benchmark-output/

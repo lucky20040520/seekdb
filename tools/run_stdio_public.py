@@ -18,12 +18,12 @@ from minivector.engine import DBError
 
 
 class Session:
-    def __init__(self, data, mode, timeout):
+    def __init__(self, data, mode, timeout, command=None):
         self.timeout = timeout
         self.lines = queue.Queue()
         self.errors = deque(maxlen=40)
         self.process = subprocess.Popen(
-            [sys.executable, '-u', '-m', 'minivector', '--data-dir', str(data), '--mode', mode],
+            command or [sys.executable, '-u', '-m', 'minivector', '--data-dir', str(data), '--mode', mode],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             text=True, encoding='utf-8', bufsize=1)
         def stdout():
