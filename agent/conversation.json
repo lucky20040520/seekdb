@@ -371,6 +371,13 @@
       "status": "executed",
       "output": "{\"before_passed_replays\": 14, \"after_passed_replays\": 40, \"replays\": 40, \"sql\": 190, \"selftests\": 49, \"fixture_hashes_unchanged\": true, \"fixed_startup_modes\": [\"exact\", \"ann\"], \"scope\": \"Own UTF-8 diagnostic pipe protocol; fixed-mode replays, not official live mode-switch driver or formal admission\"}\nBefore regression: test_utf8_pipe_overrides_non_utf8_host_default FAIL under PYTHONIOENCODING=cp1252 (VARCHAR length/type error for Chinese+emoji). After entry stream reconfiguration: Ran49 tests in8.116s OK;40/40 case replays,190 SQL over diagnostic pipes.",
       "interpretation": "父进程Popen encoding只控制父侧包装，子进程仍可按host默认解码。入口显式reconfigure UTF-8，拒绝被默认编码误读的合法中文问题闭合。固定exact及ann各重放全部20样例，保留同进程连续请求、失败后继续、EOF关闭和同目录重启。未宣称官方协议或在线模式切换已验证。这是Agent设计和修复，不补写学生理解。"
+    },
+    {
+      "id": "diagnostic-utf8-linux-result-001",
+      "actor": "agent_with_tools",
+      "status": "executed",
+      "output": "GitHub Actions run42650910619,head_sha=deea79efb1b403a53e3428336430b0da0ee8f9e4,status=completed,conclusion=success. Every step succeeded:locked Docker build,49 self-tests,20 public core cases,40 diagnostic pipe replays/190 SQL,and indexed SQL-loaded greater-than-memory resource probe.",
+      "interpretation": "Actual Linux follow-up to Windows evidence,not official wire compatibility,formal29-case admission or score."
     }
   ],
   "retrospective": {
