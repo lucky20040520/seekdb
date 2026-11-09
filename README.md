@@ -1,6 +1,6 @@
 # MiniVectorDB correctness baseline
 
-当前阶段：数据库核心和本地诊断入口已实现；当前包含34项自建功能检查，Windows已全部通过；此前版本已通过离线容器验证，当前提交与SQL载入资源检查的结果以GitHub Actions为准。官方题包未取得，**不能作为已完成正式兼容的提交**。核心使用 Python 标准库，NumPy 仅用于可选的向量数学运算，未使用现成数据库或向量索引引擎。Python 3.8+ 可运行，容器定义使用 Python 3.12.8 / NumPy 1.26.4；正式镜像及依赖须待题包对齐。
+当前阶段：数据库核心和本地诊断入口已实现；当前34项自建功能检查已在Windows及Linux离线容器通过，SQL批量载入的大表事务检查亦通过，记录见已知必测审计。官方题包未取得，**不能作为已完成正式兼容的提交**。核心使用 Python 标准库，NumPy 仅用于可选的向量数学运算，未使用现成数据库或向量索引引擎。Python 3.8+ 可运行，容器定义使用 Python 3.12.8 / NumPy 1.26.4；正式镜像及依赖须待题包对齐。
 
 ```powershell
 python -m unittest discover -s tests -v

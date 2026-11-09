@@ -222,6 +222,14 @@
       "command": "tools/verify_resources.py --load-via-sql; updated CI configuration",
       "output": "Previous resource probe loaded 80000 rows through internal rewrite, bypassing SQL INSERT. Added --load-via-sql to load 100-row autocommit batches through Parser/execute/insert; resource CI now requests that path. Result not yet observed at record time.",
       "interpretation": "这是已识别的验证覆盖缺口，不是已通过结果。现有内部加载结果仍保留为历史证据，不再代替SQL批量载入验证。"
+    },
+    {
+      "id": "container-contract-audit-001",
+      "actor": "agent_with_tools",
+      "status": "executed",
+      "command": "GitHub Actions run 42566014888, job 128992574912, committed workflow at dfd34501b1c4ca0b7d8bc2f98d1289d0fb71d5ba",
+      "output": "job conclusion=success. Validate learning material=success; Build from source with locked dependencies=success; Run self-tests offline in Linux container=success; Verify data larger than process memory with transactions=success.",
+      "interpretation": "工作流配置执行34项自建检查，并传--load-via-sql，在64MiB进程地址空间下通过SQL每批100行载入80000行、超过该上限的表数据；随后排序、更新回滚、删除提交及重启计数均有断言。外层容器禁网、1CPU、256MiB、禁用swap。不是正式协议、正式cgroup指标、官方准入或分数。此前planned记录保留为当时状态，本条记录最终实际结果。"
     }
   ],
   "retrospective": {
