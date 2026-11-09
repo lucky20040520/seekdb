@@ -1,6 +1,6 @@
 # MiniVectorDB correctness baseline
 
-当前阶段：数据库核心和本地诊断入口已实现；当前Windows48项自建检查及官方公开20例/95条SQL的核心API层断言已通过；此前版本已通过离线容器和SQL大表事务检查，本次容器结果见CI。已取得官方mysqltest公开题包，但完整进程驱动及冻结配置仍未取得，**不能作为已完成正式兼容的提交**。核心使用 Python 标准库，NumPy 仅用于可选的向量数学运算，未使用现成数据库或向量索引引擎。已验证Python 3.8.8、3.8.10及容器Python 3.12.8，容器定义使用 Python 3.12.8 / NumPy 1.26.4；正式镜像及依赖须待题包对齐。
+当前阶段：已完成协议无关的功能、组合异常、完整负载全量核对、真实诊断管道、超容器内存及交付镜像验证；52项自建检查、公开20例核心断言和两种启动模式40次管道重放通过。结果与明确边界见 [协议无关工作完成记录](docs/协议无关工作完成记录.md)。官方完整通信格式、冻结配置及29例正式准入仍未确认，不能宣称已获得正式成绩。运行时Python3.12.8、NumPy1.26.4，核心存储、查询、索引和事务自行实现。
 
 ```powershell
 python -m unittest discover -s tests -v
@@ -52,7 +52,7 @@ docker run --rm -i --network none -v "$demo_data:/data" minivector-local < examp
 
 CREATE VECTOR INDEX 已实现实际磁盘Flat L2索引：保存主键、float32向量和行位置，随数据修改同步维护；同一清单原子提交，支持回滚、重启及启动前重建。exact和ann入口均可通过该精确Flat路径返回结果，**未实现近似剪枝加速，不能据此宣称满足尚未冻结的ANN预算或性能达标**。INSERT 已改成数据段追加，主键查重不再解析向量；UPDATE/DELETE 仍重写表，数据段数量增长与元数据/I/O 开销尚需按正式限制验证。当前不把本地加速比换算成平台排名。
 
-SQL 支持建表、增删改查、AND 比较、单项 ORDER BY、LIMIT、L2_DISTANCE、事务和索引描述；VECTOR支持公开样例的带引号数组字面量（如'[3,4]'），同时保留裸数组输入。完整语法边界仍待官方冻结。未支持的 JOIN、聚合、NULL、子查询、主键更新等明确报错。
+SQL 支持建表、增删改查、AND 比较、单项 ORDER BY、LIMIT、L2_DISTANCE、事务和实际磁盘Flat索引；VECTOR支持公开样例的带引号数组字面量（如'[3,4]'），同时保留裸数组输入。完整语法边界仍待官方冻结。未支持的 JOIN、聚合、NULL、子查询、主键更新等明确报错。
 
 详见 [必测矩阵](docs/必测矩阵.md)、[验证记录](docs/验证记录.md) 和 [上次经验](docs/powercontext经验复盘.md)。学习材料在 `agent/conversation.json`，不把 Agent 自动实现当作学生独立理解。
 
