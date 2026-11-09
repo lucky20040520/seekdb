@@ -1,0 +1,12 @@
+CREATE TABLE docs(id BIGINT PRIMARY KEY,title VARCHAR(20),embedding VECTOR(2));
+INSERT INTO docs VALUES (1,'alpha',[3,4]),(2,'beta',[1,0]);
+SELECT id,title FROM docs ORDER BY id;
+SELECT id,L2_DISTANCE(embedding,[0,0]) AS distance FROM docs ORDER BY distance LIMIT 2;
+BEGIN;
+UPDATE docs SET embedding=[0,0] WHERE id=1;
+ROLLBACK;
+BEGIN;
+DELETE FROM docs WHERE id=2;
+COMMIT;
+BEGIN;
+INSERT INTO docs VALUES (3,'uncommitted',[9,9]);

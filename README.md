@@ -1,6 +1,6 @@
 # MiniVectorDB correctness baseline
 
-当前阶段：数据库核心和本地诊断入口已实现；当前34项自建功能检查已在Windows及Linux离线容器通过，SQL批量载入的大表事务检查亦通过，记录见已知必测审计。官方题包未取得，**不能作为已完成正式兼容的提交**。核心使用 Python 标准库，NumPy 仅用于可选的向量数学运算，未使用现成数据库或向量索引引擎。Python 3.8+ 可运行，容器定义使用 Python 3.12.8 / NumPy 1.26.4；正式镜像及依赖须待题包对齐。
+当前阶段：数据库核心和本地诊断入口已实现；当前34项自建功能检查已在Windows及Linux离线容器通过，SQL批量载入的大表事务检查亦通过，记录见已知必测审计。官方题包未取得，**不能作为已完成正式兼容的提交**。核心使用 Python 标准库，NumPy 仅用于可选的向量数学运算，未使用现成数据库或向量索引引擎。已验证Python 3.8.8、3.8.10及容器Python 3.12.8，容器定义使用 Python 3.12.8 / NumPy 1.26.4；正式镜像及依赖须待题包对齐。
 
 ```powershell
 python -m unittest discover -s tests -v
@@ -25,6 +25,17 @@ COMMIT;
 ```
 
 EOF 正常关闭并放弃未提交事务。再次用同一目录启动即可读取提交状态。容器构建 `docker build -t minivector-local .`；运行 `docker run --rm -i --network none -v minivector-data:/data minivector-local`，不启动网络服务。GitHub Actions 已验证该镜像从源码构建，并在禁网、1 CPU、256 MiB 内存、禁用 swap 的容器中执行自建验收；不是正式功能准入。
+
+完整的空目录到重启示例（在Linux宿主、仓库根目录执行）：
+
+```bash
+docker build -t minivector-local .
+demo_data=$(mktemp -d)
+docker run --rm -i --network none -v "$demo_data:/data" minivector-local < examples/first-run.sql
+docker run --rm -i --network none -v "$demo_data:/data" minivector-local < examples/after-restart.sql
+```
+
+第一次运行覆盖写入、普通查询、向量检索、回滚和提交；最后插入主键3但不提交，文件结束关闭进程。第二次启动复用数据目录，应只剩主键1、标题alpha、向量[3,4]，到[0,0]距离为5；主键2已提交删除，主键3随关闭回滚。SQL示例没有退出命令，使用EOF；正式退出方式仍须按驱动对齐。上述挂载保存数据库文件，容器自身随`--rm`删除。
 
 ## 存储和事务
 

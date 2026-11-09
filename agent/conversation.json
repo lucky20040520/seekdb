@@ -2,7 +2,7 @@
   "rule_version": "agent-learning-evidence-v3-unbounded",
   "synthetic": false,
   "status": "in_progress",
-  "scope": "2026-11-09 开发过程真实摘录；包含用户原话、Agent提议及实际工具结果。已有正确性和性能改进基线，未运行官方公开或正式用例。",
+  "scope": "开发过程的阶段性真实摘录，包含用户原话、必要Agent回应及实际工具结果；不是完整聊天导出。最近问答按原文补录，原消息先后以记录来源说明为准。未取得官方功能准入或两榜成绩。",
   "conversations": [
     {
       "id": "student-001",
@@ -75,6 +75,36 @@
       "role": "student",
       "source": "用户本轮原话，授权在厘清主次后继续实施",
       "content": "好的，分清主次后可以继续做题了"
+    },
+    {
+      "id": "student-012",
+      "role": "student",
+      "source": "用户近期关于stdin/stdout的原话；此提问没有自动视为已经理解接口细节",
+      "content": "我不懂，这不是说了驱动通过 stdin/stdout 执行 SQL，不可以使用么？"
+    },
+    {
+      "id": "agent-002",
+      "role": "agent",
+      "source": "Agent对此问题的实际回复摘录，属于Agent纠正表述，不作为学生理解",
+      "content": "我之前把这个格式核对问题说成整个接口都不能使用，表述不准确，给你造成了困惑。"
+    },
+    {
+      "id": "student-013",
+      "role": "student",
+      "source": "用户近期要求重新核查官方仓库的原话，保留Markdown原文；与已有协议定位问题属于同一排查上下文，不新增自评分实例",
+      "content": "[https://github.com/oceanbase/seekdb](https://github.com/oceanbase/seekdb)是不是我需要重新读取一下大赛的仓库，看看有没有`2026-competition-round2` 分支的配套驱动和题包  "
+    },
+    {
+      "id": "agent-003",
+      "role": "agent",
+      "source": "Agent在用户粘贴3.3性能规则后的实际回复摘录；修正为Agent所作",
+      "content": "也需要修正我上一条的优先级表述：**不能把“先做近似索引”当作进入性能评测的必要条件。**正确顺序仍是先补齐功能准入；是否需要近似索引，由功能合同和实际综合收益决定。达到性能 40 分，最终要取得该榜第一名或并列第一。"
+    },
+    {
+      "id": "student-014",
+      "role": "student",
+      "source": "用户要求保留该修正的原话；该要求不自动证明完整技术理解",
+      "content": "欧克，记住你刚才的修正"
     }
   ],
   "experiments": [
@@ -230,6 +260,14 @@
       "command": "GitHub Actions run 42566014888, job 128992574912, committed workflow at dfd34501b1c4ca0b7d8bc2f98d1289d0fb71d5ba",
       "output": "job conclusion=success. Validate learning material=success; Build from source with locked dependencies=success; Run self-tests offline in Linux container=success; Verify data larger than process memory with transactions=success.",
       "interpretation": "工作流配置执行34项自建检查，并传--load-via-sql，在64MiB进程地址空间下通过SQL每批100行载入80000行、超过该上限的表数据；随后排序、更新回滚、删除提交及重启计数均有断言。外层容器禁网、1CPU、256MiB、禁用swap。不是正式协议、正式cgroup指标、官方准入或分数。此前planned记录保留为当时状态，本条记录最终实际结果。"
+    },
+    {
+      "id": "restart-example-delivery-001",
+      "actor": "agent_with_tools",
+      "status": "executed",
+      "command": "Run examples/first-run.sql and examples/after-restart.sql through two separate python -m minivector processes using the same initially empty directory",
+      "output": "PASS: two separate CLI processes share an initially empty data directory\nPASS: committed delete, rolled-back vector update, and uncommitted insert verified after restart\nLOCAL_READY\nid\ttitle\tembedding\n1\t\"alpha\"\t[3.0, 4.0]\nEND\nid\tdistance\n1\t5.0\nEND\nid\nEND\n",
+      "interpretation": "按4.2补齐可复现重启示例：第一次自动提交插入、向量更新后回滚、删除后提交，最后插入但未提交即EOF。第二个进程验证仅余主键1和原向量，距离5，主键2/3不可见。已验证本地CLI；Docker构建本身已有CI证据，新增两次docker run示例的完整命令未在本地主机执行，不冒称正式协议通过。"
     }
   ],
   "retrospective": {
@@ -242,11 +280,25 @@
     "功能覆盖和接口兼容具备证据后再继续性能优化；持续保留真实用户贡献与结果，不编造学习表现。"
   ],
   "limitations": [
-    "已有数据库正确性基线及 22 项自建测试结果；无官方准入结果、无性能排名或官方得分。",
+    "已有数据库正确性基线及 34 项自建测试结果；无官方准入结果、无性能排名或官方得分。",
     "Docker 构建和离线容器自建检查已通过；没有近似加速算法；UPDATE/DELETE仍重写表，存在性能与临时磁盘开销。",
     "当前学生贡献仅限已记录原话，尚无学生解释实验结果的记录。",
     "旧聊天仅用于方法复盘，不将旧题成功结果作为本题已验证证据。",
     "材料为持续维护的阶段性摘录，尚不是可提测的最终交付。未包含密钥、访问令牌或隐藏思维链。",
     "学生尚未亲自解释本轮实验和技术结果；Agent设计、测试、修复与解释均不能冒充学生贡献，不自评学习得分。"
-  ]
+  ],
+  "reference_rules": {
+    "source": "用户本轮粘贴的详细题面3.4节，属于第三方规则上下文，不作为学生原创技术贡献",
+    "rule_version": "agent-learning-evidence-v3-unbounded",
+    "dimensions": [
+      "问题理解与自主拆解",
+      "技术理解与迁移",
+      "独立验证与质疑",
+      "实验与反馈迭代",
+      "取舍与反思"
+    ],
+    "evidence_policy": "单个JSON内保留真实原话和实际结果。学生、Agent、工具区分。同一问题或修正链不得拆分或跨维度重复计分。分档与引用字段是评审报告要求，不伪造学生解释或评分报告。",
+    "aggregation": "独立三轮，各维度取三次中位数后相加；不是取最好一轮，也不是合并三轮实例。原始分用于排名；赛事分按名次折算。",
+    "admission": "全部正式MySQL case通过，材料有效且评审/复核完成后方能参与该榜；无官方成绩不宣称已得40分。"
+  }
 }
