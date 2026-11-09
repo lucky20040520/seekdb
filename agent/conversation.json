@@ -51,6 +51,12 @@
       "role": "student",
       "source": "用户对报名登记仓库问题的原始回复",
       "content": "[https://github.com/lucky20040520/seekdb](https://github.com/lucky20040520/seekdb)"
+    },
+    {
+      "id": "student-008",
+      "role": "student",
+      "source": "用户回答后续验证优先级的原话，保留原始字词；未提供原因，Agent不补写为学生推理",
+      "content": "官方协议兼容 把"
     }
   ],
   "experiments": [
@@ -133,6 +139,30 @@
       "command": "GitHub Actions MiniVectorDB local acceptance; jobs API for run 42563182013",
       "output": "commit a4d35b692b1466684745306e36d5fd083bd539c5; job 128983874596; conclusion=success. Validate learning material=success; Build from source with locked dependencies=success; Run self-tests offline in Linux container=success.",
       "interpretation": "Dockerfile从源码构建Python3.12.8/NumPy1.26.4镜像。执行本仓库22项自建验收，禁网、1CPU、256MiB、禁止swap；不是正式协议或MySQL准入。此结论属于Agent执行结果，尚无学生独立解释。"
+    },
+    {
+      "id": "large-transaction-resources-001",
+      "actor": "agent_with_tools",
+      "status": "executed",
+      "command": "python3 tools/verify_resources.py --data-dir /tmp/minivector-resource-final-20261109-rerun",
+      "output": "{\"status\": \"PASS\", \"rows\": 80000, \"table_bytes\": 82788890, \"address_space_limit_bytes\": 67108864, \"peak_rss_kib\": 16008, \"remaining_rows\": 79996, \"verified\": \"write, external sort, transaction update/rollback, delete/commit, restart count\", \"limitations\": \"RLIMIT_AS and RSS are not cgroup memory.peak; no formal I/O or latency limits\"}",
+      "interpretation": "首次运行在排序spill时以OSError errno28失败；df确认根盘仅剩43MiB。仅清理本次已结束且结果已取回的临时数据后剩461MiB，最终源码重跑通过。64MiB进程地址空间内处理约79MiB表、更新回滚、删除提交与重启计数；不代替正式容器资源测量。"
+    },
+    {
+      "id": "container-large-transactions-001",
+      "actor": "agent_with_tools",
+      "status": "executed",
+      "command": "GitHub Actions run 42563445647 jobs API",
+      "output": "commit 56013b86538aa156cee4ece61e2ded1b450b0535; job 128984697724; conclusion=success; Build from source with locked dependencies=success; Run self-tests offline in Linux container=success; Verify data larger than process memory with transactions=success.",
+      "interpretation": "容器构建、22项自建功能检查和超过进程内存的数据事务检查均通过，仍不是官方准入或成绩。"
+    },
+    {
+      "id": "official-protocol-investigation-001",
+      "actor": "agent_with_tools",
+      "status": "executed",
+      "command": "git ls-remote official round2; read official Yuque visible text/links; inspect MiniVectorDB task list/details; inspect recent 5 official GitHub releases",
+      "output": "Official round2 HEAD=c842a368c3394748d0499386c18f6b465242e141, unchanged. Official task list contains performance item 800517 and Agent Prompt item 800518. Performance detail links to the same Yuque article; no public driver/download found there. Recent 5 releases show seekdb product assets; no MiniVectorDB package found.",
+      "interpretation": "按用户选择，将优先级调整为官方协议兼容并暂停性能扩展。当前LOCAL_READY、TSV/END和自建错误码尚无官方一致性证据，不能宣称通过；未点击正式提测。用户只表达了优先选择，未表达技术原因，不捏造其理解。"
     }
   ],
   "retrospective": {
@@ -140,9 +170,9 @@
     "content": "旧题复盘提示：不能将发现真实缺陷等同于找到零分主因；先遍历必测，再做组合边界测试和独立真值交叉检查。该段为 Agent 总结，不能当作学生自身技术理解。"
   },
   "plans": [
-    "拿到配套题包后固定协议、错误码、资源限制与依赖，对齐现有核心并逐类运行官方测试。",
-    "全部功能类别形成闭环后再优化性能；公开和自建通过不代替正式全部通过。",
-    "继续记录真实用户判断及工具结果，不编造学生反思或运行结果。"
+    "先取得官方协议/驱动/冻结环境，逐项对齐适配层和语法，执行官方预检与公开用例，再正式提测。",
+    "保留已通过的自建容器检查和逐轮性能数据；不把它们替代正式功能、资源、排名证据。",
+    "继续记录用户实际参与的判断与工具结果，不能编造学生解释、实验或得分。"
   ],
   "limitations": [
     "已有数据库正确性基线及 22 项自建测试结果；无官方准入结果、无性能排名或官方得分。",
