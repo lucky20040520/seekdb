@@ -1,0 +1,22 @@
+{
+  "source_commit": "15ba3f8cf43b34117d3a015b54d4a5511fc073c6",
+  "run_id": 42651720183,
+  "job_id": 129279527088,
+  "status": "completed",
+  "conclusion": "success",
+  "job_started_at": "2026-11-09T16:08:33Z",
+  "job_completed_at": "2026-11-09T16:15:42Z",
+  "artifact_id": 13690412741,
+  "artifact_name": "minivector-full-exact",
+  "artifact_digest": "sha256:f782cb4f0ccf20025c37a74412bc77c90d1318456d9f2c147c4bc2ce8e279d7a",
+  "rows_per_round": 10000,
+  "dimensions": 128,
+  "queries_per_round": 1000,
+  "rounds": 3,
+  "verified_query_comparisons": 3000,
+  "content_checks_per_round": "10000 records before close and10000 after restart",
+  "functional_run_id": 42651720186,
+  "functional_conclusion": "success",
+  "evidence_source": "GitHub REST API run/job/step and artifact metadata. Counts follow locked script and successful assertion-enforced --verify-all workflow. Artifact raw timings not downloaded/read in this session.",
+  "limitations": "Own core API test,not official wire,cgroup measurements or29-case admission. No new timing medians claimed. Identical fixed seed across rounds is deliberate repeatability,not three independent datasets."
+}
