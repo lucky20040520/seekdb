@@ -1,0 +1,34 @@
+name: MiniVectorDB full-size local benchmark
+on:
+  push:
+    branches: [2026-competition-round2]
+    paths: [.github/workflows/minivector-performance.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build locked runtime from source
+        run: docker build -t minivector-benchmark .
+      - name: Three rounds of exact queries at full default scale
+        run: |
+          mkdir -p benchmark-output
+          docker run --rm --network none --cpus 2 --memory 2g --memory-swap 2g \
+            --entrypoint python -e TMPDIR=/data \
+            -v "$GITHUB_WORKSPACE/tools:/app/tools:ro" \
+            -v "$GITHUB_WORKSPACE/benchmark-output:/results" \
+            minivector-benchmark tools/benchmark.py \
+            --rows 10000 --dimensions 128 --queries 1000 --rounds 3 \
+            --verify-samples 30 --data-root /data/full-exact --output /results/full-exact.json
+      - name: Publish raw local benchmark evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: minivector-full-exact
+          path: benchmark-output/
+      - name: Scope
+        run: echo 'Core API workload; not official wire protocol, physical I/O, cgroup peak, frozen limits, formal admission or score.'
