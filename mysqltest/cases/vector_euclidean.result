@@ -1,0 +1,18 @@
+[
+  {},
+  {
+    "affected_rows": 1
+  },
+  {
+    "columns": [
+      "id",
+      "distance"
+    ],
+    "rows": [
+      [
+        1,
+        5.0
+      ]
+    ]
+  }
+]
