@@ -24,3 +24,9 @@ jobs:
           minivector-local -m unittest discover -s tests -v
       - name: Explain scope
         run: echo 'These are self-tests, not official MySQL admission or platform scores.'
+      - name: Verify data larger than process memory with transactions
+        run: >-
+          docker run --rm --network none --cpus 1 --memory 256m --memory-swap 256m
+          --entrypoint python
+          -v "$GITHUB_WORKSPACE/tools:/app/tools:ro"
+          minivector-local tools/verify_resources.py --data-dir /data/resource-probe

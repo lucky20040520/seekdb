@@ -125,6 +125,14 @@
       "command": "python3 tools/verify_resources.py --data-dir /tmp/minivector-resource-20261109-v2",
       "output": "{\"status\": \"PASS\", \"rows\": 80000, \"table_bytes\": 82788890, \"address_space_limit_bytes\": 67108864, \"peak_rss_kib\": 16096, \"verified\": \"write, external descending sort, restart, streaming count\", \"limitations\": \"RLIMIT_AS and RSS are not cgroup memory.peak; no formal I/O or latency limits\"}",
       "interpretation": "优化后的大表流式路径仍通过独立进程地址空间限制；此探测先于两个别名/同步错误修复，不能代替最终源码的全部资源验收。"
+    },
+    {
+      "id": "container-ci-001",
+      "actor": "agent_with_tools",
+      "status": "executed",
+      "command": "GitHub Actions MiniVectorDB local acceptance; jobs API for run 42563182013",
+      "output": "commit a4d35b692b1466684745306e36d5fd083bd539c5; job 128983874596; conclusion=success. Validate learning material=success; Build from source with locked dependencies=success; Run self-tests offline in Linux container=success.",
+      "interpretation": "Dockerfile从源码构建Python3.12.8/NumPy1.26.4镜像。执行本仓库22项自建验收，禁网、1CPU、256MiB、禁止swap；不是正式协议或MySQL准入。此结论属于Agent执行结果，尚无学生独立解释。"
     }
   ],
   "retrospective": {
@@ -138,7 +146,7 @@
   ],
   "limitations": [
     "已有数据库正确性基线及 22 项自建测试结果；无官方准入结果、无性能排名或官方得分。",
-    "Docker 镜像尚未构建；没有近似加速算法；UPDATE/DELETE仍重写表，存在性能与临时磁盘开销。",
+    "Docker 构建和离线容器自建检查已通过；没有近似加速算法；UPDATE/DELETE仍重写表，存在性能与临时磁盘开销。",
     "当前学生贡献仅限已记录原话，尚无学生解释实验结果的记录。",
     "旧聊天仅用于方法复盘，不将旧题成功结果作为本题已验证证据。",
     "材料为持续维护的阶段性摘录，尚不是可提测的最终交付。未包含密钥、访问令牌或隐藏思维链。",
