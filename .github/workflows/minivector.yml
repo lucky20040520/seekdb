@@ -16,6 +16,8 @@ jobs:
         run: python3 tools/validate_material.py
       - name: Build from source with locked dependencies
         run: docker build -t minivector-local .
+      - name: Check delivered versions examples and runtime file scope
+        run: python3 tools/check_delivery.py --image minivector-local
       - name: Run self-tests offline in Linux container
         run: >-
           docker run --rm --network none --cpus 1 --memory 256m --memory-swap 256m
