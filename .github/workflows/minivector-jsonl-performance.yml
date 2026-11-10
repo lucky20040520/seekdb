@@ -1,0 +1,32 @@
+name: MiniVectorDB official JSONL full workload
+on:
+  push:
+    branches: [2026-competition-round2]
+    paths: [.github/workflows/minivector-jsonl-performance.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build actual Linux amd64 submission entry
+        run: docker build --platform linux/amd64 -t minivector-jsonl-performance .
+      - name: Smoke test using official transport and unchanged config
+        run: >-
+          python3 tools/benchmark_jsonl.py --image minivector-jsonl-performance
+          --rows 200 --dimensions 8 --queries 20 --rounds 1
+          --output benchmark-smoke/result.json
+      - name: Three full rounds of official JSONL workload and all-query truth
+        run: >-
+          python3 tools/benchmark_jsonl.py --image minivector-jsonl-performance
+          --rows 10000 --dimensions 128 --queries 1000 --rounds 3
+          --output benchmark-jsonl/full-result.json
+      - name: Publish actual JSONL results and stderr logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: minivector-official-jsonl-full
+          path: benchmark-jsonl/
