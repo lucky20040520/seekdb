@@ -19,7 +19,7 @@ class InputFraming(unittest.TestCase):
             sql = ("CREATE TABLE t(id BIGINT PRIMARY KEY,s VARCHAR(3));"
                    "INSERT INTO t VALUES (1,'" + text + "');SELECT s FROM t;")
             result = subprocess.run(
-                [sys.executable, '-u', '-m', 'minivector', '--data-dir', directory],
+                [sys.executable, '-u', '-m', 'minivector', '--data-dir', directory, '--protocol', 'diagnostic'],
                 input=sql, capture_output=True, text=True, encoding='utf-8', timeout=15,
                 cwd=str(Path(__file__).resolve().parents[1]),
                 env=dict(os.environ, PYTHONIOENCODING='cp1252'))
@@ -32,7 +32,7 @@ class InputFraming(unittest.TestCase):
         root = Path(__file__).resolve().parents[1]
         with tempfile.TemporaryDirectory() as directory:
             process = subprocess.Popen(
-                [sys.executable, '-u', '-m', 'minivector', '--data-dir', directory],
+                [sys.executable, '-u', '-m', 'minivector', '--data-dir', directory, '--protocol', 'diagnostic'],
                 cwd=str(root), stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE, text=True, encoding='utf-8',
                 env=dict(os.environ, PYTHONIOENCODING='utf-8'))

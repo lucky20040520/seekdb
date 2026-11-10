@@ -1,4 +1,4 @@
-"""Local TSV diagnostic adapter, NOT the still-unpublished official protocol."""
+"""Official JSONL entry, with an explicit legacy SQL diagnostic option."""
 import argparse
 import json
 import sys
@@ -70,8 +70,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data-dir", default="/data")
     parser.add_argument("--mode", choices=("exact", "ann"), default="exact")
+    parser.add_argument("--protocol", choices=("jsonl", "diagnostic"), default="jsonl")
     args = parser.parse_args()
     db = Database(args.data_dir)
+    if args.protocol == "jsonl":
+        from .jsonl import serve
+        serve(db)
+        return
     print("LOCAL_READY", flush=True)
     try:
         for sql in statements(sys.stdin):

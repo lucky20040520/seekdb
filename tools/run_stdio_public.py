@@ -23,7 +23,8 @@ class Session:
         self.lines = queue.Queue()
         self.errors = deque(maxlen=40)
         self.process = subprocess.Popen(
-            command or [sys.executable, '-u', '-m', 'minivector', '--data-dir', str(data), '--mode', mode],
+            command or [sys.executable, '-u', '-m', 'minivector', '--data-dir', str(data),
+                        '--mode', mode, '--protocol', 'diagnostic'],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             text=True, encoding='utf-8', bufsize=1)
         def stdout():

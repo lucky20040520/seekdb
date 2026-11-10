@@ -1,0 +1,37 @@
+name: MiniVectorDB published protocol check
+on:
+  push:
+    branches: [2026-competition-round2]
+    paths: [minivector/**, protocol_check/**, mysqltest/**, Dockerfile, requirements.txt, .github/workflows/minivector-official-protocol.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  protocol:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reproduce previous diagnostic entry failure using official checker
+        run: |
+          git fetch --depth=1 origin 1182c16ef8534128eb1f93e88bc12d174290bc10
+          baseline_root=$(mktemp -d)
+          git archive 1182c16ef8534128eb1f93e88bc12d174290bc10 | tar -x -C "$baseline_root"
+          docker build --platform linux/amd64 -t minivector-before-jsonl "$baseline_root"
+          if python3 protocol_check/run.py --image minivector-before-jsonl --handshake-only --output protocol-results/before; then
+            echo 'Baseline unexpectedly passed; inspect before/after assumptions'
+            exit 1
+          fi
+          python3 -c "import json; r=json.load(open('protocol-results/before/result.json')); assert r['passed'] is False and 'invalid JSON response' in r['cases'][0]['message'],r"
+      - name: Build actual submission default entry
+        run: docker build --platform linux/amd64 -t minivector-jsonl .
+      - name: Official interactive handshake and shutdown
+        run: python3 protocol_check/run.py --image minivector-jsonl --handshake-only --output protocol-results/handshake
+      - name: Official public SQL suite with restart and live search mode
+        run: python3 protocol_check/run.py --image minivector-jsonl --output protocol-results/public
+      - name: Preserve official checker reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: minivector-official-protocol
+          path: protocol-results/

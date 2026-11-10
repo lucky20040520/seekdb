@@ -173,7 +173,7 @@ runpy.run_module('minivector',run_name='__main__')
             self.run_interrupted_worker(directory,script)
             self.run_interrupted_worker(directory,script)
             # A normal CLI can report ready only after rebuilding the index.
-            result=subprocess.run([sys.executable,'-m','minivector','--data-dir',directory],
+            result=subprocess.run([sys.executable,'-m','minivector','--data-dir',directory, '--protocol', 'diagnostic'],
                 cwd=str(Path(__file__).resolve().parents[1]),
                 input="SELECT id FROM t ORDER BY L2_DISTANCE(v,'[0,0]') LIMIT 10;\n",
                 text=True,encoding='utf-8',capture_output=True,timeout=15,

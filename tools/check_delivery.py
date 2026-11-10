@@ -26,7 +26,7 @@ def main():
     try:
         for index, file in enumerate(('first-run.sql', 'after-restart.sql')):
             command = ['docker', 'run', '--rm', '-i', '--name', names[index], '--network', 'none',
-                       '--mount', 'type=volume,src=' + volume + ',dst=/data', args.image]
+                       '--mount', 'type=volume,src=' + volume + ',dst=/data', args.image, '--protocol', 'diagnostic']
             session = Session(None, 'exact', 30, command=command)
             text = (Path(__file__).resolve().parents[1]/'examples'/file).read_text(encoding='utf-8')
             results = [session.execute(sql) for sql in statements(io.StringIO(text))]

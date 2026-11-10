@@ -164,7 +164,7 @@ class Acceptance(unittest.TestCase):
 
     def child(self):
         env = dict(os.environ, PYTHONIOENCODING="utf-8")
-        return subprocess.Popen([sys.executable, "-u", "-m", "minivector", "--data-dir", self.temp.name],
+        return subprocess.Popen([sys.executable, "-u", "-m", "minivector", "--data-dir", self.temp.name, '--protocol', 'diagnostic'],
                                 cwd=str(ROOT), stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE, text=True, encoding="utf-8", env=env)
 
@@ -183,7 +183,7 @@ class Acceptance(unittest.TestCase):
         self.assertEqual([[1]], self.rows("SELECT id FROM t;"))
 
     def test_local_multistatement_adapter(self):
-        result = subprocess.run([sys.executable, '-m', 'minivector', '--data-dir', self.temp.name], cwd=str(ROOT),
+        result = subprocess.run([sys.executable, '-m', 'minivector', '--data-dir', self.temp.name, '--protocol', 'diagnostic'], cwd=str(ROOT),
             input="INSERT INTO t VALUES (1,'a;''b',[0,0]); /* ; */ SELECT id FROM t;\n", text=True,
             encoding='utf-8', capture_output=True, timeout=15, env=dict(os.environ, PYTHONIOENCODING='utf-8'))
         self.assertEqual(0, result.returncode, result.stderr)

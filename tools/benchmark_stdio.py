@@ -61,7 +61,7 @@ def run_round(args, number):
         return Session(None, 'exact', 120, command=[
             'docker', 'run', '--rm', '-i', '--name', name, '--network', 'none',
             '--cpus', '2', '--memory', '2g', '--memory-swap', '2g',
-            '--mount', 'type=volume,src=' + volume + ',dst=/data', args.image])
+            '--mount', 'type=volume,src=' + volume + ',dst=/data', args.image, '--protocol', 'diagnostic'])
     try:
         started = time.perf_counter()
         session = start(names[0])

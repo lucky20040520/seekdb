@@ -1,15 +1,17 @@
 # MiniVectorDB correctness baseline
 
-当前阶段：已完成协议无关的功能、组合异常、完整负载全量核对、真实诊断管道、超容器内存及交付镜像验证；52项自建检查、公开20例核心断言和两种启动模式40次管道重放通过。结果与明确边界见 [协议无关工作完成记录](docs/协议无关工作完成记录.md)。官方完整通信格式、冻结配置及29例正式准入仍未确认，不能宣称已获得正式成绩。运行时Python3.12.8、NumPy1.26.4，核心存储、查询、索引和事务自行实现。
+当前阶段：官方分支f4d4e26已发布STDIO_PROTOCOL.md及protocol_check，默认入口现已对接JSONL，Docker官方工具验证正在执行。此前协议无关验证及其实际结果保留，尚无正式29例准入或比赛成绩。运行时Python3.12.8、NumPy1.26.4，存储、查询、索引和事务核心自行实现。
 
 ```powershell
 python -m unittest discover -s tests -v
-python -m minivector --data-dir ./data
+python -m minivector --data-dir ./data --protocol diagnostic
 python tools/validate_material.py
 python tools/run_public.py
 ```
 
-诊断入口按分号分隔 SQL，不要求分号之后额外换行，支持跨行、引号及注释中的分号。启动输出 `LOCAL_READY`；修改输出 `OK n`，错误输出 `ERROR code message`；查询输出 TSV、以 `END` 结束。字符串与向量字段用 JSON 字面量转义。**这些是本地诊断约定，不是官方协议，不使用 JSON 请求封装。** 公开样例的部分语法已对齐；完整语法、正式通信格式和错误码映射仍须对齐。
+默认入口读取JSON Lines：恢复完成后输出`{"type":"ready"}`，每请求一行、每响应一行，支持execute及shutdown，逐请求search_mode默认exact。详见原样保留的 [官方协议](STDIO_PROTOCOL.md)。
+
+显式`--protocol diagnostic`的旧诊断入口按分号分隔 SQL，不要求分号之后额外换行，支持跨行、引号及注释中的分号。启动输出 `LOCAL_READY`；修改输出 `OK n`，错误输出 `ERROR code message`；查询输出 TSV、以 `END` 结束。字符串与向量字段用 JSON 字面量转义。**这些是本地诊断约定，不是官方协议，不使用 JSON 请求封装。** 公开样例的部分语法已对齐；完整SQL范围和后续错误码映射仍须按官方更新对齐；当前官方error_codes为空，错误码最低要求为非空字符串。
 
 ```sql
 CREATE TABLE docs(id BIGINT PRIMARY KEY, tag VARCHAR(20), embedding VECTOR(2));
@@ -32,8 +34,8 @@ EOF 正常关闭并放弃未提交事务。再次用同一目录启动即可读�
 ```bash
 docker build -t minivector-local .
 demo_data=$(mktemp -d)
-docker run --rm -i --network none -v "$demo_data:/data" minivector-local < examples/first-run.sql
-docker run --rm -i --network none -v "$demo_data:/data" minivector-local < examples/after-restart.sql
+docker run --rm -i --network none -v "$demo_data:/data" minivector-local --protocol diagnostic < examples/first-run.sql
+docker run --rm -i --network none -v "$demo_data:/data" minivector-local --protocol diagnostic < examples/after-restart.sql
 ```
 
 第一次运行覆盖写入、普通查询、向量检索、回滚和提交；最后插入主键3但不提交，文件结束关闭进程。第二次启动复用数据目录，应只剩主键1、标题alpha、向量[3,4]，到[0,0]距离为5；主键2已提交删除，主键3随关闭回滚。SQL示例没有退出命令，使用EOF；正式退出方式仍须按驱动对齐。上述挂载保存数据库文件，容器自身随`--rm`删除。
@@ -58,6 +60,8 @@ SQL 支持建表、增删改查、AND 比较、单项 ORDER BY、LIMIT、L2_DIST
 
 逐项实现/证据/缺口对应关系见 [已知必测审计](docs/已知必测审计.md)。宽行候选预算只限制估算量，不是总进程内存承诺。
 
-官方公开样例来源与前后验证范围见 [公开题包验证](docs/公开题包验证.md)。包不包含完整运行驱动；自建核心API执行器不会改变正式通信约定。
+官方公开样例来源与前后验证范围见 [公开题包验证](docs/公开题包验证.md)。该文中的旧状态保留作历史记录；新官方交互工具为`protocol_check/run.py`，须对实际默认Docker入口运行。
 
 实际索引布局、事务维护和启动重建见 [磁盘向量索引](docs/磁盘向量索引.md)。
+
+官方镜像检查：`python3 protocol_check/run.py --image minivector-local --output protocol-results/public-new`。该工具不消耗正式提测次数；公开通过不等于正式29例准入。
