@@ -490,14 +490,16 @@ class Database:
         query = _vector(query, size)
         if mode not in ("exact", "ann"):
             raise DatabaseError("invalid search mode")
-        if candidate_budget is not None and (type(candidate_budget) is not int or candidate_budget < 1):
+        if candidate_budget is not None and candidate_budget != "auto" and (type(candidate_budget) is not int or candidate_budget < 1):
             raise DatabaseError("invalid candidate budget")
         if mode == "ann" and self.pending is None:
             name = next((name for name, target in self.vector_indexes.items() if target == (table, column)), None)
             if name is not None:
                 if name not in self.vector_runtime:
                     self._build_vector_index(name)
-                return self.vector_runtime[name].search(query, limit, predicate, candidate_budget)
+                index = self.vector_runtime[name]
+                budget = max(256, limit, (index.count * 93 + 99) // 100) if candidate_budget == "auto" else candidate_budget
+                return index.search(query, limit, predicate, budget)
         primary_key = schema["primary_key"]
         def results():
             for row in self.rows(table):

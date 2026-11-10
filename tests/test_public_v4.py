@@ -78,39 +78,31 @@ class PublicV4Test(unittest.TestCase):
             with self.subTest(case=name), tempfile.TemporaryDirectory() as directory:
                 mode = "exact"
                 for segment in segments:
-                    cmd = [sys.executable, "-m", "minivectordb", "--data", directory, "--search-mode", mode]
-                    process = subprocess.run(cmd, input="\n".join(line for line, _ in segment) + "\n",
+                    cmd = [sys.executable, "-m", "minivectordb", "--data", directory]
+                    requests, checks = [], []
+                    for line, expected in segment:
+                        if line == "--mode ann":
+                            mode = "ann"
+                        elif line.startswith("--"):
+                            self.fail("unsupported driver directive: " + line)
+                        else:
+                            requests.append({"id": len(requests), "op": "execute", "sql": line, "search_mode": mode})
+                            checks.append(expected)
+                    requests.append({"id": "shutdown", "op": "shutdown"})
+                    process = subprocess.run(cmd, input="".join(json.dumps(req, ensure_ascii=False) + "\n" for req in requests),
                                              capture_output=True, text=True, encoding="utf-8",
                                              env=dict(os.environ, PYTHONUTF8="1"), timeout=60)
                     self.assertEqual(process.returncode, 0, process.stderr)
-                    output = iter(process.stdout.splitlines())
-                    self.assertEqual(next(output), "READY")
-                    for line, expected in segment:
-                        first = next(output)
-                        if line == "--mode ann":
-                            self.assertEqual(first, "MODE\tann")
-                            mode = "ann"
-                            continue
-                        if line.startswith("--"):
-                            self.fail("unsupported driver directive: " + line)
-                        if first.startswith("ERROR\t"):
-                            fields = first.split("\t", 2)
-                            self.assertGreaterEqual(len(fields), 2)
-                            self.assertTrue(fields[1])
-                            actual = {"error": fields[1]}
-                        elif first.startswith("OK\t"):
-                            actual = {"affected_rows": int(first.split("\t", 1)[1])}
-                        else:
-                            self.assertTrue(first.startswith("COLUMNS\t"), first)
-                            actual = {"columns": first.split("\t")[1:], "rows": []}
-                            for row in output:
-                                if row == "END":
-                                    break
-                                self.assertTrue(row.startswith("ROW\t"), row)
-                                actual["rows"].append([json.loads(value) for value in row.split("\t")[1:]])
-                            else:
-                                self.fail("missing result terminator")
+                    output = iter(json.loads(line) for line in process.stdout.splitlines())
+                    self.assertEqual(next(output), {"type": "ready"})
+                    for request, expected in zip(requests, checks):
+                        actual = next(output)
+                        self.assertEqual(actual["id"], request["id"])
+                        self.assertIs(actual["ok"], "error" not in expected)
+                        if not actual["ok"]:
+                            actual["error"] = actual["error"]["code"]
                         self.check_result(actual, expected)
+                    self.assertEqual(next(output), {"id": "shutdown", "ok": True})
                     self.assertEqual(list(output), [])
 
 

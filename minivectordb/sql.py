@@ -21,6 +21,9 @@ class Result:
 _TOKEN = re.compile(r"\s*(?:(--[^\n]*(?:\n|$))|('(?:''|[^'])*')|(`(?:``|[^`])*`)|(-?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)|([A-Za-z_][A-Za-z_0-9]*)|(<=|>=|<>|!=|[(),;*=<>\[\]]))")
 
 
+_MAX_INTEGER_DIGITS = 128  # Larger than any finite float32 integer or BIGINT.
+
+
 class Parser:
     def __init__(self, sql):
         self.tokens = []
@@ -40,7 +43,13 @@ class Parser:
             elif quoted is not None:
                 self.tokens.append(("identifier", quoted[1:-1].replace("``", "`").lower()))
             elif number is not None:
-                self.tokens.append(("literal", float(number) if any(c in number for c in ".eE") else int(number)))
+                if any(c in number for c in ".eE"):
+                    numeric_value = float(number)
+                else:
+                    if len(number.lstrip("-")) > _MAX_INTEGER_DIGITS:
+                        raise DatabaseError("integer literal too long")
+                    numeric_value = int(number)
+                self.tokens.append(("literal", numeric_value))
             else:
                 self.tokens.append(("word" if word else "symbol", (word or symbol).lower()))
         self.index = 0
@@ -321,7 +330,7 @@ def execute(db, sql, *, stream=False, search_mode="exact"):
             distance_order = None
     rows = (row for row in db.rows(table) if predicate(row))
     if distance_order is not None:
-        rows = (entry[2] for entry in db.search(table, distance_order[1], _convert("VECTOR", distance_order[2]), limit, predicate, mode="ann"))
+        rows = (entry[2] for entry in db.search(table, distance_order[1], _convert("VECTOR", distance_order[2]), limit, predicate, mode="ann", candidate_budget="auto"))
     elif not ordering:
         rows = itertools.islice(rows, limit) if limit is not None else rows
     elif len(ordering) == 1 and not ordering[0][1] and limit is not None:

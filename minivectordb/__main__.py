@@ -1,4 +1,4 @@
-"""Local stdin/stdout adapter; official contest framing is not yet available."""
+"""JSON Lines process adapter for the MiniVectorDB contest protocol."""
 import argparse
 import json
 import os
@@ -8,63 +8,63 @@ from .sql import execute
 from .storage import Database, DatabaseError
 
 
-def statements(source):
-    buffer = []
-    quote = None
-    comment = False
-    while True:
-        char = source.read(1)
-        if not char:
-            if "".join(buffer).strip():
-                yield "".join(buffer)
-            return
-        buffer.append(char)
-        if comment:
-            if char == "\n":
-                comment = False
-                if "".join(buffer).strip().lower() in ("--mode ann", "--mode exact"):
-                    yield "".join(buffer).strip().lower()
-                    buffer.clear()
-            continue
-        if quote:
-            if char == quote:
-                quote = None
-            continue
-        if char in ("'", "`"):
-            quote = char
-        elif char == "-" and len(buffer) >= 2 and buffer[-2] == "-":
-            comment = True
-        elif char == ";":
-            yield "".join(buffer)
-            buffer.clear()
+def send(message):
+    print(json.dumps(message, ensure_ascii=False, allow_nan=False, separators=(",", ":")), flush=True)
+
+
+def send_result(ident, result):
+    if not result.columns:
+        send({"id": ident, "ok": True, "affected_rows": result.affected})
+        return
+    # The response is one JSON line, but stream its rows to avoid retaining
+    # the entire result set in memory. The final newline and flush complete it.
+    encode = lambda value: json.dumps(value, ensure_ascii=False, allow_nan=False, separators=(",", ":"))
+    sys.stdout.write('{"id":' + encode(ident) + ',"ok":true,"columns":' + encode(result.columns) + ',"rows":[')
+    first = True
+    for row in result.rows:
+        if not first:
+            sys.stdout.write(",")
+        sys.stdout.write(encode(row))
+        first = False
+    sys.stdout.write("]}\n")
+    sys.stdout.flush()
 
 
 def main():
-    parser = argparse.ArgumentParser(description="MiniVectorDB local protocol")
+    parser = argparse.ArgumentParser(description="MiniVectorDB JSONL protocol")
     parser.add_argument("--data", default=os.environ.get("MINIVECTORDB_DATA", "/data"))
-    parser.add_argument("--search-mode", choices=("exact", "ann"), default="exact")
     args = parser.parse_args()
+    if hasattr(sys.stdin, "reconfigure"):
+        sys.stdin.reconfigure(encoding="utf-8")
+        sys.stdout.reconfigure(encoding="utf-8")
     db = Database(args.data)
+    closed = False
     try:
-        print("READY", flush=True)
-        for statement in statements(sys.stdin):
-            if statement in ("--mode ann", "--mode exact"):
-                args.search_mode = statement.split()[1]
-                print("MODE\t" + args.search_mode, flush=True)
-                continue
+        send({"type": "ready"})
+        for line in sys.stdin:
+            ident = None
             try:
-                result = execute(db, statement, stream=True, search_mode=args.search_mode)
-                if result.columns:
-                    print("COLUMNS\t" + "\t".join(result.columns))
-                    for row in result.rows:
-                        print("ROW\t" + "\t".join(json.dumps(value, ensure_ascii=False, separators=(",", ":")) for value in row))
-                    print("END", flush=True)
-                else:
-                    print("OK\t" + str(result.affected), flush=True)
-            except DatabaseError as exc:
-                print("ERROR\t" + exc.code + "\t" + str(exc).replace("\n", " "), flush=True)
+                request = json.loads(line)
+                if not isinstance(request, dict):
+                    raise DatabaseError("request must be an object")
+                ident = request.get("id")
+                operation = request.get("op")
+                if operation == "shutdown":
+                    db.close()
+                    closed = True
+                    send({"id": ident, "ok": True})
+                    return
+                if operation != "execute" or not isinstance(request.get("sql"), str):
+                    raise DatabaseError("invalid request")
+                result = execute(db, request["sql"], stream=True, search_mode=request.get("search_mode", "exact"))
+                send_result(ident, result)
+            except (DatabaseError, json.JSONDecodeError) as exc:
+                send({"id": ident, "ok": False, "error": {
+                    "code": exc.code if isinstance(exc, DatabaseError) else "invalid_request",
+                    "message": str(exc)}})
     finally:
-        db.close()
+        if not closed:
+            db.close()
 
 
 if __name__ == "__main__":

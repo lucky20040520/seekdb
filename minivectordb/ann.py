@@ -7,7 +7,7 @@ import tempfile
 
 
 class ProjectionIndex:
-    BITS = 6
+    BITS = 8
     _KEY = struct.Struct("<q")
 
     def __init__(self, db, table, column, dimension):
@@ -15,6 +15,7 @@ class ProjectionIndex:
         rng = random.Random(18037 + dimension)
         self.planes = [[rng.choice((-1.0, 1.0)) for _ in range(dimension)] for _ in range(self.BITS)]
         self.buckets = {}
+        self.count = 0
         primary_key = db.schema(table)["primary_key"]
         try:
             for row in db.rows(table):
@@ -22,6 +23,7 @@ class ProjectionIndex:
                 if bucket not in self.buckets:
                     self.buckets[bucket] = tempfile.TemporaryFile(dir=db.directory, mode="w+b")
                 self.buckets[bucket].write(self._KEY.pack(row[primary_key]))
+                self.count += 1
         except BaseException:
             self.close()
             raise
@@ -33,13 +35,23 @@ class ProjectionIndex:
                 signature |= 1 << bit
         return signature
 
+    def probe_order(self, vector):
+        # Crossing a nearby hyperplane is more plausible than crossing a
+        # distant one. Rank multiprobe buckets by their boundary margins.
+        projections = [sum(a * b for a, b in zip(vector, plane)) for plane in self.planes]
+        signature = sum(1 << bit for bit, value in enumerate(projections) if value >= 0)
+        costs = [0.0] * (1 << self.BITS)
+        for mask in range(1, len(costs)):
+            bit = (mask & -mask).bit_length() - 1
+            costs[mask] = costs[mask & (mask - 1)] + abs(projections[bit])
+        return sorted(range(len(costs)), key=lambda bucket: (costs[bucket ^ signature], bucket))
+
     def search(self, query, limit, predicate, candidate_budget=None):
         if limit == 0:
             return []
-        signature = self.signature(query)
         candidates = []
         remaining = candidate_budget
-        buckets = sorted(range(1 << self.BITS), key=lambda bucket: (bin(bucket ^ signature).count("1"), bucket))
+        buckets = self.probe_order(query) if remaining is not None else range(1 << self.BITS)
         for bucket in buckets:
             file = self.buckets.get(bucket)
             if file is None:

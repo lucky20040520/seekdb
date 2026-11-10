@@ -83,31 +83,22 @@ class PublicCaseTest(unittest.TestCase):
         manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
         for case in manifest["cases"]:
             name = case["id"]
-            statements = (ROOT / "cases" / (name + ".test")).read_text(encoding="utf-8")
+            statements = (ROOT / "cases" / (name + ".test")).read_text(encoding="utf-8").splitlines()
             expected = json.loads((ROOT / "cases" / (name + ".result")).read_text(encoding="utf-8"))
             with self.subTest(case=name), tempfile.TemporaryDirectory() as directory:
                 env = dict(os.environ, PYTHONUTF8="1")
+                requests = [dict(id=i, op="execute", sql=sql, search_mode="exact") for i, sql in enumerate(statements, 1) if sql.strip()]
+                requests.append(dict(id="shutdown", op="shutdown"))
                 process = subprocess.run([sys.executable, "-m", "minivectordb", "--data", directory],
-                                         input=statements, capture_output=True, text=True,
+                                         input="".join(json.dumps(req, ensure_ascii=False) + "\n" for req in requests), capture_output=True, text=True,
                                          encoding="utf-8", env=env, timeout=60)
                 self.assertEqual(process.returncode, 0, process.stderr)
-                lines = iter(process.stdout.splitlines())
-                self.assertEqual(next(lines), "READY")
-                for assertion in expected:
-                    first = next(lines)
-                    self.assertFalse(first.startswith("ERROR\t"), first)
-                    if first.startswith("OK\t"):
-                        actual = {"affected_rows": int(first.split("\t", 1)[1])}
-                    else:
-                        self.assertTrue(first.startswith("COLUMNS\t"), first)
-                        actual = {"columns": first.split("\t")[1:], "rows": []}
-                        for line in lines:
-                            if line == "END":
-                                break
-                            self.assertTrue(line.startswith("ROW\t"), line)
-                            actual["rows"].append([json.loads(value) for value in line.split("\t")[1:]])
-                        else:
-                            self.fail("missing END marker")
+                lines = iter(json.loads(line) for line in process.stdout.splitlines())
+                self.assertEqual(next(lines), {"type": "ready"})
+                for request, assertion in zip(requests, expected):
+                    actual = next(lines)
+                    self.assertEqual(actual["id"], request["id"])
+                    self.assertIs(actual["ok"], True, actual)
                     if "affected_rows" in assertion:
                         self.assertEqual(actual.get("affected_rows"), assertion["affected_rows"])
                     if "columns" in assertion:
@@ -115,6 +106,7 @@ class PublicCaseTest(unittest.TestCase):
                     if "rows" in assertion:
                         compare = same_unordered if assertion.get("unordered") else same_value
                         self.assertTrue(compare(actual.get("rows"), assertion["rows"]))
+                self.assertEqual(next(lines), {"id": "shutdown", "ok": True})
                 self.assertEqual(list(lines), [])
 
 
