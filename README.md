@@ -67,3 +67,5 @@ SQL 支持建表、增删改查、AND 比较、单项 ORDER BY、LIMIT、L2_DIST
 官方镜像检查：`python3 protocol_check/run.py --image minivector-local --output protocol-results/public-new`。该工具不消耗正式提测次数；公开通过不等于正式29例准入。
 
 默认JSONL示例：同一数据卷依次输入 `examples/first-run.jsonl` 和 `examples/after-restart.jsonl`，无需 `--protocol diagnostic`。实际验证与新旧说明冲突处理见 [官方JSONL对接](docs/官方JSONL对接.md)。
+
+官方JSONL默认入口已完成三轮10000行/128维/1000查询完整负载、每批100行显式提交、全部查询真值及重启内容核对。写入中位4.576秒，1000查询中位3.689秒；详细资源、超时与正式成绩边界见 [官方JSONL完整负载验证](docs/官方JSONL完整负载验证.md)。
