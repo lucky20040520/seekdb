@@ -1,0 +1,13 @@
+{"id": 1, "op": "execute", "sql": "CREATE TABLE docs(id BIGINT PRIMARY KEY,title VARCHAR(20),embedding VECTOR(2));", "search_mode": "exact"}
+{"id": 2, "op": "execute", "sql": "INSERT INTO docs VALUES (1,'alpha',[3,4]),(2,'beta',[1,0]);", "search_mode": "exact"}
+{"id": 3, "op": "execute", "sql": "SELECT id,title FROM docs ORDER BY id;", "search_mode": "exact"}
+{"id": 4, "op": "execute", "sql": "SELECT id,L2_DISTANCE(embedding,[0,0]) AS distance FROM docs ORDER BY distance LIMIT 2;", "search_mode": "exact"}
+{"id": 5, "op": "execute", "sql": "BEGIN;", "search_mode": "exact"}
+{"id": 6, "op": "execute", "sql": "UPDATE docs SET embedding=[0,0] WHERE id=1;", "search_mode": "exact"}
+{"id": 7, "op": "execute", "sql": "ROLLBACK;", "search_mode": "exact"}
+{"id": 8, "op": "execute", "sql": "BEGIN;", "search_mode": "exact"}
+{"id": 9, "op": "execute", "sql": "DELETE FROM docs WHERE id=2;", "search_mode": "exact"}
+{"id": 10, "op": "execute", "sql": "COMMIT;", "search_mode": "exact"}
+{"id": 11, "op": "execute", "sql": "BEGIN;", "search_mode": "exact"}
+{"id": 12, "op": "execute", "sql": "INSERT INTO docs VALUES (3,'uncommitted',[9,9]);", "search_mode": "exact"}
+{"id": "shutdown", "op": "shutdown"}

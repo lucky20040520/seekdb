@@ -1,0 +1,4 @@
+{"id": 1, "op": "execute", "sql": "SELECT id,title,embedding FROM docs ORDER BY id;", "search_mode": "exact"}
+{"id": 2, "op": "execute", "sql": "SELECT id,L2_DISTANCE(embedding,[0,0]) AS distance FROM docs ORDER BY distance LIMIT 10;", "search_mode": "exact"}
+{"id": 3, "op": "execute", "sql": "SELECT id FROM docs WHERE id=3;", "search_mode": "exact"}
+{"id": "shutdown", "op": "shutdown"}

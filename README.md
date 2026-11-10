@@ -1,6 +1,6 @@
 # MiniVectorDB correctness baseline
 
-当前阶段：官方分支f4d4e26已发布STDIO_PROTOCOL.md及protocol_check，默认入口现已对接JSONL，Docker官方工具验证正在执行。此前协议无关验证及其实际结果保留，尚无正式29例准入或比赛成绩。运行时Python3.12.8、NumPy1.26.4，存储、查询、索引和事务核心自行实现。
+当前阶段：官方分支f4d4e26已发布STDIO_PROTOCOL.md及protocol_check，默认入口现已对接JSONL，实际Docker镜像已通过官方交互式握手、shutdown及20公开例，完整回归通过。此前协议无关验证及其实际结果保留，尚无正式29例准入或比赛成绩。运行时Python3.12.8、NumPy1.26.4，存储、查询、索引和事务核心自行实现。
 
 ```powershell
 python -m unittest discover -s tests -v
@@ -65,3 +65,5 @@ SQL 支持建表、增删改查、AND 比较、单项 ORDER BY、LIMIT、L2_DIST
 实际索引布局、事务维护和启动重建见 [磁盘向量索引](docs/磁盘向量索引.md)。
 
 官方镜像检查：`python3 protocol_check/run.py --image minivector-local --output protocol-results/public-new`。该工具不消耗正式提测次数；公开通过不等于正式29例准入。
+
+默认JSONL示例：同一数据卷依次输入 `examples/first-run.jsonl` 和 `examples/after-restart.jsonl`，无需 `--protocol diagnostic`。实际验证与新旧说明冲突处理见 [官方JSONL对接](docs/官方JSONL对接.md)。
