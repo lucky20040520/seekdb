@@ -91,6 +91,7 @@ Table decode_table(const Json& value) {
     if (value.contains("files")) table.files=value.at("files").get<std::vector<std::string>>();
     else if (value.contains("file") && !value["file"].is_null()) table.files.push_back(value["file"].get<std::string>());
     table.indexes=value.value("indexes",Json::object());
+    table.key_ranges=value.value("key_ranges",Json::object());
     return table;
 }
 
@@ -538,11 +539,15 @@ void Database::rewrite(const std::string& name,const std::function<void(const Ro
     const auto target=path/filename, key_target=path/(filename+".keys");
     try {
         Output output(target), keys(key_target);
+        std::optional<int64_t> low, high;
         producer([&](const Row& row) {
             std::string encoded=row_json(row).dump();
             encoded.push_back('\n');
             output.write(encoded);
-            put_le(keys,static_cast<uint64_t>(std::get<int64_t>(row[pk])),8);
+            const int64_t key=std::get<int64_t>(row[pk]);
+            put_le(keys,static_cast<uint64_t>(key),8);
+            low=low ? std::min(*low,key) : key;
+            high=high ? std::max(*high,key) : key;
         });
         output.durable(); keys.durable();
         if (append) {
@@ -550,7 +555,9 @@ void Database::rewrite(const std::string& name,const std::function<void(const Ro
             catalog[name]["files"]=files; catalog[name]["file"]=nullptr;
         } else {
             catalog[name].erase("files"); catalog[name]["file"]=filename;
+            catalog[name].erase("key_ranges");
         }
+        if (low) catalog[name]["key_ranges"][filename]=Json::array({*low,*high});
         prepare_indexes(catalog,name);
     } catch (...) {
         remove_quietly(target); remove_quietly(key_target); throw;
@@ -584,7 +591,15 @@ int64_t Database::insert(const std::string& name,const std::vector<Json>& values
         if (!keys.insert(std::get<int64_t>(row[pk])).second) fail("duplicate primary key","DUPLICATE");
         added.push_back(std::move(row));
     }
+    if (keys.empty()) return 0;
+    const auto bounds=std::minmax_element(keys.begin(),keys.end());
     for (const auto& file:schema.files) {
+        // Immutable segment bounds are published atomically with the rows.
+        // Old catalogs without bounds still use the complete duplicate check.
+        const auto range=schema.key_ranges.find(file);
+        if (range!=schema.key_ranges.end() &&
+            (*bounds.second<range->at(0).get<int64_t>() ||
+             *bounds.first>range->at(1).get<int64_t>())) continue;
         const auto keys_path=path/(file+".keys");
         if (fs::exists(keys_path)) {
             auto source=input(keys_path);

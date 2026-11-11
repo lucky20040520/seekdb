@@ -1,0 +1,39 @@
+name: MiniVectorDB C++ migration verification
+on:
+  push:
+    branches: [codex/minivectordb-cpp-migration]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate submission materials
+        run: |
+          python3 tools/validate_material.py agent/conversation.json
+          cmp conversation.json agent/conversation.json
+      - name: Build Linux amd64 candidate
+        run: docker build --platform linux/amd64 -t migration-cpp .
+      - name: Official public checks on C++ entrypoint
+        run: python3 protocol_check/run.py --image migration-cpp --output protocol-results/migration-public
+      - name: Transactions recovery and boundary regression
+        run: python3 tools/test_cpp.py --docker-image migration-cpp --output protocol-results/migration-regression.json
+      - name: Build exact previously submitted C++ baseline
+        run: |
+          git fetch --depth=1 origin 8c2bbcac83953c360a0f55e601da8538e5b18326
+          baseline=$(mktemp -d)
+          git archive 8c2bbcac83953c360a0f55e601da8538e5b18326 cpp Dockerfile | tar -x -C "$baseline"
+          docker build --platform linux/amd64 -t migration-before "$baseline"
+      - name: Compare original C++ and migration under a 128 MiB limit
+        run: |
+          before_status=0
+          python3 tools/check_cpp_large.py --image migration-before --output protocol-results/migration-before.json || before_status=$?
+          echo "Baseline exit status = $before_status"
+          python3 tools/check_cpp_large.py --image migration-cpp --output protocol-results/migration-after.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cpp-migration-evidence
+          path: protocol-results/

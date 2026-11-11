@@ -21,7 +21,12 @@ struct DBError : std::runtime_error {
 using Cell = std::variant<int64_t,std::string,std::vector<float>>;
 using Row = std::vector<Cell>;
 struct Column { std::string name,kind; int64_t size=0; bool primary=false; };
-struct Table { std::vector<Column> columns; std::vector<std::string> files; Json indexes=Json::object(); };
+struct Table {
+    std::vector<Column> columns;
+    std::vector<std::string> files;
+    Json indexes=Json::object();
+    Json key_ranges=Json::object();
+};
 struct Condition { std::string column,op; Json value; };
 struct Predicate {
     size_t column;
