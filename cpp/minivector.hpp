@@ -17,7 +17,7 @@ struct DBError : std::runtime_error {
     std::string code;
     DBError(std::string code, std::string message) : std::runtime_error(message), code(std::move(code)) {}
 };
-[[noreturn]] inline void fail(const std::string& message, const std::string& code="INVALID") { throw DBError(code,message); }
+[[noreturn]] inline void fail(const std::string& message, const std::string& code="invalid_request") { throw DBError(code,message); }
 using Cell = std::variant<int64_t,std::string,std::vector<float>>;
 using Row = std::vector<Cell>;
 struct Column { std::string name,kind; int64_t size=0; bool primary=false; };

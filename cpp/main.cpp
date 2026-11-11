@@ -14,9 +14,9 @@ class RequestScanner {
     const std::string& text; size_t pos=0;
     void ws() { while(pos<text.size() && (text[pos]==' '||text[pos]=='\t'||text[pos]=='\r'||text[pos]=='\n')) ++pos; }
     bool eat(char c) { ws(); if(pos<text.size()&&text[pos]==c){++pos;return true;} return false; }
-    void need(char c) { if(!eat(c)) fail("malformed JSON request","PROTOCOL"); }
+    void need(char c) { if(!eat(c)) fail("malformed JSON request","protocol_error"); }
     std::string string() {
-        ws(); size_t start=pos; if(pos==text.size()||text[pos++]!='"') fail("JSON string required","PROTOCOL");
+        ws(); size_t start=pos; if(pos==text.size()||text[pos++]!='"') fail("JSON string required","protocol_error");
         bool escaped=false;
         while(pos<text.size()) {
             char c=text[pos++];
@@ -24,11 +24,11 @@ class RequestScanner {
             if(c=='\\'){escaped=true;continue;}
             if(c=='"') return Json::parse(text.substr(start,pos-start)).get<std::string>();
         }
-        fail("unterminated JSON string","PROTOCOL");
+        fail("unterminated JSON string","protocol_error");
     }
     void value(unsigned depth) {
-        if(depth>128) fail("JSON nesting too deep","PROTOCOL");
-        ws(); if(pos==text.size()) fail("missing JSON value","PROTOCOL");
+        if(depth>128) fail("JSON nesting too deep","protocol_error");
+        ws(); if(pos==text.size()) fail("missing JSON value","protocol_error");
         char c=text[pos];
         if(c=='"'){string();return;}
         if(c=='{'){object(depth+1,false);return;}
@@ -39,23 +39,23 @@ class RequestScanner {
         size_t number_start=pos;
         if(c=='-') ++pos;
         auto digit=[&](){return pos<text.size()&&text[pos]>='0'&&text[pos]<='9';};
-        if(!digit()) fail("invalid JSON number","PROTOCOL");
+        if(!digit()) fail("invalid JSON number","protocol_error");
         if(text[pos]=='0') ++pos; else while(digit()) ++pos;
-        if(pos<text.size()&&text[pos]=='.'){++pos;if(!digit())fail("invalid JSON fraction","PROTOCOL");while(digit())++pos;}
+        if(pos<text.size()&&text[pos]=='.'){++pos;if(!digit())fail("invalid JSON fraction","protocol_error");while(digit())++pos;}
         if(pos<text.size()&&(text[pos]=='e'||text[pos]=='E')) {
             ++pos;if(pos<text.size()&&(text[pos]=='+'||text[pos]=='-'))++pos;
-            if(!digit())fail("invalid JSON exponent","PROTOCOL");
+            if(!digit())fail("invalid JSON exponent","protocol_error");
             while(digit())++pos;
         }
         const std::string number=text.substr(number_start,pos-number_start);
         if(number.find_first_of(".eE")!=std::string::npos && !std::isfinite(std::strtod(number.c_str(),nullptr)))
-            fail("nonfinite JSON number","PROTOCOL");
+            fail("nonfinite JSON number","protocol_error");
     }
     void object(unsigned depth,bool root) {
         need('{'); std::unordered_set<std::string> keys;
         if(eat('}'))return;
         do {
-            std::string key=string(); if(!keys.insert(key).second)fail("duplicate JSON key","PROTOCOL");
+            std::string key=string(); if(!keys.insert(key).second)fail("duplicate JSON key","protocol_error");
             need(':');ws();size_t start=pos;value(depth);
             if(root&&key=="id"){id_start=start;id_end=pos;}
         } while(eat(','));
@@ -65,8 +65,8 @@ public:
     size_t id_start=std::string::npos,id_end=0;
     explicit RequestScanner(const std::string& s):text(s){}
     Json parse(std::string& id) {
-        object(0,true); ws();if(pos!=text.size())fail("trailing JSON data","PROTOCOL");
-        if(id_start==std::string::npos)fail("request id required","PROTOCOL");
+        object(0,true); ws();if(pos!=text.size())fail("trailing JSON data","protocol_error");
+        if(id_start==std::string::npos)fail("request id required","protocol_error");
         id=text.substr(id_start,id_end-id_start);
         return Json::parse(text.substr(0,id_start)+"null"+text.substr(id_end));
     }
@@ -108,10 +108,10 @@ void serve(Database& db) {
             Json request;
             { profile::Scope timer(profile::Phase::protocol_parse); request=RequestScanner(line).parse(id); }
             if(request.value("op",Json())=="shutdown"){db.close();emit(id,{{"ok",true}});return;}
-            if(request.value("op",Json())!="execute")fail("unsupported operation","UNSUPPORTED_OP");
-            if(!request.contains("sql")||!request["sql"].is_string())fail("SQL string required","PROTOCOL");
+            if(request.value("op",Json())!="execute")fail("unsupported operation","unsupported_operation");
+            if(!request.contains("sql")||!request["sql"].is_string())fail("SQL string required","protocol_error");
             Json mode=request.value("search_mode",Json("exact"));
-            if(mode!="exact"&&mode!="ann")fail("exact/ann search_mode required","PROTOCOL");
+            if(mode!="exact"&&mode!="ann")fail("exact/ann search_mode required","protocol_error");
             Result result=execute(db,request["sql"].get<std::string>(),mode.get<std::string>());
             if(!result.query){emit(id,{{"ok",true},{"affected_rows",result.affected}});continue;}
             ResponseBuffer output(db.path);
@@ -122,7 +122,7 @@ void serve(Database& db) {
         } catch(const DBError& error) {
             emit(id,{{"ok",false},{"error",{{"code",error.code},{"message",error.what()}}}});
         } catch(const Json::exception& error) {
-            emit(id,{{"ok",false},{"error",{{"code","PROTOCOL"},{"message",error.what()}}}});
+            emit(id,{{"ok",false},{"error",{{"code","protocol_error"},{"message",error.what()}}}});
         }
     }
     {profile::Request close_profile("eof_close",++sequence);db.close();}

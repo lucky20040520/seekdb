@@ -96,7 +96,7 @@ Table decode_table(const Json& value) {
 }
 
 Row decode_row(const Table& table,const Json& encoded) {
-    if (!encoded.is_array() || encoded.size()!=table.columns.size()) fail("stored row does not match schema","IO");
+    if (!encoded.is_array() || encoded.size()!=table.columns.size()) fail("stored row does not match schema","storage_error");
     Row row;
     row.reserve(table.columns.size());
     for (size_t i=0;i<table.columns.size();++i) row.push_back(validate(table.columns[i],encoded[i]));
@@ -121,14 +121,14 @@ size_t utf8_length(const std::string& value) {
         else if (first>=0xc2 && first<=0xdf) { scalar=first&0x1f; trailing=1; minimum=0x80; }
         else if (first>=0xe0 && first<=0xef) { scalar=first&0x0f; trailing=2; minimum=0x800; }
         else if (first>=0xf0 && first<=0xf4) { scalar=first&0x07; trailing=3; minimum=0x10000; }
-        else fail("invalid Unicode string","TYPE");
-        if (trailing>value.size()-i) fail("invalid Unicode string","TYPE");
+        else fail("invalid Unicode string","type_error");
+        if (trailing>value.size()-i) fail("invalid Unicode string","type_error");
         for (size_t j=0;j<trailing;++j) {
             const unsigned char next=static_cast<unsigned char>(value[i++]);
-            if ((next&0xc0)!=0x80) fail("invalid Unicode string","TYPE");
+            if ((next&0xc0)!=0x80) fail("invalid Unicode string","type_error");
             scalar=(scalar<<6)|(next&0x3f);
         }
-        if (scalar<minimum || scalar>0x10ffff || (scalar>=0xd800 && scalar<=0xdfff)) fail("invalid Unicode string","TYPE");
+        if (scalar<minimum || scalar>0x10ffff || (scalar>=0xd800 && scalar<=0xdfff)) fail("invalid Unicode string","type_error");
         ++result;
     }
     return result;
@@ -171,7 +171,7 @@ bool valid_index(const fs::path& directory,const std::string& rows,const Json& f
 std::string build_index(const fs::path& directory,const std::string& rows,const Table& table,const std::string& column) {
     const size_t vector_column=column_index(table,column), pk=primary_index(table);
     const int64_t dimension=table.columns[vector_column].size;
-    if (dimension<=0 || uint64_t(dimension)>std::numeric_limits<uint32_t>::max() || vector_column>std::numeric_limits<uint32_t>::max()) fail("index dimension out of range","SCHEMA");
+    if (dimension<=0 || uint64_t(dimension)>std::numeric_limits<uint32_t>::max() || vector_column>std::numeric_limits<uint32_t>::max()) fail("index dimension out of range","invalid_schema");
     const std::string filename=unique_name("index-",".flat");
     const auto target=directory/filename;
     try {
@@ -235,17 +235,17 @@ Json row_json(const Row& row) {
 
 Cell validate(const Column& column,const Json& value,bool for_storage) {
     if (column.kind=="BIGINT") {
-        if (!value.is_number_integer() || (value.is_number_unsigned() && value.get<uint64_t>()>uint64_t(std::numeric_limits<int64_t>::max()))) fail("BIGINT value out of range or wrong type","TYPE");
+        if (!value.is_number_integer() || (value.is_number_unsigned() && value.get<uint64_t>()>uint64_t(std::numeric_limits<int64_t>::max()))) fail("BIGINT value out of range or wrong type","type_error");
         return value.get<int64_t>();
     }
     if (column.kind=="VARCHAR") {
-        if (!value.is_string()) fail("VARCHAR type or length mismatch","TYPE");
+        if (!value.is_string()) fail("VARCHAR type or length mismatch","type_error");
         const auto& text=value.get_ref<const std::string&>();
         const size_t length=utf8_length(text);
-        if (for_storage && (column.size<0 || uint64_t(length)>uint64_t(column.size))) fail("VARCHAR type or length mismatch","TYPE");
+        if (for_storage && (column.size<0 || uint64_t(length)>uint64_t(column.size))) fail("VARCHAR type or length mismatch","type_error");
         return text;
     }
-    if (column.kind!="VECTOR") fail("unsupported type","SCHEMA");
+    if (column.kind!="VECTOR") fail("unsupported type","type_error");
     Json decoded;
     const Json* array=&value;
     if (value.is_string()) {
@@ -253,17 +253,17 @@ Cell validate(const Column& column,const Json& value,bool for_storage) {
         // row-decode timer; avoid attributing the same interval twice.
         profile::Scope timer(profile::Phase::vector_literal_parse,profile::stored_decode_depth==0);
         try { decoded=Json::parse(value.get_ref<const std::string&>()); }
-        catch (const Json::exception&) { fail("invalid VECTOR array literal","TYPE"); }
+        catch (const Json::exception&) { fail("invalid VECTOR array literal","invalid_vector"); }
         array=&decoded;
     }
-    if (!array->is_array() || column.size<0 || array->size()!=uint64_t(column.size)) fail("VECTOR dimension mismatch","TYPE");
+    if (!array->is_array() || column.size<0 || array->size()!=uint64_t(column.size)) fail("VECTOR dimension mismatch","dimension_mismatch");
     std::vector<float> result;
     result.reserve(array->size());
     for (const auto& element:*array) {
-        if (!element.is_number()) fail("VECTOR element must be numeric","TYPE");
+        if (!element.is_number()) fail("VECTOR element must be numeric","invalid_vector");
         const double number=element.get<double>();
         const float stored=static_cast<float>(number);
-        if (!std::isfinite(number) || !std::isfinite(stored)) fail("VECTOR requires finite float32","TYPE");
+        if (!std::isfinite(number) || !std::isfinite(stored)) fail("VECTOR requires finite float32","invalid_vector");
         result.push_back(stored);
     }
     return result;
@@ -271,12 +271,12 @@ Cell validate(const Column& column,const Json& value,bool for_storage) {
 
 size_t column_index(const Table& table,const std::string& name) {
     for (size_t i=0;i<table.columns.size();++i) if (table.columns[i].name==name) return i;
-    fail("unknown column: "+name,"SCHEMA");
+    fail("unknown column: "+name,"unknown_column");
 }
 
 size_t primary_index(const Table& table) {
     for (size_t i=0;i<table.columns.size();++i) if (table.columns[i].primary) return i;
-    fail("missing primary key","SCHEMA");
+    fail("missing primary key","missing_primary_key");
 }
 
 bool Predicate::matches(const Cell& actual) const {
@@ -293,8 +293,8 @@ Predicates compile_conditions(const Table& table,const std::vector<Condition>& c
     Predicates result;
     for (const auto& condition:conditions) {
         const size_t index=column_index(table,condition.column);
-        if (table.columns[index].kind=="VECTOR") fail("vector comparison unsupported");
-        if (condition.op!="=" && condition.op!="<" && condition.op!="<=" && condition.op!=">" && condition.op!=">=") fail("unsupported comparison operator");
+        if (table.columns[index].kind=="VECTOR") fail("vector comparison unsupported","unsupported_sql");
+        if (condition.op!="=" && condition.op!="<" && condition.op!="<=" && condition.op!=">" && condition.op!=">=") fail("unsupported comparison operator","unsupported_sql");
         result.tests.push_back({index,condition.op,validate(table.columns[index],condition.value,false)});
     }
     return result;
@@ -306,7 +306,7 @@ Database::Database(const fs::path& directory) : path(directory) {
     if (fs::exists(catalog_path)) {
         auto source=input(catalog_path);
         source>>catalog_;
-        if (!catalog_.is_object()) fail("invalid catalog","IO");
+        if (!catalog_.is_object()) fail("invalid catalog","storage_error");
     }
     collect();
     Json recovered=catalog_;
@@ -317,7 +317,7 @@ const Json& Database::visible() const { return transaction_ ? *transaction_ : ca
 
 Table Database::table(const std::string& name) const {
     const auto found=visible().find(name);
-    if (found==visible().end()) fail("unknown table: "+name,"SCHEMA");
+    if (found==visible().end()) fail("unknown table: "+name,"unknown_table");
     return decode_table(*found);
 }
 
@@ -363,19 +363,19 @@ void Database::accept(const Json& catalog) {
 }
 
 void Database::begin() {
-    if (transaction_) fail("transaction already active","TRANSACTION");
+    if (transaction_) fail("transaction already active","transaction_already_active");
     transaction_=catalog_;
 }
 
 void Database::commit() {
-    if (!transaction_) fail("no active transaction","TRANSACTION");
+    if (!transaction_) fail("no active transaction","no_active_transaction");
     publish(*transaction_);
     transaction_.reset();
     collect();
 }
 
 void Database::rollback() {
-    if (!transaction_) fail("no active transaction","TRANSACTION");
+    if (!transaction_) fail("no active transaction","no_active_transaction");
     transaction_.reset();
     collect();
 }
@@ -383,21 +383,21 @@ void Database::rollback() {
 void Database::close() { transaction_.reset(); collect(); }
 
 void Database::create(const std::string& name,const std::vector<Column>& columns) {
-    if (visible().contains(name)) fail("table exists","SCHEMA");
+    if (visible().contains(name)) fail("table exists","table_exists");
     std::set<std::string> names;
     size_t primaries=0,vectors=0;
     Json encoded=Json::array();
     for (const auto& column:columns) {
-        if (!names.insert(column.name).second) fail("duplicate or empty columns","SCHEMA");
-        if (column.primary) { ++primaries; if (column.kind!="BIGINT") fail("exactly one BIGINT primary key required","SCHEMA"); }
+        if (!names.insert(column.name).second) fail("duplicate or empty columns","invalid_schema");
+        if (column.primary) { ++primaries; if (column.kind!="BIGINT") fail("exactly one BIGINT primary key required","invalid_schema"); }
         if (column.kind=="VECTOR") ++vectors;
-        if (column.kind!="BIGINT" && column.kind!="VARCHAR" && column.kind!="VECTOR") fail("unsupported type","SCHEMA");
-        if (column.kind!="BIGINT" && column.size<=0) fail("positive type size required","SCHEMA");
+        if (column.kind!="BIGINT" && column.kind!="VARCHAR" && column.kind!="VECTOR") fail("unsupported type","type_error");
+        if (column.kind!="BIGINT" && column.size<=0) fail("positive type size required","invalid_schema");
         encoded.push_back({{"name",column.name},{"kind",column.kind},{"size",column.size},{"primary",column.primary}});
     }
-    if (columns.empty()) fail("duplicate or empty columns","SCHEMA");
-    if (primaries!=1) fail("exactly one BIGINT primary key required","SCHEMA");
-    if (vectors>1) fail("at most one vector column","SCHEMA");
+    if (columns.empty()) fail("duplicate or empty columns","invalid_schema");
+    if (primaries!=1) fail("exactly one BIGINT primary key required","invalid_schema");
+    if (vectors>1) fail("at most one vector column","invalid_schema");
     Json catalog=visible();
     catalog[name]={{"columns",encoded},{"file",nullptr},{"indexes",Json::object()}};
     accept(catalog);
@@ -573,11 +573,11 @@ int64_t Database::insert(const std::string& name,const std::vector<Json>& values
     for (const auto& column:schema.columns) supplied.push_back(column.name);
     if (column_names) supplied=*column_names;
     std::set<std::string> unique(supplied.begin(),supplied.end());
-    if (unique.size()!=supplied.size() || supplied.size()!=schema.columns.size()) fail("INSERT must supply each column once","SCHEMA");
+    if (unique.size()!=supplied.size() || supplied.size()!=schema.columns.size()) fail("INSERT must supply each column once","invalid_insert");
     std::vector<size_t> positions;
     for (const auto& column:schema.columns) {
         const auto position=std::find(supplied.begin(),supplied.end(),column.name);
-        if (position==supplied.end()) fail("INSERT must supply each column once","SCHEMA");
+        if (position==supplied.end()) fail("INSERT must supply each column once","invalid_insert");
         positions.push_back(static_cast<size_t>(position-supplied.begin()));
     }
     const size_t pk=primary_index(schema);
@@ -585,10 +585,10 @@ int64_t Database::insert(const std::string& name,const std::vector<Json>& values
     std::vector<Row> added;
     added.reserve(values.size());
     for (const auto& value:values) {
-        if (!value.is_array() || value.size()!=supplied.size()) fail("INSERT value count mismatch");
+        if (!value.is_array() || value.size()!=supplied.size()) fail("INSERT value count mismatch","column_count_mismatch");
         Row row; row.reserve(schema.columns.size());
         for (size_t i=0;i<schema.columns.size();++i) row.push_back(validate(schema.columns[i],value[positions[i]]));
-        if (!keys.insert(std::get<int64_t>(row[pk])).second) fail("duplicate primary key","DUPLICATE");
+        if (!keys.insert(std::get<int64_t>(row[pk])).second) fail("duplicate primary key","duplicate_key");
         added.push_back(std::move(row));
     }
     if (keys.empty()) return 0;
@@ -607,17 +607,17 @@ int64_t Database::insert(const std::string& name,const std::vector<Json>& values
             do {
                 source.read(reinterpret_cast<char*>(block.data()),block.size());
                 const auto bytes=source.gcount();
-                if (bytes%8) fail("truncated primary key file","IO");
+                if (bytes%8) fail("truncated primary key file","storage_error");
                 for (std::streamsize offset=0;offset<bytes;offset+=8) {
                     const uint64_t bits=get_le(block.data()+offset,8);
                     int64_t key; std::memcpy(&key,&bits,sizeof(key));
-                    if (keys.count(key)) fail("duplicate primary key","DUPLICATE");
+                    if (keys.count(key)) fail("duplicate primary key","duplicate_key");
                 }
             } while (source);
             if (source.bad()) io_error("primary key file read failed");
         } else {
             Table segment=schema; segment.files={file};
-            scan(segment,[&](const Row& row) { if (keys.count(std::get<int64_t>(row[pk]))) fail("duplicate primary key","DUPLICATE"); });
+            scan(segment,[&](const Row& row) { if (keys.count(std::get<int64_t>(row[pk]))) fail("duplicate primary key","duplicate_key"); });
         }
     }
     rewrite(name,[&](const RowVisitor& emit) { for (const auto& row:added) emit(row); },true);
@@ -630,7 +630,7 @@ int64_t Database::modify(const std::string& name,const std::vector<Condition>& c
     std::map<size_t,Cell> changes;
     if (assignments) for (const auto& assignment:*assignments) {
         const size_t index=column_index(schema,assignment.column);
-        if (schema.columns[index].primary || changes.count(index)) fail("primary key update or duplicate assignment unsupported");
+        if (schema.columns[index].primary || changes.count(index)) fail("primary key update or duplicate assignment unsupported","unsupported_sql");
         changes.emplace(index,validate(schema.columns[index],assignment.value));
     }
     int64_t count=0;
@@ -649,9 +649,9 @@ int64_t Database::modify(const std::string& name,const std::vector<Condition>& c
 
 void Database::create_index(const std::string& name,const std::string& table_name,const std::string& column) {
     const Table schema=table(table_name);
-    for (const auto& value:visible()) if (value.at("indexes").contains(name)) fail("index exists","SCHEMA");
+    for (const auto& value:visible()) if (value.at("indexes").contains(name)) fail("index exists","index_exists");
     const auto found=std::find_if(schema.columns.begin(),schema.columns.end(),[&](const Column& c) { return c.name==column && c.kind=="VECTOR"; });
-    if (found==schema.columns.end()) fail("index requires VECTOR column","SCHEMA");
+    if (found==schema.columns.end()) fail("index requires VECTOR column","invalid_schema");
     Json catalog=visible();
     catalog[table_name]["indexes"][name]={{"column",column}};
     prepare_indexes(catalog,table_name);
