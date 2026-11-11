@@ -94,12 +94,19 @@ class Container:
                "--cpus=" + str(self.args.cpus), "--memory=" + self.args.memory,
                "--memory-swap=" + self.args.memory, "--pids-limit=" + str(self.args.pids),
                "--read-only", "--cap-drop=ALL", "--security-opt=no-new-privileges",
-               "--mount", "type=volume,src=" + self.volume + ",dst=/data", self.image]
+               "--mount", "type=volume,src=" + self.volume + ",dst=/data"]
+        if getattr(self.args, "profile_engine", False):
+            cmd.extend(["--env", "MINIVECTOR_PROFILE=1"])
+        if getattr(self.args, "screen_block", None) is not None:
+            cmd.extend(["--env", "MINIVECTOR_SCREEN_BLOCK=" + str(self.args.screen_block)])
+        cmd.append(self.image)
         self.process = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                         stderr=subprocess.PIPE)
         self.session = JsonlSession(self.process, startup_timeout=self.args.startup_timeout,
                                     request_timeout=self.args.request_timeout,
-                                    max_response_bytes=self.args.max_response_bytes)
+                                    max_response_bytes=self.args.max_response_bytes,
+                                    stderr_line_handler=getattr(self.args, "stderr_line_handler", None),
+                                    measure_client=getattr(self.args, "measure_client", False))
         start = time.perf_counter()
         self.session.wait_ready()
         return (time.perf_counter() - start) * 1000

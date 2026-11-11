@@ -1,0 +1,865 @@
+{
+  "status": "completed",
+  "timestamp_utc": "2026-11-11T03:52:51.418981+00:00",
+  "scope": "Local opt-in diagnostic; no official score",
+  "configuration": {
+    "image": "minivector-cpp:profile-20261111",
+    "reference_image": "minivector-cpp:contiguous-20261111",
+    "output": "performance_checker/results/profile-20261111-complete",
+    "io_device": "8:48",
+    "rows": 10000,
+    "dimensions": 128,
+    "queries": 1000,
+    "k": 10,
+    "verify_queries": 20,
+    "cpus": "2",
+    "memory": "2g",
+    "pids": 128,
+    "startup_timeout": 120,
+    "request_timeout": 60,
+    "max_response_bytes": 16777216
+  },
+  "client_clocks": {
+    "perf_counter": {
+      "implementation": "QueryPerformanceCounter()",
+      "nominal_resolution_seconds": 1e-07
+    },
+    "process_time": {
+      "implementation": "GetProcessTimes()",
+      "nominal_resolution_seconds": 1e-07
+    },
+    "thread_time": {
+      "implementation": "GetThreadTimes()",
+      "nominal_resolution_seconds": 1e-07
+    }
+  },
+  "source_sha256": {
+    "cpp/profile.hpp": "e9d015d6e78c505d604234a63b613602819d19158804eb3dae0ba41b3fab9c61",
+    "cpp/main.cpp": "c3f84f41f5d344b92744aa59d449202c30e5c7a47c946b49031092bfbc3512e9",
+    "cpp/sql.cpp": "6d79145ca319eaf267072e28471f6bf865ff524d47e5cdd975229a51a68a4902",
+    "cpp/storage.cpp": "92b972e1f888b9b1cf1e3ebba3b234eba681810e61e87f172400e3dd36af96b3",
+    "cpp/query.cpp": "7678a927c106919012cb7f0235e195df842d1609df5ddb3a8543fabdd769cb91",
+    "cpp/minivector.hpp": "e514f849b0b3238a88bb466264a64ef8ecccbecaba77c72325343dd5578f2740",
+    "Dockerfile": "8bc573cbbaed9d2931c16eab6e7ebc6e2de6328b867037bbe02bc5e6b9ab1fda",
+    "performance_checker/profile_phases.py": "afae81ac17382a42d25116db051cfb6dc6c5a7201289bcc63e76741c3a348fad",
+    "performance_checker/checker.py": "0ebadf916112b2d27f620aba4e7ff1e1766b689b600cfe90776c820cfa87d713",
+    "performance_checker/workload.py": "e6db78d02d05e590e1a345edf638340cdd3fe55f1d69e0ce331c6bd3e10c439e",
+    "performance_checker/transport.py": "251d1a8c961fbb717cf4e5a5a2dae8d56a7f0fc1e1420942f191a3440e3e2a86"
+  },
+  "limitations": [
+    "Instrumentation perturbs time, particularly hot per-row phases.",
+    "Roundtrip minus engine wall includes IPC, scheduling and measurement-boundary effects; it is not pure driver CPU time.",
+    "Client process CPU covers the benchmark Python process, including collection and bookkeeping, but excludes Docker and database subprocesses.",
+    "Short per-request thread CPU times may quantize to zero; they are not proof of no CPU work. Thread counters exclude parts of stdout handling, stderr, Docker and OS work.",
+    "Engine other includes disk reads, output serialization, sorting, setup and instrumentation overhead.",
+    "Resource counters include load and warmup; no dedicated cold-cache or writeback attribution is guaranteed."
+  ],
+  "runs": {
+    "reference": {
+      "startup_ms": 295.03630000000004,
+      "load_ms": 4909.0373,
+      "query_ms": 1413.4289,
+      "load_client_process_cpu_ns": 15625000,
+      "query_client_process_cpu_ns": 109375000,
+      "io_bytes": 26710016,
+      "memory_bytes": 40701952,
+      "raw_resources": {
+        "sync_exit_code": 0,
+        "sync_stderr": "",
+        "io_stat": "8:48 rbytes=0 wbytes=26710016 rios=0 wios=301 dbytes=0 dios=0\n",
+        "memory_peak": "40701952\n",
+        "data_device": "8:48",
+        "errors": []
+      },
+      "persisted": true,
+      "groups": {
+        "create": {
+          "requests": 1,
+          "roundtrip_ns": 22927700,
+          "client_encode_ns": 19700,
+          "client_decode_ns": 31300,
+          "client_main_cpu_ns": 0,
+          "client_writer_cpu_ns": 0,
+          "client_stdout_reader_cpu_ns": 0,
+          "engine_wall_ns": null,
+          "phases": {}
+        },
+        "begin": {
+          "requests": 100,
+          "roundtrip_ns": 117447600,
+          "client_encode_ns": 1396300,
+          "client_decode_ns": 1844400,
+          "client_main_cpu_ns": 0,
+          "client_writer_cpu_ns": 0,
+          "client_stdout_reader_cpu_ns": 0,
+          "engine_wall_ns": null,
+          "phases": {}
+        },
+        "insert": {
+          "requests": 100,
+          "roundtrip_ns": 3519081200,
+          "client_encode_ns": 79373900,
+          "client_decode_ns": 3121500,
+          "client_main_cpu_ns": 15625000,
+          "client_writer_cpu_ns": 0,
+          "client_stdout_reader_cpu_ns": 0,
+          "engine_wall_ns": null,
+          "phases": {}
+        },
+        "commit": {
+          "requests": 100,
+          "roundtrip_ns": 1268914300,
+          "client_encode_ns": 1720200,
+          "client_decode_ns": 2271800,
+          "client_main_cpu_ns": 0,
+          "client_writer_cpu_ns": 0,
+          "client_stdout_reader_cpu_ns": 0,
+          "engine_wall_ns": null,
+          "phases": {}
+        },
+        "warmup": {
+          "requests": 1,
+          "roundtrip_ns": 225665400,
+          "client_encode_ns": 25700,
+          "client_decode_ns": 57300,
+          "client_main_cpu_ns": 0,
+          "client_writer_cpu_ns": 0,
+          "client_stdout_reader_cpu_ns": 0,
+          "engine_wall_ns": null,
+          "phases": {}
+        },
+        "unfiltered": {
+          "requests": 500,
+          "roundtrip_ns": 792200000,
+          "client_encode_ns": 9895700,
+          "client_decode_ns": 12290400,
+          "client_main_cpu_ns": 15625000,
+          "client_writer_cpu_ns": 0,
+          "client_stdout_reader_cpu_ns": 0,
+          "engine_wall_ns": null,
+          "phases": {}
+        },
+        "filtered": {
+          "requests": 500,
+          "roundtrip_ns": 611542300,
+          "client_encode_ns": 10054600,
+          "client_decode_ns": 12298000,
+          "client_main_cpu_ns": 62500000,
+          "client_writer_cpu_ns": 0,
+          "client_stdout_reader_cpu_ns": 0,
+          "engine_wall_ns": null,
+          "phases": {}
+        },
+        "shutdown": {
+          "requests": 1,
+          "roundtrip_ns": 1378300,
+          "client_encode_ns": 20900,
+          "client_decode_ns": 19700,
+          "client_main_cpu_ns": 0,
+          "client_writer_cpu_ns": 0,
+          "client_stdout_reader_cpu_ns": 0,
+          "engine_wall_ns": null,
+          "phases": {}
+        }
+      },
+      "startup_engine": null,
+      "answers_sha256": "63ad788352d9eed2e9bfe4b4898667c87a3dbcfa083e41af469d22d7feccf973",
+      "image": "minivector-cpp:contiguous-20261111",
+      "image_id": "sha256:f829755b0c8ed5250d7c78d290875a6f823203700c1368be16ccbe2bd312adc2"
+    },
+    "disabled": {
+      "startup_ms": 298.04339999999917,
+      "load_ms": 5034.4559,
+      "query_ms": 1430.8051,
+      "load_client_process_cpu_ns": 0,
+      "query_client_process_cpu_ns": 0,
+      "io_bytes": 26710016,
+      "memory_bytes": 41140224,
+      "raw_resources": {
+        "sync_exit_code": 0,
+        "sync_stderr": "",
+        "io_stat": "8:48 rbytes=0 wbytes=26710016 rios=0 wios=301 dbytes=0 dios=0\n",
+        "memory_peak": "41140224\n",
+        "data_device": "8:48",
+        "errors": []
+      },
+      "persisted": true,
+      "groups": {
+        "create": {
+          "requests": 1,
+          "roundtrip_ns": 23756700,
+          "client_encode_ns": 16900,
+          "client_decode_ns": 28800,
+          "client_main_cpu_ns": 0,
+          "client_writer_cpu_ns": 0,
+          "client_stdout_reader_cpu_ns": 0,
+          "engine_wall_ns": null,
+          "phases": {}
+        },
+        "begin": {
+          "requests": 100,
+          "roundtrip_ns": 117845100,
+          "client_encode_ns": 1406900,
+          "client_decode_ns": 1688000,
+          "client_main_cpu_ns": 0,
+          "client_writer_cpu_ns": 0,
+          "client_stdout_reader_cpu_ns": 0,
+          "engine_wall_ns": null,
+          "phases": {}
+        },
+        "insert": {
+          "requests": 100,
+          "roundtrip_ns": 3622301400,
+          "client_encode_ns": 78183000,
+          "client_decode_ns": 2934000,
+          "client_main_cpu_ns": 0,
+          "client_writer_cpu_ns": 0,
+          "client_stdout_reader_cpu_ns": 0,
+          "engine_wall_ns": null,
+          "phases": {}
+        },
+        "commit": {
+          "requests": 100,
+          "roundtrip_ns": 1290748300,
+          "client_encode_ns": 1741300,
+          "client_decode_ns": 2139900,
+          "client_main_cpu_ns": 0,
+          "client_writer_cpu_ns": 0,
+          "client_stdout_reader_cpu_ns": 0,
+          "engine_wall_ns": null,
+          "phases": {}
+        },
+        "warmup": {
+          "requests": 1,
+          "roundtrip_ns": 228503300,
+          "client_encode_ns": 25400,
+          "client_decode_ns": 37500,
+          "client_main_cpu_ns": 0,
+          "client_writer_cpu_ns": 0,
+          "client_stdout_reader_cpu_ns": 0,
+          "engine_wall_ns": null,
+          "phases": {}
+        },
+        "unfiltered": {
+          "requests": 500,
+          "roundtrip_ns": 789659700,
+          "client_encode_ns": 10217100,
+          "client_decode_ns": 12155400,
+          "client_main_cpu_ns": 0,
+          "client_writer_cpu_ns": 0,
+          "client_stdout_reader_cpu_ns": 0,
+          "engine_wall_ns": null,
+          "phases": {}
+        },
+        "filtered": {
+          "requests": 500,
+          "roundtrip_ns": 631336700,
+          "client_encode_ns": 10047200,
+          "client_decode_ns": 11985600,
+          "client_main_cpu_ns": 0,
+          "client_writer_cpu_ns": 0,
+          "client_stdout_reader_cpu_ns": 0,
+          "engine_wall_ns": null,
+          "phases": {}
+        },
+        "shutdown": {
+          "requests": 1,
+          "roundtrip_ns": 1570300,
+          "client_encode_ns": 23300,
+          "client_decode_ns": 23200,
+          "client_main_cpu_ns": 0,
+          "client_writer_cpu_ns": 0,
+          "client_stdout_reader_cpu_ns": 0,
+          "engine_wall_ns": null,
+          "phases": {}
+        }
+      },
+      "startup_engine": null,
+      "answers_sha256": "63ad788352d9eed2e9bfe4b4898667c87a3dbcfa083e41af469d22d7feccf973",
+      "image": "minivector-cpp:profile-20261111",
+      "image_id": "sha256:db4e2a0cf24b56696a7419ce23ac8d0c2465e52a69ccac6d1dc0900996a2ecdd"
+    },
+    "enabled": {
+      "startup_ms": 266.59989999999925,
+      "load_ms": 5059.2228,
+      "query_ms": 1828.3966,
+      "load_client_process_cpu_ns": 62500000,
+      "query_client_process_cpu_ns": 109375000,
+      "io_bytes": 26710016,
+      "memory_bytes": 40411136,
+      "raw_resources": {
+        "sync_exit_code": 0,
+        "sync_stderr": "",
+        "io_stat": "8:48 rbytes=0 wbytes=26710016 rios=0 wios=301 dbytes=0 dios=0\n",
+        "memory_peak": "40411136\n",
+        "data_device": "8:48",
+        "errors": []
+      },
+      "persisted": true,
+      "groups": {
+        "create": {
+          "requests": 1,
+          "roundtrip_ns": 22895500,
+          "client_encode_ns": 41300,
+          "client_decode_ns": 25500,
+          "client_main_cpu_ns": 0,
+          "client_writer_cpu_ns": 0,
+          "client_stdout_reader_cpu_ns": 0,
+          "engine_wall_ns": 21843037,
+          "phases": {
+            "collect": {
+              "ns": 56775,
+              "calls": 1
+            },
+            "directory_sync": {
+              "ns": 10574594,
+              "calls": 2
+            },
+            "distance_exact": {
+              "ns": 0,
+              "calls": 0
+            },
+            "distance_screen": {
+              "ns": 0,
+              "calls": 0
+            },
+            "file_sync": {
+              "ns": 11030752,
+              "calls": 1
+            },
+            "filter": {
+              "ns": 0,
+              "calls": 0
+            },
+            "filter_lists": {
+              "ns": 0,
+              "calls": 0
+            },
+            "heap": {
+              "ns": 0,
+              "calls": 0
+            },
+            "protocol_parse": {
+              "ns": 19469,
+              "calls": 1
+            },
+            "sql_parse": {
+              "ns": 13014,
+              "calls": 1
+            },
+            "stored_row_decode": {
+              "ns": 0,
+              "calls": 0
+            },
+            "vector_literal_parse": {
+              "ns": 0,
+              "calls": 0
+            }
+          },
+          "engine_other_ns": 148433,
+          "roundtrip_minus_engine_ns": 1052463
+        },
+        "begin": {
+          "requests": 100,
+          "roundtrip_ns": 113002000,
+          "client_encode_ns": 1464400,
+          "client_decode_ns": 1733000,
+          "client_main_cpu_ns": 15625000,
+          "client_writer_cpu_ns": 0,
+          "client_stdout_reader_cpu_ns": 0,
+          "engine_wall_ns": 3907855,
+          "phases": {
+            "collect": {
+              "ns": 0,
+              "calls": 0
+            },
+            "directory_sync": {
+              "ns": 0,
+              "calls": 0
+            },
+            "distance_exact": {
+              "ns": 0,
+              "calls": 0
+            },
+            "distance_screen": {
+              "ns": 0,
+              "calls": 0
+            },
+            "file_sync": {
+              "ns": 0,
+              "calls": 0
+            },
+            "filter": {
+              "ns": 0,
+              "calls": 0
+            },
+            "filter_lists": {
+              "ns": 0,
+              "calls": 0
+            },
+            "heap": {
+              "ns": 0,
+              "calls": 0
+            },
+            "protocol_parse": {
+              "ns": 1082099,
+              "calls": 100
+            },
+            "sql_parse": {
+              "ns": 128907,
+              "calls": 100
+            },
+            "stored_row_decode": {
+              "ns": 0,
+              "calls": 0
+            },
+            "vector_literal_parse": {
+              "ns": 0,
+              "calls": 0
+            }
+          },
+          "engine_other_ns": 2696849,
+          "roundtrip_minus_engine_ns": 109094145
+        },
+        "insert": {
+          "requests": 100,
+          "roundtrip_ns": 3628613700,
+          "client_encode_ns": 80823900,
+          "client_decode_ns": 2661800,
+          "client_main_cpu_ns": 46875000,
+          "client_writer_cpu_ns": 0,
+          "client_stdout_reader_cpu_ns": 0,
+          "engine_wall_ns": 1884157977,
+          "phases": {
+            "collect": {
+              "ns": 10618846,
+              "calls": 100
+            },
+            "directory_sync": {
+              "ns": 0,
+              "calls": 0
+            },
+            "distance_exact": {
+              "ns": 0,
+              "calls": 0
+            },
+            "distance_screen": {
+              "ns": 0,
+              "calls": 0
+            },
+            "file_sync": {
+              "ns": 1231616602,
+              "calls": 200
+            },
+            "filter": {
+              "ns": 0,
+              "calls": 0
+            },
+            "filter_lists": {
+              "ns": 0,
+              "calls": 0
+            },
+            "heap": {
+              "ns": 0,
+              "calls": 0
+            },
+            "protocol_parse": {
+              "ns": 202428119,
+              "calls": 100
+            },
+            "sql_parse": {
+              "ns": 65647437,
+              "calls": 100
+            },
+            "stored_row_decode": {
+              "ns": 0,
+              "calls": 0
+            },
+            "vector_literal_parse": {
+              "ns": 203151477,
+              "calls": 10000
+            }
+          },
+          "engine_other_ns": 170695496,
+          "roundtrip_minus_engine_ns": 1744455723
+        },
+        "commit": {
+          "requests": 100,
+          "roundtrip_ns": 1313976100,
+          "client_encode_ns": 1712900,
+          "client_decode_ns": 2225200,
+          "client_main_cpu_ns": 0,
+          "client_writer_cpu_ns": 0,
+          "client_stdout_reader_cpu_ns": 0,
+          "engine_wall_ns": 1181513842,
+          "phases": {
+            "collect": {
+              "ns": 10038331,
+              "calls": 100
+            },
+            "directory_sync": {
+              "ns": 572199979,
+              "calls": 200
+            },
+            "distance_exact": {
+              "ns": 0,
+              "calls": 0
+            },
+            "distance_screen": {
+              "ns": 0,
+              "calls": 0
+            },
+            "file_sync": {
+              "ns": 583243624,
+              "calls": 100
+            },
+            "filter": {
+              "ns": 0,
+              "calls": 0
+            },
+            "filter_lists": {
+              "ns": 0,
+              "calls": 0
+            },
+            "heap": {
+              "ns": 0,
+              "calls": 0
+            },
+            "protocol_parse": {
+              "ns": 1158928,
+              "calls": 100
+            },
+            "sql_parse": {
+              "ns": 138887,
+              "calls": 100
+            },
+            "stored_row_decode": {
+              "ns": 0,
+              "calls": 0
+            },
+            "vector_literal_parse": {
+              "ns": 0,
+              "calls": 0
+            }
+          },
+          "engine_other_ns": 14734093,
+          "roundtrip_minus_engine_ns": 132462258
+        },
+        "warmup": {
+          "requests": 1,
+          "roundtrip_ns": 220132400,
+          "client_encode_ns": 21400,
+          "client_decode_ns": 37200,
+          "client_main_cpu_ns": 0,
+          "client_writer_cpu_ns": 0,
+          "client_stdout_reader_cpu_ns": 0,
+          "engine_wall_ns": 218414151,
+          "phases": {
+            "collect": {
+              "ns": 0,
+              "calls": 0
+            },
+            "directory_sync": {
+              "ns": 0,
+              "calls": 0
+            },
+            "distance_exact": {
+              "ns": 147036,
+              "calls": 94
+            },
+            "distance_screen": {
+              "ns": 648138,
+              "calls": 9990
+            },
+            "file_sync": {
+              "ns": 0,
+              "calls": 0
+            },
+            "filter": {
+              "ns": 0,
+              "calls": 0
+            },
+            "filter_lists": {
+              "ns": 0,
+              "calls": 0
+            },
+            "heap": {
+              "ns": 11064,
+              "calls": 85
+            },
+            "protocol_parse": {
+              "ns": 42570,
+              "calls": 1
+            },
+            "sql_parse": {
+              "ns": 16984,
+              "calls": 1
+            },
+            "stored_row_decode": {
+              "ns": 208836039,
+              "calls": 10000
+            },
+            "vector_literal_parse": {
+              "ns": 25590,
+              "calls": 1
+            }
+          },
+          "engine_other_ns": 8686730,
+          "roundtrip_minus_engine_ns": 1718249
+        },
+        "unfiltered": {
+          "requests": 500,
+          "roundtrip_ns": 1055889000,
+          "client_encode_ns": 10273800,
+          "client_decode_ns": 12578700,
+          "client_main_cpu_ns": 31250000,
+          "client_writer_cpu_ns": 15625000,
+          "client_stdout_reader_cpu_ns": 0,
+          "engine_wall_ns": 606474384,
+          "phases": {
+            "collect": {
+              "ns": 0,
+              "calls": 0
+            },
+            "directory_sync": {
+              "ns": 0,
+              "calls": 0
+            },
+            "distance_exact": {
+              "ns": 72712403,
+              "calls": 44226
+            },
+            "distance_screen": {
+              "ns": 316129354,
+              "calls": 4995000
+            },
+            "file_sync": {
+              "ns": 0,
+              "calls": 0
+            },
+            "filter": {
+              "ns": 0,
+              "calls": 0
+            },
+            "filter_lists": {
+              "ns": 0,
+              "calls": 0
+            },
+            "heap": {
+              "ns": 5337209,
+              "calls": 39726
+            },
+            "protocol_parse": {
+              "ns": 18041890,
+              "calls": 500
+            },
+            "sql_parse": {
+              "ns": 6634540,
+              "calls": 500
+            },
+            "stored_row_decode": {
+              "ns": 0,
+              "calls": 0
+            },
+            "vector_literal_parse": {
+              "ns": 12857560,
+              "calls": 500
+            }
+          },
+          "engine_other_ns": 174761428,
+          "roundtrip_minus_engine_ns": 449414616
+        },
+        "filtered": {
+          "requests": 500,
+          "roundtrip_ns": 762299900,
+          "client_encode_ns": 10355400,
+          "client_decode_ns": 12427600,
+          "client_main_cpu_ns": 15625000,
+          "client_writer_cpu_ns": 0,
+          "client_stdout_reader_cpu_ns": 0,
+          "engine_wall_ns": 314381956,
+          "phases": {
+            "collect": {
+              "ns": 0,
+              "calls": 0
+            },
+            "directory_sync": {
+              "ns": 0,
+              "calls": 0
+            },
+            "distance_exact": {
+              "ns": 59756674,
+              "calls": 36221
+            },
+            "distance_screen": {
+              "ns": 103078611,
+              "calls": 995000
+            },
+            "file_sync": {
+              "ns": 0,
+              "calls": 0
+            },
+            "filter": {
+              "ns": 29514596,
+              "calls": 1000000
+            },
+            "filter_lists": {
+              "ns": 596103,
+              "calls": 500
+            },
+            "heap": {
+              "ns": 4556905,
+              "calls": 31721
+            },
+            "protocol_parse": {
+              "ns": 18433867,
+              "calls": 500
+            },
+            "sql_parse": {
+              "ns": 7199291,
+              "calls": 500
+            },
+            "stored_row_decode": {
+              "ns": 0,
+              "calls": 0
+            },
+            "vector_literal_parse": {
+              "ns": 12576579,
+              "calls": 500
+            }
+          },
+          "engine_other_ns": 78669330,
+          "roundtrip_minus_engine_ns": 447917944
+        },
+        "shutdown": {
+          "requests": 1,
+          "roundtrip_ns": 1415100,
+          "client_encode_ns": 18100,
+          "client_decode_ns": 19700,
+          "client_main_cpu_ns": 0,
+          "client_writer_cpu_ns": 0,
+          "client_stdout_reader_cpu_ns": 0,
+          "engine_wall_ns": 242350,
+          "phases": {
+            "collect": {
+              "ns": 206078,
+              "calls": 1
+            },
+            "directory_sync": {
+              "ns": 0,
+              "calls": 0
+            },
+            "distance_exact": {
+              "ns": 0,
+              "calls": 0
+            },
+            "distance_screen": {
+              "ns": 0,
+              "calls": 0
+            },
+            "file_sync": {
+              "ns": 0,
+              "calls": 0
+            },
+            "filter": {
+              "ns": 0,
+              "calls": 0
+            },
+            "filter_lists": {
+              "ns": 0,
+              "calls": 0
+            },
+            "heap": {
+              "ns": 0,
+              "calls": 0
+            },
+            "protocol_parse": {
+              "ns": 15049,
+              "calls": 1
+            },
+            "sql_parse": {
+              "ns": 0,
+              "calls": 0
+            },
+            "stored_row_decode": {
+              "ns": 0,
+              "calls": 0
+            },
+            "vector_literal_parse": {
+              "ns": 0,
+              "calls": 0
+            }
+          },
+          "engine_other_ns": 21223,
+          "roundtrip_minus_engine_ns": 1172750
+        }
+      },
+      "startup_engine": {
+        "kind": "startup",
+        "phases": {
+          "collect": {
+            "calls": 1,
+            "ns": 20149
+          },
+          "directory_sync": {
+            "calls": 0,
+            "ns": 0
+          },
+          "distance_exact": {
+            "calls": 0,
+            "ns": 0
+          },
+          "distance_screen": {
+            "calls": 0,
+            "ns": 0
+          },
+          "file_sync": {
+            "calls": 0,
+            "ns": 0
+          },
+          "filter": {
+            "calls": 0,
+            "ns": 0
+          },
+          "filter_lists": {
+            "calls": 0,
+            "ns": 0
+          },
+          "heap": {
+            "calls": 0,
+            "ns": 0
+          },
+          "protocol_parse": {
+            "calls": 0,
+            "ns": 0
+          },
+          "sql_parse": {
+            "calls": 0,
+            "ns": 0
+          },
+          "stored_row_decode": {
+            "calls": 0,
+            "ns": 0
+          },
+          "vector_literal_parse": {
+            "calls": 0,
+            "ns": 0
+          }
+        },
+        "sequence": 0,
+        "wall_ns": 54219
+      },
+      "answers_sha256": "63ad788352d9eed2e9bfe4b4898667c87a3dbcfa083e41af469d22d7feccf973",
+      "image": "minivector-cpp:profile-20261111",
+      "image_id": "sha256:db4e2a0cf24b56696a7419ce23ac8d0c2465e52a69ccac6d1dc0900996a2ecdd"
+    }
+  },
+  "verified_query_counts": {
+    "unfiltered": 10,
+    "filtered": 10
+  },
+  "verified_recall": {
+    "unfiltered": 1.0,
+    "filtered": 1.0
+  }
+}

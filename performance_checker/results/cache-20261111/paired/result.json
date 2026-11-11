@@ -1,0 +1,312 @@
+{
+  "status": "completed",
+  "timestamp_utc": "2026-11-11T03:27:42.393272+00:00",
+  "scope": "Paired exact query benchmark; local measurements, not an official score",
+  "limitations": [
+    "Synthetic dataset and seeds are not verified to be the official workload.",
+    "Cold-cache preparation, the dedicated device and cgroup writeback attribution are not independently verified.",
+    "Resource counters are read before shutdown; subsequent writes may be omitted.",
+    "docker exec collection helpers share the measured cgroup and affect its counters.",
+    "The official frozen resource limits, baseline, score and ranking are not established by this tool.",
+    "Hardware cache misses and DRAM traffic are not measured.",
+    "Modeled predicate checks are code/workload-derived counts, not hardware counters.",
+    "Write performance and the full competition efficiency score are not measured."
+  ],
+  "configuration": {
+    "before": "minivector-cpp:20261111",
+    "after": "minivector-cpp:contiguous-20261111",
+    "output": "performance_checker/results/cache-20261111/paired",
+    "io_device": "8:48",
+    "rows": 10000,
+    "dimensions": 128,
+    "queries": 1000,
+    "k": 10,
+    "cpus": "2",
+    "memory": "2g",
+    "pids": 128,
+    "startup_timeout": 120,
+    "request_timeout": 60,
+    "max_response_bytes": 16777216,
+    "mode": "exact",
+    "create_index": false,
+    "rounds": 3,
+    "data_seed": 19017,
+    "query_seed": 29017
+  },
+  "source_sha256": {
+    "cpp/minivector.hpp": "e514f849b0b3238a88bb466264a64ef8ecccbecaba77c72325343dd5578f2740",
+    "cpp/storage.cpp": "1a416d6a86ee84f565fcf0494fbd16068c501953572ade037190effac8538ec6",
+    "cpp/query.cpp": "dbafceabe8bde33d9ab1a4f7be90572c685b0149cd210d14c27f1105ed8a5e22",
+    "cpp/sql.cpp": "ededa5782340784d8bbc7d4cd4b8a79c829feed1284971a47b5e99b66bdb6705",
+    "cpp/main.cpp": "aae0a4145dfa4cfd68df6b0d87116d8c38b0ef7770f85da610369a6d555747c9",
+    "Dockerfile": "8bc573cbbaed9d2931c16eab6e7ebc6e2de6328b867037bbe02bc5e6b9ab1fda",
+    "performance_checker/compare_cache.py": "061ba4c02fce927234ecdc98f2c355bb85714b5ab786e2ad53cdfbc4b7c22d83",
+    "performance_checker/workload.py": "e6db78d02d05e590e1a345edf638340cdd3fe55f1d69e0ce331c6bd3e10c439e",
+    "performance_checker/checker.py": "474ff19c659c213f76687245eb9bb59b364aba2800c08314f73df3d7745b4d0c"
+  },
+  "images": {
+    "before": "sha256:e62a9eb2b20f1de8649ff38cd5fc2cc3f0539753cf048154cdae39875bb493ae",
+    "after": "sha256:f829755b0c8ed5250d7c78d290875a6f823203700c1368be16ccbe2bd312adc2"
+  },
+  "rounds": [
+    {
+      "number": 1,
+      "measurement_order": [
+        "before",
+        "after"
+      ],
+      "before": {
+        "time_ms": 1665.6173999999994,
+        "groups": {
+          "unfiltered": {
+            "count": 500,
+            "time_ms": 944.3602000000161
+          },
+          "filtered": {
+            "count": 500,
+            "time_ms": 718.4395000000046
+          }
+        },
+        "startup_ms": 285.2505000000001,
+        "load_ms": 5001.597000000001,
+        "preparation_ms": 240.47009999999958,
+        "io_bytes": 27389952,
+        "memory_bytes": 40878080,
+        "raw_resources": {
+          "sync_exit_code": 0,
+          "sync_stderr": "",
+          "io_stat": "8:48 rbytes=679936 wbytes=26710016 rios=13 wios=301 dbytes=0 dios=0\n",
+          "memory_peak": "40878080\n",
+          "data_device": "8:48",
+          "errors": []
+        },
+        "persisted": true,
+        "answers_sha256": "63ad788352d9eed2e9bfe4b4898667c87a3dbcfa083e41af469d22d7feccf973"
+      },
+      "after": {
+        "time_ms": 1541.5269999999985,
+        "groups": {
+          "unfiltered": {
+            "count": 500,
+            "time_ms": 861.5124000000203
+          },
+          "filtered": {
+            "count": 500,
+            "time_ms": 677.0608000000157
+          }
+        },
+        "startup_ms": 288.98289999999884,
+        "load_ms": 5080.1516999999985,
+        "preparation_ms": 246.15909999999985,
+        "io_bytes": 26710016,
+        "memory_bytes": 40484864,
+        "raw_resources": {
+          "sync_exit_code": 0,
+          "sync_stderr": "",
+          "io_stat": "8:48 rbytes=0 wbytes=26710016 rios=0 wios=301 dbytes=0 dios=0\n",
+          "memory_peak": "40484864\n",
+          "data_device": "8:48",
+          "errors": []
+        },
+        "persisted": true,
+        "answers_sha256": "63ad788352d9eed2e9bfe4b4898667c87a3dbcfa083e41af469d22d7feccf973"
+      },
+      "identical_answers": true,
+      "recall": {
+        "unfiltered": 1.0,
+        "filtered": 1.0
+      },
+      "modeled_scalar_predicate_checks": {
+        "before": 5000000,
+        "after_including_list_builds": 1100000,
+        "assumption": "Each observed tag list fits, is built once in two passes and remains resident."
+      }
+    },
+    {
+      "number": 2,
+      "measurement_order": [
+        "after",
+        "before"
+      ],
+      "after": {
+        "time_ms": 1541.214999999994,
+        "groups": {
+          "unfiltered": {
+            "count": 500,
+            "time_ms": 854.4001999998159
+          },
+          "filtered": {
+            "count": 500,
+            "time_ms": 683.8382999997066
+          }
+        },
+        "startup_ms": 311.59690000001206,
+        "load_ms": 5269.315899999981,
+        "preparation_ms": 232.8027000000077,
+        "io_bytes": 26710016,
+        "memory_bytes": 40611840,
+        "raw_resources": {
+          "sync_exit_code": 0,
+          "sync_stderr": "",
+          "io_stat": "8:48 rbytes=0 wbytes=26710016 rios=0 wios=301 dbytes=0 dios=0\n",
+          "memory_peak": "40611840\n",
+          "data_device": "8:48",
+          "errors": []
+        },
+        "persisted": true,
+        "answers_sha256": "7fd3a1b437185ccb4b7f5784413c21ee43f4090fc0f8a468f80d63bf89080176"
+      },
+      "before": {
+        "time_ms": 1802.9532000000188,
+        "groups": {
+          "unfiltered": {
+            "count": 500,
+            "time_ms": 1012.0854999997562
+          },
+          "filtered": {
+            "count": 500,
+            "time_ms": 787.6021000002424
+          }
+        },
+        "startup_ms": 295.79810000001316,
+        "load_ms": 5052.829099999997,
+        "preparation_ms": 236.35740000000283,
+        "io_bytes": 26710016,
+        "memory_bytes": 39763968,
+        "raw_resources": {
+          "sync_exit_code": 0,
+          "sync_stderr": "",
+          "io_stat": "8:48 rbytes=0 wbytes=26710016 rios=0 wios=301 dbytes=0 dios=0\n",
+          "memory_peak": "39763968\n",
+          "data_device": "8:48",
+          "errors": []
+        },
+        "persisted": true,
+        "answers_sha256": "7fd3a1b437185ccb4b7f5784413c21ee43f4090fc0f8a468f80d63bf89080176"
+      },
+      "identical_answers": true,
+      "recall": {
+        "unfiltered": 1.0,
+        "filtered": 1.0
+      },
+      "modeled_scalar_predicate_checks": {
+        "before": 5000000,
+        "after_including_list_builds": 1100000,
+        "assumption": "Each observed tag list fits, is built once in two passes and remains resident."
+      }
+    },
+    {
+      "number": 3,
+      "measurement_order": [
+        "before",
+        "after"
+      ],
+      "before": {
+        "time_ms": 1820.7226000000105,
+        "groups": {
+          "unfiltered": {
+            "count": 500,
+            "time_ms": 1017.9205000002867
+          },
+          "filtered": {
+            "count": 500,
+            "time_ms": 799.3554000000813
+          }
+        },
+        "startup_ms": 298.81699999998546,
+        "load_ms": 4966.769099999965,
+        "preparation_ms": 234.1119999999819,
+        "io_bytes": 26710016,
+        "memory_bytes": 40108032,
+        "raw_resources": {
+          "sync_exit_code": 0,
+          "sync_stderr": "",
+          "io_stat": "8:48 rbytes=0 wbytes=26710016 rios=0 wios=301 dbytes=0 dios=0\n",
+          "memory_peak": "40108032\n",
+          "data_device": "8:48",
+          "errors": []
+        },
+        "persisted": true,
+        "answers_sha256": "d1e8139e5f7ac4d1cfe7d9a8c53f23f1d88464e61c2f8196d45ab0e168904d0e"
+      },
+      "after": {
+        "time_ms": 1874.4621000000166,
+        "groups": {
+          "unfiltered": {
+            "count": 500,
+            "time_ms": 1020.281500000408
+          },
+          "filtered": {
+            "count": 500,
+            "time_ms": 850.2335000002859
+          }
+        },
+        "startup_ms": 286.4440999999829,
+        "load_ms": 5222.4965999999995,
+        "preparation_ms": 254.93060000002288,
+        "io_bytes": 26710016,
+        "memory_bytes": 40787968,
+        "raw_resources": {
+          "sync_exit_code": 0,
+          "sync_stderr": "",
+          "io_stat": "8:48 rbytes=0 wbytes=26710016 rios=0 wios=301 dbytes=0 dios=0\n",
+          "memory_peak": "40787968\n",
+          "data_device": "8:48",
+          "errors": []
+        },
+        "persisted": true,
+        "answers_sha256": "d1e8139e5f7ac4d1cfe7d9a8c53f23f1d88464e61c2f8196d45ab0e168904d0e"
+      },
+      "identical_answers": true,
+      "recall": {
+        "unfiltered": 1.0,
+        "filtered": 1.0
+      },
+      "modeled_scalar_predicate_checks": {
+        "before": 5000000,
+        "after_including_list_builds": 1100000,
+        "assumption": "Each observed tag list fits, is built once in two passes and remains resident."
+      }
+    }
+  ],
+  "medians": {
+    "before": {
+      "time_ms": 1802.9532000000188,
+      "io_bytes": 26710016,
+      "memory_bytes": 40108032,
+      "preparation_ms": 236.35740000000283,
+      "groups": {
+        "unfiltered": {
+          "time_ms": 1012.0854999997562,
+          "queries": 500
+        },
+        "filtered": {
+          "time_ms": 787.6021000002424,
+          "queries": 500
+        }
+      }
+    },
+    "after": {
+      "time_ms": 1541.5269999999985,
+      "io_bytes": 26710016,
+      "memory_bytes": 40611840,
+      "preparation_ms": 246.15909999999985,
+      "groups": {
+        "unfiltered": {
+          "time_ms": 861.5124000000203,
+          "queries": 500
+        },
+        "filtered": {
+          "time_ms": 683.8382999997066,
+          "queries": 500
+        }
+      }
+    },
+    "reduction_percent": {
+      "time_ms": 14.499888294383767,
+      "io_bytes": 0.0,
+      "memory_bytes": -1.2561274509803821,
+      "preparation_ms": -4.146982493459861
+    }
+  }
+}

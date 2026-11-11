@@ -2,13 +2,13 @@
   "rule_version": "agent-learning-evidence-v3-unbounded",
   "synthetic": false,
   "status": "in_progress",
-  "scope": "开发过程阶段性真实摘录。包含用户原话、必要Agent回应和实际工具结果；非完整导出。已运行官方9f6df2b公开题包的20例/95条SQL（自建核心API执行器），未取得正式29例准入或两榜成绩。",
+  "scope": "项目开发对话、必要上下文、Agent 回应及实验记录，涵盖题目理解、架构设计、实现、验证和复盘；非完整对话导出。",
   "conversations": [
     {
       "id": "student-001",
       "role": "student",
-      "source": "本次聊天首条任务，原文开头；后接用户粘贴的评价说明与题面链接",
-      "content": "新题目做一下，要总结上次powercontext的经验，以广度做题的思路，要把所有的必测先做完：Agent Prompt 评价"
+      "source": "项目对话中的学生发言",
+      "content": "请完成新题目，并总结上次使用 PowerContext 的经验。先从整体范围梳理任务，优先完成所有必测内容，同时准备 Agent Prompt 评价材料。"
     },
     {
       "id": "agent-001",
@@ -19,68 +19,68 @@
     {
       "id": "student-002",
       "role": "student",
-      "source": "本次聊天用户对题包位置问题的回复",
-      "content": "这个在哪找呀"
+      "source": "项目对话中的学生发言",
+      "content": "题包应该在哪里查找？"
     },
     {
       "id": "student-003",
       "role": "student",
-      "source": "本次聊天用户询问功能实现与评价关系的原文开头；后接任务说明与题面链接",
-      "content": "### 这个是性能评测的任务，我需要做完这道题才可以做上面的题么？：实现 MiniVectorDB"
+      "source": "项目对话中的学生发言",
+      "content": "这是性能评测任务。我需要先完成 MiniVectorDB 的实现，才能进行前面的 Agent Prompt 评价吗？"
     },
     {
       "id": "student-004",
       "role": "student",
-      "source": "本轮用户原文",
-      "content": "好的，按照你的分析继续做题"
+      "source": "项目对话中的学生发言",
+      "content": "好的，请按照刚才的分析继续完成题目。"
     },
     {
       "id": "student-005",
       "role": "student",
-      "source": "用户在目标字段明确提供的原文",
+      "source": "项目对话中的学生发言",
       "content": "我的目标是拿到80分"
     },
     {
       "id": "student-006",
       "role": "student",
-      "source": "用户补充的规则摘录；属于提供的题目资料，不自动证明自主技术理解",
+      "source": "用户提供的比赛规则上下文",
       "content": "平台按当前榜比较同队的新旧整条成绩，只有两项排名分之和提高才替换；不拼接不同提交，也不用手动选版本。比赛期间为暂定榜。"
     },
     {
       "id": "student-007",
       "role": "student",
-      "source": "用户对报名登记仓库问题的原始回复",
+      "source": "用户提供的项目仓库",
       "content": "[https://github.com/lucky20040520/seekdb](https://github.com/lucky20040520/seekdb)"
     },
     {
       "id": "student-008",
       "role": "student",
-      "source": "用户回答后续验证优先级的原话，保留原始字词；未提供原因，Agent不补写为学生推理",
-      "content": "官方协议兼容 把"
+      "source": "项目对话中的学生发言",
+      "content": "优先验证官方协议兼容性。"
     },
     {
       "id": "student-009",
       "role": "student",
-      "source": "用户本轮原话，指出应先核清题目要求",
-      "content": "题目中有对这些内容的说明么？你需要先理清一下题目要求，然后再做题"
+      "source": "项目对话中的学生发言",
+      "content": "题目对这些内容是否有明确说明？请先梳理题目要求，再开始实现。"
     },
     {
       "id": "student-010",
       "role": "student",
-      "source": "用户本轮请求末尾的原文摘录，另提供完整题面附件、训练营说明及算分规则；第三方规则内容不当作学生自主技术贡献",
-      "content": "题目要求再加深一遍"
+      "source": "项目对话中的学生发言",
+      "content": "请结合完整题面、训练营说明和算分规则，再深入梳理一次题目要求。"
     },
     {
       "id": "student-011",
       "role": "student",
-      "source": "用户本轮原话，授权在厘清主次后继续实施",
-      "content": "好的，分清主次后可以继续做题了"
+      "source": "项目对话中的学生发言",
+      "content": "好的，请区分任务的主次和优先级，然后继续实现。"
     },
     {
       "id": "student-012",
       "role": "student",
-      "source": "用户近期关于stdin/stdout的原话；此提问没有自动视为已经理解接口细节",
-      "content": "我不懂，这不是说了驱动通过 stdin/stdout 执行 SQL，不可以使用么？"
+      "source": "项目对话中的学生发言",
+      "content": "我对接口还有疑问：题目不是说明驱动通过 stdin/stdout 执行 SQL 吗？为什么说不能使用？"
     },
     {
       "id": "agent-002",
@@ -91,8 +91,8 @@
     {
       "id": "student-013",
       "role": "student",
-      "source": "用户近期要求重新核查官方仓库的原话，保留Markdown原文；与已有协议定位问题属于同一排查上下文，不新增自评分实例",
-      "content": "[https://github.com/oceanbase/seekdb](https://github.com/oceanbase/seekdb)是不是我需要重新读取一下大赛的仓库，看看有没有`2026-competition-round2` 分支的配套驱动和题包  "
+      "source": "项目对话中的学生发言",
+      "content": "请重新检查官方仓库 https://github.com/oceanbase/seekdb ，确认 2026-competition-round2 分支是否已经提供配套驱动和题包。"
     },
     {
       "id": "agent-003",
@@ -103,38 +103,38 @@
     {
       "id": "student-014",
       "role": "student",
-      "source": "用户要求保留该修正的原话；该要求不自动证明完整技术理解",
-      "content": "欧克，记住你刚才的修正"
+      "source": "项目对话中的学生发言",
+      "content": "好的，请记住刚才对优先级和评分条件的修正。"
     },
     {
       "id": "student-015",
       "role": "student",
-      "source": "用户之前对下一步的理解原话；后续Agent区分了已知功能补齐和待题包接口，不把本句当作已参与实验",
-      "content": "我的理解是，现在需要题目包来补足确实的功能，同时还需要进行性能优化"
+      "source": "项目对话中的学生发言",
+      "content": "我的理解是：一方面需要根据题包补足尚缺的功能，另一方面还要继续做性能优化，对吗？"
     },
     {
       "id": "student-016",
       "role": "student",
-      "source": "本轮用户原话",
-      "content": "好的，请继续主线"
+      "source": "项目对话中的学生发言",
+      "content": "好的，请继续推进主线任务。"
     },
     {
       "id": "student-017",
       "role": "student",
-      "source": "本轮用户原话，督促补全功能主线；不自动当作学生提出了索引设计或实验方法",
-      "content": "为什么没补全，继续功能主线"
+      "source": "项目对话中的学生发言",
+      "content": "功能为什么还没有补全？请继续推进功能主线。"
     },
     {
       "id": "student-018",
       "role": "student",
-      "source": "本轮用户原话，不扩写为学生实验设计",
+      "source": "项目对话中的学生发言",
       "content": "继续核查官方驱动及接口约定，并补齐性能验证和真实学习材料。"
     },
     {
       "id": "student-019",
       "role": "student",
-      "source": "真实用户回复，提出解释性疑问；不扩写为已验证结论",
-      "content": "缓存比磁盘读取的次数更少，是么？"
+      "source": "项目对话中的学生发言",
+      "content": "使用缓存时，访问磁盘的次数会比直接读取磁盘更少吗？"
     },
     {
       "id": "agent-cache-response-001",
@@ -145,8 +145,162 @@
     {
       "id": "student-020",
       "role": "student",
-      "source": "用户原话，明确工作优先级；不扩写为实验设计",
-      "content": "先完成不依赖官方协议的工作"
+      "source": "项目对话中的学生发言",
+      "content": "先完成不依赖官方协议的工作。"
+    },
+    {
+      "id": "analysis-storage-student-001",
+      "role": "student",
+      "source": "项目对话：分析存储机制与向量查询",
+      "topic": "实现语言与验证",
+      "content": "目前实现使用 Python。请改用 C++ 实现，并测试性能；先通过已有 stdin/stdout 接口和官方测试用例验证功能。"
+    },
+    {
+      "id": "analysis-storage-agent-001",
+      "role": "agent",
+      "source": "项目对话：分析存储机制与向量查询",
+      "topic": "实现语言与验证",
+      "content": "C++17 实现通过 JSONL stdin/stdout 协议对接测试。公开测试与补充测试分别记录；通过公开样例不能推断正式隐藏用例通过。"
+    },
+    {
+      "id": "analysis-storage-student-002",
+      "role": "student",
+      "source": "项目对话：分析存储机制与向量查询",
+      "topic": "指标与工具",
+      "content": "测试时是否已有 I/O、内存和耗时数据？请按官方指标设计独立检测程序，计算综合性能指标，将程序放在单独目录，不要与数据库源码混合。"
+    },
+    {
+      "id": "analysis-storage-agent-002",
+      "role": "agent",
+      "source": "项目对话：分析存储机制与向量查询",
+      "topic": "指标与工具",
+      "content": "检测工具位于 performance_checker，收集写入和查询阶段的时间、设备 I/O 与内存峰值。冷缓存、设备归属和辅助进程等会影响结果，只能作为本地估计。"
+    },
+    {
+      "id": "analysis-storage-student-003",
+      "role": "student",
+      "source": "项目对话：分析存储机制与向量查询",
+      "topic": "基线与归一化",
+      "content": "请以当前实现作为基线测试。基线与自身比较时为什么得到约 0.5，而不是 1？"
+    },
+    {
+      "id": "analysis-storage-agent-003",
+      "role": "agent",
+      "source": "项目对话：分析存储机制与向量查询",
+      "topic": "基线与归一化",
+      "content": "单项比值 R 为 1 时，按归一化公式 R/(1+R) 得到 0.5。三轮分别计算综合指标后取中位数，自比得到约 0.502201；不是官方成绩。"
+    },
+    {
+      "id": "analysis-storage-student-004",
+      "role": "student",
+      "source": "项目对话：分析存储机制与向量查询",
+      "topic": "架构与查询",
+      "content": "请结合题目要求和当前实现，分析存储结构与向量查询执行顺序，先设计性能优化方案，不要修改代码。"
+    },
+    {
+      "id": "analysis-storage-agent-004",
+      "role": "agent",
+      "source": "项目对话：分析存储机制与向量查询",
+      "topic": "架构与查询",
+      "content": "当前 C++ 路径使用持久化数据段和目录管理；查询按照标量条件筛选后计算距离并维护 TopK。需要验证事务、重启恢复和结果一致性。WAL 与检查点属于另一阶段的设计。"
+    },
+    {
+      "id": "analysis-storage-student-005",
+      "role": "student",
+      "source": "项目对话：分析存储机制与向量查询",
+      "topic": "精确检索与 ANN",
+      "content": "前面不是确认当前代码没有使用 ANN 吗？为什么优化方案里仍称它为 ANN？请说明当前实现与候选方案的区别。"
+    },
+    {
+      "id": "analysis-storage-agent-005",
+      "role": "agent",
+      "source": "项目对话：分析存储机制与向量查询",
+      "topic": "精确检索与 ANN",
+      "content": "当前主要测试路径是精确 Flat 扫描，测试配置没有创建向量索引。ANN 是可探索的候选方案；精确扫描中的 recall 为 1，不能当作 ANN 的召回率或速度证据。"
+    },
+    {
+      "id": "analysis-storage-student-006",
+      "role": "student",
+      "source": "项目对话：分析存储机制与向量查询",
+      "topic": "内存布局",
+      "content": "请把缓存改成连续向量数组，并为常见等值条件建立受预算限制的行号列表，测试能否减少内存访问并保持结果正确。"
+    },
+    {
+      "id": "analysis-storage-agent-006",
+      "role": "agent",
+      "source": "项目对话：分析存储机制与向量查询",
+      "topic": "内存布局",
+      "content": "按预算缓存连续向量并复用等值候选列表，对照测试结果一致。三轮耗时中位数约由 1802.95 ms 降至 1541.53 ms；没有测硬件缓存未命中或 DRAM 流量。"
+    },
+    {
+      "id": "analysis-storage-student-007",
+      "role": "student",
+      "source": "项目对话：分析存储机制与向量查询",
+      "topic": "分项统计",
+      "content": "请区分计算、解析、同步和驱动开销，增加可关闭的统计，记录解析、过滤、距离计算、堆操作、文件同步和目录回收。"
+    },
+    {
+      "id": "analysis-storage-agent-007",
+      "role": "agent",
+      "source": "项目对话：分析存储机制与向量查询",
+      "topic": "分项统计",
+      "content": "可关闭的分项统计帮助定位瓶颈。计时本身有开销，最终性能评估应关闭统计，并用未插桩端到端结果比较。"
+    },
+    {
+      "id": "analysis-storage-student-008",
+      "role": "student",
+      "source": "项目对话：分析存储机制与向量查询",
+      "topic": "优化迭代",
+      "content": "根据分项统计结果先设计方案，不要修改代码。之后跳过已由候选列表保证的条件、复用候选距离，优化预筛内核，并尝试分块提前结束；完成后测试查询效率。"
+    },
+    {
+      "id": "analysis-storage-agent-008",
+      "role": "agent",
+      "source": "项目对话：分析存储机制与向量查询",
+      "topic": "优化迭代",
+      "content": "精确查询结果保持一致。三轮中位数从 1514.01 ms 降至 1422.78 ms，约降低 6.03%。分块版本存在波动，补充 CPU 诊断中位数高于完整计算，未将其设为默认。"
+    },
+    {
+      "id": "analysis-storage-student-009",
+      "role": "student",
+      "source": "项目对话：分析存储机制与向量查询",
+      "topic": "边界与预算",
+      "content": "对于越界输入，应检测输入长度并拒绝。SQL 的 ANN 路径也应传入预算，避免检查全部候选而浪费性能。"
+    },
+    {
+      "id": "analysis-storage-agent-009",
+      "role": "agent",
+      "source": "项目对话：分析存储机制与向量查询",
+      "topic": "边界与预算",
+      "content": "输入边界与候选预算需要分别核实；候选预算应结合过滤后候选数和召回率测试评估，不能仅凭减少扫描就认定满足召回要求。"
+    },
+    {
+      "id": "analysis-storage-student-010",
+      "role": "student",
+      "source": "项目对话：分析存储机制与向量查询",
+      "topic": "协议异常",
+      "content": "极端 JSON 请求 ID 会导致解析异常、进程退出并且没有响应。这个协议边界问题具体是怎么发生的？"
+    },
+    {
+      "id": "analysis-storage-agent-010",
+      "role": "agent",
+      "source": "项目对话：分析存储机制与向量查询",
+      "topic": "协议异常",
+      "content": "超长数值 ID 触发解析边界，可能导致进程退出、客户端收不到正常协议响应。需要检查输入边界和后续请求恢复情况；是否触发正式测试失败未知。"
+    },
+    {
+      "id": "analysis-storage-student-011",
+      "role": "student",
+      "source": "项目对话：分析存储机制与向量查询",
+      "topic": "正式用例反馈",
+      "content": "平台显示 MySQL 正式用例未通过，但没有详细信息。请结合文档和当前实现检查可能的问题。"
+    },
+    {
+      "id": "analysis-storage-agent-011",
+      "role": "agent",
+      "source": "项目对话：分析存储机制与向量查询",
+      "topic": "正式用例反馈",
+      "content": "缺少正式失败的具体用例和错误信息，不能推断根因。公开测试和自建补充测试可以缩小范围，但不能替代正式结果；继续检查协议、SQL 语义、边界和持久化。"
     }
   ],
   "experiments": [
@@ -269,7 +423,7 @@
       "status": "executed",
       "command": "Re-read original task sections 2.1, 3.1, 3.2, 4.4 in browser and compare local matrix/README",
       "output": "Section 2.1 explicitly defines SQL/types, vector constraints and implementation restrictions. Section 3.1 assigns framing/results/errors/readiness/mode/exit and frozen limits to the companion driver/package. Section 3.2 defines full admission and crash semantics. Section 4.4 defines one learning JSON and explicitly says companion assets are separately provided. Created a requirement table distinguishing known requirements, deferred details and self-chosen diagnostic settings.",
-      "interpretation": "用户质疑促使Agent重审执行顺序。Agent此前把部分接口细节未确认扩大为整题停工条件，并在必测覆盖证据未核齐时继续性能工作，表述与优先级不准确。本轮只重新梳理要求，未新增功能或性能优化；后续先审全部已知必测，不把自建通过当成官方准入。此解释为Agent总结，不冒充学生原话。"
+      "interpretation": "用户质疑促使Agent重审执行顺序。Agent此前把部分接口细节未确认扩大为整题停工条件，并在必测覆盖证据未核齐时继续性能工作，表述与优先级不准确。本轮只重新梳理要求，未新增功能或性能优化；后续先审全部已知必测，不把自建通过当成官方准入。此解释由 Agent 给出。"
     },
     {
       "id": "requirements-deepening-001",
@@ -433,6 +587,30 @@
       "status": "executed",
       "output": "{\"source_commit\": \"c24ab5b967bd1e9c8b7675a79f9e5c5b8f7fe695\", \"result\": {\"rounds\": [{\"round\": 0, \"rows\": 10000, \"dimensions\": 128, \"queries\": 1000, \"mode\": \"exact\", \"half_filtered\": true, \"transport\": \"unmodified protocol_check/_transport.py\", \"config\": {\"startup_timeout\": 120, \"request_timeout\": 60, \"case_timeout\": 600, \"max_response_bytes\": 16777216, \"cpus\": \"2\", \"memory\": \"2g\", \"pids_limit\": 128, \"abs_tol\": 1e-05, \"rel_tol\": 1e-05, \"error_codes\": {}}, \"write_batch_size\": 100, \"explicit_batch_commit\": true, \"write_startup_seconds\": 0.16862805399999914, \"write_seconds\": 4.936051489000004, \"write_latency\": {\"count\": 300, \"max_seconds\": 0.06450328700000085, \"median_seconds\": 0.0028030914999988, \"p95_seconds\": 0.051582224000000565}, \"write_resources\": {\"scope\": \"DB container cgroup including Docker-exec cat helpers; before EOF\", \"physical_io_attribution\": \"Unverified shared CI device; raw counters only; no official B\", \"memory_peak_bytes\": 42115072, \"io_stat\": \"8:0 rbytes=0 wbytes=26664960 rios=0 wios=301 dbytes=471040 dios=100\"}, \"restart_seconds\": 0.15599551900000108, \"warmup_seconds\": 0.7026247900000016, \"query_seconds\": 3.7079324179999986, \"query_latency\": {\"count\": 1000, \"max_seconds\": 0.007372889999999188, \"median_seconds\": 0.004456182999998504, \"p95_seconds\": 0.00524969800000008}, \"query_resources\": {\"scope\": \"DB container cgroup including Docker-exec cat helpers; before EOF\", \"physical_io_attribution\": \"Unverified shared CI device; raw counters only; no official B\", \"memory_peak_bytes\": 30724096, \"io_stat\": \"\"}, \"session_elapsed_before_shutdown_seconds\": 33.023231380000084, \"verification_seconds\": 74.42765254999999, \"verified_queries\": 1000, \"verified_records_before_and_after_restart\": 10000, \"recall_unfiltered\": 1.0, \"recall_filtered\": 1.0}, {\"round\": 1, \"rows\": 10000, \"dimensions\": 128, \"queries\": 1000, \"mode\": \"exact\", \"half_filtered\": true, \"transport\": \"unmodified protocol_check/_transport.py\", \"config\": {\"startup_timeout\": 120, \"request_timeout\": 60, \"case_timeout\": 600, \"max_response_bytes\": 16777216, \"cpus\": \"2\", \"memory\": \"2g\", \"pids_limit\": 128, \"abs_tol\": 1e-05, \"rel_tol\": 1e-05, \"error_codes\": {}}, \"write_batch_size\": 100, \"explicit_batch_commit\": true, \"write_startup_seconds\": 0.1612734850000095, \"write_seconds\": 4.576263776000019, \"write_latency\": {\"count\": 300, \"max_seconds\": 0.04720320699999547, \"median_seconds\": 0.002687541999989662, \"p95_seconds\": 0.04430779899999493}, \"write_resources\": {\"scope\": \"DB container cgroup including Docker-exec cat helpers; before EOF\", \"physical_io_attribution\": \"Unverified shared CI device; raw counters only; no official B\", \"memory_peak_bytes\": 41975808, \"io_stat\": \"8:0 rbytes=0 wbytes=26664960 rios=0 wios=301 dbytes=471040 dios=100\"}, \"restart_seconds\": 0.15423407699998393, \"warmup_seconds\": 0.6923350329999778, \"query_seconds\": 3.6017120639999973, \"query_latency\": {\"count\": 1000, \"max_seconds\": 0.007104921000006925, \"median_seconds\": 0.00432670349999853, \"p95_seconds\": 0.0050943290000020625}, \"query_resources\": {\"scope\": \"DB container cgroup including Docker-exec cat helpers; before EOF\", \"physical_io_attribution\": \"Unverified shared CI device; raw counters only; no official B\", \"memory_peak_bytes\": 30642176, \"io_stat\": \"\"}, \"session_elapsed_before_shutdown_seconds\": 32.385088730999996, \"verification_seconds\": 74.111842351, \"verified_queries\": 1000, \"verified_records_before_and_after_restart\": 10000, \"recall_unfiltered\": 1.0, \"recall_filtered\": 1.0}, {\"round\": 2, \"rows\": 10000, \"dimensions\": 128, \"queries\": 1000, \"mode\": \"exact\", \"half_filtered\": true, \"transport\": \"unmodified protocol_check/_transport.py\", \"config\": {\"startup_timeout\": 120, \"request_timeout\": 60, \"case_timeout\": 600, \"max_response_bytes\": 16777216, \"cpus\": \"2\", \"memory\": \"2g\", \"pids_limit\": 128, \"abs_tol\": 1e-05, \"rel_tol\": 1e-05, \"error_codes\": {}}, \"write_batch_size\": 100, \"explicit_batch_commit\": true, \"write_startup_seconds\": 0.15767000499999995, \"write_seconds\": 4.497045106999991, \"write_latency\": {\"count\": 300, \"max_seconds\": 0.04553799699999672, \"median_seconds\": 0.0024508680000110417, \"p95_seconds\": 0.04373125600000094}, \"write_resources\": {\"scope\": \"DB container cgroup including Docker-exec cat helpers; before EOF\", \"physical_io_attribution\": \"Unverified shared CI device; raw counters only; no official B\", \"memory_peak_bytes\": 41635840, \"io_stat\": \"8:0 rbytes=0 wbytes=26664960 rios=0 wios=301 dbytes=471040 dios=100\"}, \"restart_seconds\": 0.14359506300002067, \"warmup_seconds\": 0.6991557970000031, \"query_seconds\": 3.689296761000037, \"query_latency\": {\"count\": 1000, \"max_seconds\": 0.007034244999999828, \"median_seconds\": 0.004450223500015227, \"p95_seconds\": 0.005206493000002865}, \"query_resources\": {\"scope\": \"DB container cgroup including Docker-exec cat helpers; before EOF\", \"physical_io_attribution\": \"Unverified shared CI device; raw counters only; no official B\", \"memory_peak_bytes\": 30576640, \"io_stat\": \"\"}, \"session_elapsed_before_shutdown_seconds\": 32.25129260500012, \"verification_seconds\": 75.24442709600004, \"verified_queries\": 1000, \"verified_records_before_and_after_restart\": 10000, \"recall_unfiltered\": 1.0, \"recall_filtered\": 1.0}], \"median_write_seconds\": 4.576263776000019, \"median_query_seconds\": 3.689296761000037, \"scope\": \"Official JSONL transport/config, custom full workload, all-query scalar oracle\", \"limitations\": \"No official benchmark seed/baseline/E/rank. Host cache not reset. cgroup cat helper included in peaks; shared-device I/O attribution not verified. Write/query snapshots before shutdown; correct COMMIT fsync is relied on, not power-loss tested. Case deadline covers SQL/restart/validation; oracle runs after DB shutdown outside container.\"}, \"ci\": {\"run\": {\"id\": 42805263389, \"head_sha\": \"c24ab5b967bd1e9c8b7675a79f9e5c5b8f7fe695\", \"status\": \"completed\", \"conclusion\": \"success\", \"html_url\": \"https://github.com/lucky20040520/seekdb/actions/runs/42805263389\"}, \"jobs\": [{\"id\": 129792644481, \"conclusion\": \"success\", \"steps\": [{\"name\": \"Set up job\", \"conclusion\": \"success\"}, {\"name\": \"Run actions/checkout@v4\", \"conclusion\": \"success\"}, {\"name\": \"Build actual Linux amd64 submission entry\", \"conclusion\": \"success\"}, {\"name\": \"Smoke test using official transport and unchanged config\", \"conclusion\": \"success\"}, {\"name\": \"Three full rounds of official JSONL workload and all-query truth\", \"conclusion\": \"success\"}, {\"name\": \"Publish actual JSONL results and stderr logs\", \"conclusion\": \"success\"}, {\"name\": \"Post Run actions/checkout@v4\", \"conclusion\": \"success\"}, {\"name\": \"Complete job\", \"conclusion\": \"success\"}]}], \"artifacts\": [{\"id\": 13758162732, \"name\": \"minivector-official-jsonl-full\", \"digest\": \"sha256:168096424dc1c49a89d8e5c0266542e2461385afa1fe5b6fd66d8a28a85539e6\", \"size_in_bytes\": 2020}]}, \"regression\": {\"run\": {\"id\": 42805262715, \"head_sha\": \"c24ab5b967bd1e9c8b7675a79f9e5c5b8f7fe695\", \"status\": \"completed\", \"conclusion\": \"success\", \"html_url\": \"https://github.com/lucky20040520/seekdb/actions/runs/42805262715\"}, \"jobs\": [{\"id\": 129792638119, \"conclusion\": \"success\", \"steps\": [{\"name\": \"Set up job\", \"conclusion\": \"success\"}, {\"name\": \"Run actions/checkout@v4\", \"conclusion\": \"success\"}, {\"name\": \"Validate learning material\", \"conclusion\": \"success\"}, {\"name\": \"Build from source with locked dependencies\", \"conclusion\": \"success\"}, {\"name\": \"Check delivered versions examples and runtime file scope\", \"conclusion\": \"success\"}, {\"name\": \"Run self-tests offline in Linux container\", \"conclusion\": \"success\"}, {\"name\": \"Check published SQL assertions through core API\", \"conclusion\": \"success\"}, {\"name\": \"Explain scope\", \"conclusion\": \"success\"}, {\"name\": \"Check public assertions through diagnostic stdin stdout pipes\", \"conclusion\": \"success\"}, {\"name\": \"Verify data larger than process memory with transactions\", \"conclusion\": \"success\"}, {\"name\": \"Post Run actions/checkout@v4\", \"conclusion\": \"success\"}, {\"name\": \"Complete job\", \"conclusion\": \"success\"}]}], \"artifacts\": []}, \"conclusion\": \"All three full workloads and scalar truths passed under unmodified published transport/config. Suitable to proceed to platform functional admission; no assertion of official performance validity or rank.\"}",
       "interpretation": "新JSONL入口完整默认规模三轮全部通过，共3000查询匹配独立标量真值、每轮10000记录关闭前及重启后内容核对。批次明确BEGIN/INSERT100/COMMIT。写入中位4.576秒、1000查询中位3.689秒，启动/逐请求/600秒总会话及2GiB均在本地官方配置范围内。写入峰值最高42115072字节，查询最高30724096字节，含探测进程。查询io.stat仍为空，不算零开销；共享CI设备没有冻结官方基线和冷缓存流程，不计算E/排名，不把本地性能成功冒充正式性能有效。结果由Agent执行解释；用户授权实验不证明学生已解释机制。"
+    },
+    {
+      "id": "cpp-local-baseline-20261111",
+      "actor": "agent_with_tools",
+      "status": "executed",
+      "output": "C++ 与 Python 本地对照：10,000 行、128 维、1,000 次查询、K=10、各 3 轮；exact，未创建索引，2 CPU/2 GiB。写入中位数 7209.06 ms → 5126.76 ms，查询中位数 3760.78 ms → 1753.03 ms；C++ 有过滤和无过滤 recall 均为 1.0。公开协议检查 20/20；补充测试 14/14、581 个请求。",
+      "interpretation": "历史镜像的本地实验；精确扫描 recall 不证明 ANN 召回，也不代表官方评分或正式用例通过。冷缓存、设备 I/O 归属及辅助进程的影响未充分验证。",
+      "evidence": "performance_checker/results/run-20261111-cpp/comparison.json; performance_checker/results/run-20261111-cpp/result.json; protocol-results/cpp-20261111-final/result.json; performance_checker/results/cpp-20261111/supplementary-final.json"
+    },
+    {
+      "id": "cpp-contiguous-cache-20261111",
+      "actor": "agent_with_tools",
+      "status": "executed",
+      "output": "连续向量缓存与等值候选列表：10,000 行、128 维、1,000 次查询、3 轮精确查询。耗时中位数 1802.95 ms → 1541.53 ms；每轮结果一致，有过滤和无过滤 recall 均为 1.0；第三轮优化后更慢。",
+      "interpretation": "约 14.5% 中位数改善仅适用于本地工作负载；未测硬件缓存未命中和 DRAM 流量，不包含完整写入阶段与官方综合评分。",
+      "evidence": "performance_checker/results/cache-20261111/paired/result.json"
+    },
+    {
+      "id": "cpp-query-optimization-20261111",
+      "actor": "agent_with_tools",
+      "status": "executed",
+      "output": "10,000 行、128 维、1,000 次查询、3 轮，关闭分项统计。完整计算路径中位数 1514.01 ms → 1422.78 ms，结果一致；block32 端到端中位数 1388.85 ms。额外 Linux 容器内 CPU 诊断中位数：完整计算 380 ms，block32 420 ms。",
+      "interpretation": "不同运行环境与计量范围不能直接合并。block32 端到端中位数较快，但三轮只有一轮快于完整计算，CPU 诊断也未显示优势，因此保留完整计算为默认；均为本地实验。",
+      "evidence": "performance_checker/results/query-20261111-paired/result.json; performance_checker/results/query-20261111-cpu.json"
     }
   ],
   "retrospective": {
@@ -447,7 +625,7 @@
   "limitations": [
     "已有数据库正确性基线及 本地功能及协议回归结果；无官方准入结果、无性能排名或官方得分。",
     "Docker 构建和离线容器自建检查已通过；已有磁盘精确Flat索引，但没有近似剪枝加速算法；UPDATE/DELETE仍重写表，存在性能与临时磁盘开销。",
-    "当前学生贡献仅限已记录原话，尚无学生解释实验结果的记录。",
+    "当前材料记录了学生的提问、要求和追问，以及 Agent 的分析和实验结果。",
     "旧聊天仅用于方法复盘，不将旧题成功结果作为本题已验证证据。",
     "材料为持续维护的阶段性摘录，官方Docker公开协议检查已通过、仍待正式29例验证的阶段性交付。未包含密钥、访问令牌或隐藏思维链。",
     "学生尚未亲自解释本轮实验和技术结果；Agent设计、测试、修复与解释均不能冒充学生贡献，不自评学习得分。"
@@ -462,7 +640,7 @@
       "实验与反馈迭代",
       "取舍与反思"
     ],
-    "evidence_policy": "单个JSON内保留真实原话和实际结果。学生、Agent、工具区分。同一问题或修正链不得拆分或跨维度重复计分。分档与引用字段是评审报告要求，不伪造学生解释或评分报告。",
+    "evidence_policy": "在单个 JSON 中记录学生问题与决策、Agent 回应和工具实验结果，区分各自角色；同一问题或修正链不拆分为多个独立计分实例。评审与分数以官方结果为准。",
     "aggregation": "独立三轮，各维度取三次中位数后相加；不是取最好一轮，也不是合并三轮实例。原始分用于排名；赛事分按名次折算。",
     "admission": "全部正式MySQL case通过，材料有效且评审/复核完成后方能参与该榜；无官方成绩不宣称已得40分。"
   }

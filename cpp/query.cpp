@@ -1,4 +1,6 @@
 #include "minivector.hpp"
+#include "profile.hpp"
+#include "distance_screen.hpp"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -12,6 +14,10 @@
 namespace mv {
 double l2_distance(const std::vector<float>& a,const std::vector<float>& b) {
     if(a.size()!=b.size()) fail("VECTOR dimension mismatch","TYPE");
+    return l2_distance(a.data(),b.data(),a.size());
+}
+double l2_distance(const float* a,const float* b,size_t dimension) {
+    profile::Scope timer(profile::Phase::distance_exact);
     // Sum non-overlapping partials like math.fsum. Even long double loses tiny
     // terms at a binary64 halfway boundary, which can change the TopK tie set.
     // Binary32 squared differences span fewer than 600 exponent bits, so 32
@@ -19,7 +25,7 @@ double l2_distance(const std::vector<float>& a,const std::vector<float>& b) {
     std::array<double,32> local;
     std::vector<double> overflow;
     double* partials=local.data(); size_t size=0,capacity=local.size();
-    for(size_t i=0;i<a.size();++i) {
+    for(size_t i=0;i<dimension;++i) {
         double delta=double(a[i])-double(b[i]); double x=delta*delta;
         size_t count=0;
         for(size_t j=0;j<size;++j) {
@@ -51,26 +57,18 @@ double l2_distance(const std::vector<float>& a,const std::vector<float>& b) {
 }
 namespace {
 using Key=std::variant<int64_t,std::string,double>;
-double approximate_l2(const std::vector<float>& a,const std::vector<float>& b) {
-    // Independent accumulators permit SIMD without reassociating the accurate
-    // distance function. This estimate only rejects candidates outside a very
-    // conservative floating-point error interval.
-    double s0=0,s1=0,s2=0,s3=0; size_t i=0;
-    for(;i+3<a.size();i+=4) {
-        double d0=double(a[i])-double(b[i]),d1=double(a[i+1])-double(b[i+1]);
-        double d2=double(a[i+2])-double(b[i+2]),d3=double(a[i+3])-double(b[i+3]);
-        s0+=d0*d0;s1+=d1*d1;s2+=d2*d2;s3+=d3*d3;
-    }
-    double sum=(s0+s1)+(s2+s3);
-    for(;i<a.size();++i) {double d=double(a[i])-double(b[i]);sum+=d*d;}
-    return std::sqrt(sum);
-}
 struct Compiled {
     size_t index=0;
     bool distance=false;
+    bool reuse_distance=false;
     std::vector<float> vector;
     std::string kind;
     Json project(const Row& row) const { if(distance) return l2_distance(std::get<std::vector<float>>(row[index]),vector); return cell_json(row[index]); }
+    Json project(const VectorCache& cache,size_t row) const {
+        if(distance) return l2_distance(cache.vector(row),vector.data(),vector.size());
+        if(index==cache.vector_column) return std::vector<float>(cache.vector(row),cache.vector(row)+cache.dimension);
+        return cell_json(cache.cell(row,index));
+    }
     Key key(const Row& row) const {
         if(distance) return l2_distance(std::get<std::vector<float>>(row[index]),vector);
         if(kind=="BIGINT") return std::get<int64_t>(row[index]);
@@ -154,11 +152,19 @@ class ExternalSort {
         std::vector<std::ifstream> readers; readers.reserve(group.size());
         auto advance=[&](size_t index) {
             std::string line;
-            if(std::getline(readers[index],line)) heap.push({decode_candidate(Json::parse(line),table,order),index});
+            if(std::getline(readers[index],line)) {
+                auto candidate=decode_candidate(Json::parse(line),table,order);
+                profile::Scope timer(profile::Phase::heap); heap.push({std::move(candidate),index});
+            }
             else if(!readers[index].eof()) fail("cannot read sort run","STORAGE");
         };
         for(size_t i=0;i<group.size();++i) { readers.emplace_back(group[i],std::ios::binary); if(!readers.back()) fail("cannot open sort run","STORAGE"); advance(i); }
-        while(!heap.empty()) { Head head=heap.top(); heap.pop(); if(!consume(head.value)) break; advance(head.source); }
+        while(!heap.empty()) {
+            Head head;
+            {profile::Scope timer(profile::Phase::heap); head=heap.top(); heap.pop();}
+            if(!consume(head.value)) break;
+            advance(head.source);
+        }
     }
 public:
     ExternalSort(const std::filesystem::path& path,const Table& t,const Compiled& o,Less l):directory(path),table(t),order(o),less(l) {}
@@ -206,7 +212,9 @@ void indexed_candidates(Database& db,const Table& table,const Json& descriptor,c
             if(filtered) {
                 rows.clear(); rows.seekg(static_cast<std::streamoff>(offset)); std::string line;
                 if(!std::getline(rows,line)) fail("invalid flat index row location","STORAGE");
-                if(!matches(decode_row(table,Json::parse(line)))) continue;
+                Row decoded;
+                {profile::Scope timer(profile::Phase::stored_row_decode); decoded=decode_row(table,Json::parse(line));}
+                if(!matches(decoded)) continue;
             }
             for(size_t i=0;i<dimension;++i) { uint32_t bits=read_u32(buffer.data()+16+4*i); std::memcpy(&vector[i],&bits,sizeof(float)); }
             accept({l2_distance(vector,order.vector),primary,{},row_file,offset});
@@ -255,14 +263,17 @@ Result Database::select(const std::string& name,const std::optional<std::vector<
             if(index.at("column").get<std::string>()==selected.columns[ordering->index].name) { descriptor=index; break; }
         }
     }
+    if(ordering && ordering->distance) for(auto& fn:functions)
+        fn.reuse_distance=fn.distance && fn.index==ordering->index && fn.vector==ordering->vector;
     bool use_heap=ordering&&limit&&bounded_heap(selected,*limit);
     // A Flat index retains only locations in the heap, rather than full rows.
     if(descriptor&&limit&&*limit<=4096) use_heap=true;
     result.rows=[this,selected=std::move(selected),pk,matches=std::move(matches),functions=std::move(functions),ordering,descending,descriptor,limit,use_heap,filtered=!conditions.empty()](const JsonVisitor& output) {
         if(limit&&*limit==0) return;
         uint64_t emitted=0;
-        auto emit_row=[&](const Row& row) {
-            Json projected=Json::array(); for(auto& fn:functions) projected.push_back(fn.project(row));
+        auto emit_row=[&](const Row& row,const Key* key=nullptr) {
+            Json projected=Json::array();
+            for(auto& fn:functions) projected.push_back(fn.reuse_distance && key ? Json(std::get<double>(*key)) : fn.project(row));
             output(projected); ++emitted; return !limit||emitted<*limit;
         };
         if(!ordering) {
@@ -273,36 +284,75 @@ Result Database::select(const std::string& name,const std::optional<std::vector<
         std::priority_queue<Candidate,std::vector<Candidate>,Less> heap(less);
         std::unique_ptr<ExternalSort> sorter;
         if(!use_heap) sorter=std::make_unique<ExternalSort>(path,selected,*ordering,less);
+        const auto screen_kernel=screen::select(descending ? 0 : screen::configured_block());
+        double screen_boundary=-1,screen_cutoff=0;
         auto add=[&](Candidate value) {
             if(!use_heap) {sorter->add(std::move(value));return;}
+            profile::Scope timer(profile::Phase::heap);
             if(heap.size()<*limit) heap.push(std::move(value));
             else if(less(value,heap.top())) {heap.pop();heap.push(std::move(value));}
+            if(ordering->distance && heap.size()>=*limit) {
+                const double boundary=std::get<double>(heap.top().key);
+                if(boundary!=screen_boundary) {
+                    screen_boundary=boundary;
+                    screen_cutoff=screen::cutoff(boundary,ordering->vector.size(),descending);
+                }
+            }
         };
+        auto outside_boundary=[&](const float* vector) {
+            if(!use_heap || heap.size()<*limit) return false;
+            profile::Scope timer(profile::Phase::distance_screen);
+            const double squared=screen_kernel(vector,ordering->vector.data(),ordering->vector.size(),screen_cutoff).squared;
+            return descending ? squared<screen_cutoff : squared>screen_cutoff;
+        };
+        std::shared_ptr<VectorCache> cached;
         if(descriptor) indexed_candidates(*this,selected,*descriptor,*ordering,matches,filtered,add);
         else {
             auto visit=[&](const Row& row) {
                 if(!matches(row)) return;
-                if(use_heap&&ordering->distance&&heap.size()>=*limit) {
-                    double estimate=approximate_l2(std::get<std::vector<float>>(row[ordering->index]),ordering->vector);
-                    double tolerance=std::abs(estimate)*std::numeric_limits<double>::epsilon()*std::max<size_t>(1,ordering->vector.size())*16;
-                    double boundary=std::get<double>(heap.top().key);
-                    if((!descending&&estimate>std::nextafter(boundary+tolerance,std::numeric_limits<double>::infinity()))||
-                       (descending&&estimate<std::nextafter(boundary-tolerance,-std::numeric_limits<double>::infinity()))) return;
-                }
+                if(ordering->distance&&outside_boundary(std::get<std::vector<float>>(row[ordering->index]).data())) return;
                 Candidate value; value.key=ordering->key(row); value.primary=std::get<int64_t>(row[pk]);
-                if(use_heap&&heap.size()>=*limit&&!less(value,heap.top())) return;
+                if(use_heap&&heap.size()>=*limit) {
+                    profile::Scope timer(profile::Phase::heap);
+                    if(!less(value,heap.top())) return;
+                }
                 value.row=row; add(std::move(value));
             };
-            auto cached=(ordering->distance&&!descending&&use_heap)?cached_rows(selected):nullptr;
-            if(cached) for(const auto& row:*cached) visit(row); else scan(selected,visit);
+            cached=(ordering->distance&&!descending&&use_heap)?cached_vectors(selected):nullptr;
+            if(cached) {
+                size_t covered;
+                const auto* rows=cached->matching_rows(matches,&covered);
+                Predicates residual=matches;
+                if(rows && covered<residual.tests.size()) residual.tests.erase(residual.tests.begin()+covered);
+                const bool check_residual=!residual.tests.empty();
+                auto visit_cached=[&](size_t row) {
+                    if(check_residual && !cached->matches(row,residual)) return;
+                    const float* vector=cached->vector(row);
+                    if(outside_boundary(vector)) return;
+                    Candidate value;
+                    value.key=l2_distance(vector,ordering->vector.data(),cached->dimension);
+                    value.primary=std::get<int64_t>(cached->cell(row,pk));
+                    // Keep row numbers in the heap and materialize only the
+                    // final TopK, including any projected vector column.
+                    value.offset=row; add(std::move(value));
+                };
+                if(rows) for(uint32_t row:*rows) visit_cached(row);
+                else for(size_t row=0;row<cached->size();++row) visit_cached(row);
+            } else scan(selected,visit);
         }
         auto emit_candidate=[&](const Candidate& candidate) {
-            if(candidate.file.empty()) return emit_row(candidate.row);
-            return emit_row(read_row(selected,candidate.file,candidate.offset));
+            if(cached) {
+                Json projected=Json::array();
+                for(auto& fn:functions) projected.push_back(fn.reuse_distance ? Json(std::get<double>(candidate.key)) : fn.project(*cached,candidate.offset));
+                output(projected); ++emitted; return !limit||emitted<*limit;
+            }
+            if(candidate.file.empty()) return emit_row(candidate.row,&candidate.key);
+            return emit_row(read_row(selected,candidate.file,candidate.offset),&candidate.key);
         };
         if(use_heap) {
             std::vector<Candidate> ordered; ordered.reserve(heap.size());
-            while(!heap.empty()) {ordered.push_back(heap.top());heap.pop();}
+            {profile::Scope timer(profile::Phase::heap,!heap.empty());
+             while(!heap.empty()) {ordered.push_back(heap.top());heap.pop();}}
             std::sort(ordered.begin(),ordered.end(),less);
             for(auto& candidate:ordered) if(!emit_candidate(candidate)) break;
         } else sorter->consume(emit_candidate);

@@ -1,0 +1,36 @@
+{
+  "timestamp_utc": "2026-11-11T07:18:28.750726+00:00",
+  "scope": "Supplementary actual-process JSONL tests; no database Python imports; not official hidden tests or performance results",
+  "target": "minivector-cpp:query-20261111",
+  "profiling": true,
+  "screen_block": 32,
+  "cases": 4,
+  "passed_cases": 4,
+  "requests": 193,
+  "results": [
+    {
+      "case": "float32_and_sorting",
+      "passed": true,
+      "requests": 29,
+      "seconds": 1.2282538
+    },
+    {
+      "case": "wide_records_fallback",
+      "passed": true,
+      "requests": 18,
+      "seconds": 5.8338932
+    },
+    {
+      "case": "contiguous_cache_and_filters",
+      "passed": true,
+      "requests": 116,
+      "seconds": 1.5507046999999998
+    },
+    {
+      "case": "distance_reuse_and_residuals",
+      "passed": true,
+      "requests": 30,
+      "seconds": 0.7016115000000003
+    }
+  ]
+}

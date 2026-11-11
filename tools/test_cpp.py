@@ -87,6 +87,10 @@ class Session:
                        "--cpus", "2", "--memory", "2g", "--pids-limit", "128",
                        "--mount", "type=volume,source=" + target.volume + ",target=/data",
                        target.args.docker_image]
+            if target.args.profile:
+                command[-1:-1] = ["--env", "MINIVECTOR_PROFILE=1"]
+            if target.args.screen_block is not None:
+                command[-1:-1] = ["--env", "MINIVECTOR_SCREEN_BLOCK=" + str(target.args.screen_block)]
         else:
             command = [part.replace("{data}", str(target.directory)) for part in target.args.command]
         self.process = subprocess.Popen(command, stdin=subprocess.PIPE,
@@ -493,6 +497,63 @@ def randomized_index_truth(target):
     s.stop()
 
 
+def contiguous_cache_and_filters(target):
+    s = target.start()
+    # Vector and primary-key columns deliberately have non-default positions.
+    s.sql("CREATE TABLE t(v VECTOR(3),tag VARCHAR(8),id BIGINT PRIMARY KEY,n BIGINT);")
+    records = {i: [[float(i % 7), float(i % 3), -2.0], ("a", "中", "c")[i % 3], i, i % 5]
+               for i in range(-60, 60)}
+    values = ["(%s,'%s',%d,%d)" % (json.dumps(row[0]), row[1], row[2], row[3])
+              for row in records.values()]
+    s.sql("INSERT INTO t VALUES" + ",".join(values) + ";", affected=120)
+
+    def check(where="", predicate=lambda row: True, limit=10):
+        pool = [row for row in records.values() if predicate(row)]
+        truth = sorted(pool, key=lambda row: (math.fsum(x*x for x in row[0]), row[2]))[:limit]
+        s.sql("SELECT * FROM t " + ("WHERE " + where if where else "")
+              + " ORDER BY L2_DISTANCE(v,[0,0,0]) LIMIT %d;" % limit, rows=truth)
+
+    for _ in range(2):
+        check()
+        check("tag='中'", lambda row: row[1] == "中")
+        check("tag='中' AND n=2 AND id>=0", lambda row: row[1] == "中" and row[3] == 2 and row[2] >= 0)
+        check("tag='missing'", lambda row: False)
+        check("tag='a' AND tag='c'", lambda row: False)
+        check("n>=2 AND id<0", lambda row: row[3] >= 2 and row[2] < 0)
+    # More distinct predicates than the 32-list limit, including empty lists.
+    for i in range(-40, 40):
+        check("id=%d" % i, lambda row, rid=i: row[2] == rid)
+    check("tag='中'", lambda row: row[1] == "中")
+    saved = {key: list(row) for key, row in records.items()}
+    s.sql("BEGIN;")
+    s.sql("UPDATE t SET tag='中',v=[0,0,0] WHERE id=-60;", affected=1)
+    records[-60] = [[0.0, 0.0, 0.0], "中", -60, 0]
+    check("tag='中'", lambda row: row[1] == "中")
+    s.sql("DELETE FROM t WHERE id=1;", affected=1)
+    records.pop(1)
+    check("tag='中'", lambda row: row[1] == "中")
+    s.sql("ROLLBACK;")
+    records = saved
+    check("tag='中'", lambda row: row[1] == "中")
+    s.sql("BEGIN;")
+    s.sql("DELETE FROM t WHERE tag='中';", affected=40)
+    records = {key: row for key, row in records.items() if row[1] != "中"}
+    check("tag='中'", lambda row: False)
+    s.sql("COMMIT;")
+    check("tag='中'", lambda row: False)
+    s.sql("INSERT INTO t VALUES([0,0,0],'中',200,2);", affected=1)
+    records[200] = [[0.0, 0.0, 0.0], "中", 200, 2]
+    check("tag='中'", lambda row: row[1] == "中")
+    s.sql("CREATE TABLE other(id BIGINT PRIMARY KEY,v VECTOR(1));")
+    s.sql("INSERT INTO other VALUES(1,[1]);")
+    s.sql("SELECT * FROM other ORDER BY L2_DISTANCE(v,[0]) LIMIT 1;", rows=[[1, [1.0]]])
+    check()
+    s.stop()
+    s = target.start()
+    check("tag='中'", lambda row: row[1] == "中")
+    s.stop()
+
+
 def wide_records_fallback(target):
     s = target.start()
     s.sql("CREATE TABLE t(id BIGINT PRIMARY KEY,payload VARCHAR(65536),v VECTOR(2));")
@@ -505,6 +566,9 @@ def wide_records_fallback(target):
         s.sql("INSERT INTO t VALUES" + ",".join(values) + ";", affected=100)
     s.sql("COMMIT;")
     for mode in ("exact", "ann"):
+        # LIMIT 1 fits the heap even for wide rows, so cache construction is
+        # attempted and must abandon its partial build at the shared budget.
+        s.sql("SELECT id FROM t ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 1;", rows=[[1]], mode=mode)
         s.sql("SELECT id FROM t ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10;",
               rows=[[i] for i in range(1, 11)], mode=mode)
         s.sql("SELECT id FROM t WHERE id>=250 ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10;",
@@ -512,6 +576,41 @@ def wide_records_fallback(target):
     s.sql("SELECT id FROM t ORDER BY payload;", rows=[[i] for i in range(500, 0, -1)])
     s.sql("SELECT id FROM t ORDER BY payload DESC;", rows=[[i] for i in range(1, 501)])
     s.sql("SELECT id FROM t ORDER BY payload LIMIT 1000;", rows=[[i] for i in range(500, 0, -1)])
+    s.stop()
+
+
+def distance_reuse_and_residuals(target):
+    s = target.start()
+    create(s)
+    records = [[3, "a", [0., 0.]], [1, "a", [0., 0.]], [5, "b", [2., 0.]],
+               [2, "a", [1., 0.]], [4, "a", [0., 2.]]]
+    s.sql("INSERT INTO t VALUES" + ",".join("(%d,'%s',%s)" % (r[0], r[1], json.dumps(r[2])) for r in records) + ";")
+
+    def check():
+        for where, predicate in (("tag='a'", lambda r: r[1] == "a"),
+                                 ("id=2 AND tag='b'", lambda r: False),
+                                 ("tag='a' AND id=2", lambda r: r[0] == 2),
+                                 ("id>=2 AND tag='a'", lambda r: r[0] >= 2 and r[1] == "a"),
+                                 ("tag='a' AND tag='a'", lambda r: r[1] == "a")):
+            for descending in (False, True):
+                truth = sorted((r for r in records if predicate(r)),
+                               key=lambda r: ((-1 if descending else 1)*math.hypot(*r[2]), r[0]))[:3]
+                expected = [[r[0], math.hypot(*r[2]), math.hypot(*r[2]),
+                             math.hypot(r[2][0]-2, r[2][1]), r[2], r[1]] for r in truth]
+                s.sql("SELECT id,L2_DISTANCE(v,[0,0]) AS d,L2_DISTANCE(v,'[0,0]'),"
+                      "L2_DISTANCE(v,[2,0]),v,tag FROM t WHERE " + where + " ORDER BY d "
+                      + ("DESC" if descending else "ASC") + " LIMIT 3;", rows=expected)
+        # Same projection expression, different ORDER BY expression: no reuse.
+        s.sql("SELECT id,L2_DISTANCE(v,[2,0]) FROM t ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 2;",
+              rows=[[1, 2.0], [3, 2.0]])
+        # External-sort/ordinary scan, including distance projection without order.
+        s.sql("SELECT id,L2_DISTANCE(v,[0,0]) AS d FROM t ORDER BY d;",
+              rows=[[1, 0.0], [3, 0.0], [2, 1.0], [4, 2.0], [5, 2.0]])
+        s.sql("SELECT L2_DISTANCE(v,[2,0]) FROM t WHERE id=2;", rows=[[1.0]])
+
+    check()
+    s.sql("CREATE VECTOR INDEX iv ON t(v);")
+    check()
     s.stop()
 
 
@@ -523,12 +622,16 @@ CASES = [("crud_and_int64", crud_and_int64), ("type_errors_atomicity", type_erro
          ("kill_after_commit", lambda target: recovery(target, "commit_kill")),
          ("missing_index_rebuild", missing_index_rebuild), ("protocol_boundaries", protocol_boundaries),
          ("long_input_recovery", long_input_recovery), ("randomized_index_truth", randomized_index_truth),
-         ("wide_records_fallback", wide_records_fallback)]
+         ("wide_records_fallback", wide_records_fallback),
+         ("contiguous_cache_and_filters", contiguous_cache_and_filters),
+         ("distance_reuse_and_residuals", distance_reuse_and_residuals)]
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--docker-image")
+    parser.add_argument("--profile", action="store_true", help="enable stderr phase diagnostics in the target Docker container")
+    parser.add_argument("--screen-block", type=int, choices=[0, 32, 64, 128], help="experimental distance-screen block size in Docker")
     parser.add_argument("--command", nargs=argparse.REMAINDER, help="native command; put last and include {data}")
     parser.add_argument("--timeout", type=float, default=30)
     parser.add_argument("--long-string-bytes", type=int, default=1024 * 1024)
@@ -537,6 +640,10 @@ def main():
     args = parser.parse_args()
     if bool(args.docker_image) == bool(args.command):
         parser.error("provide exactly one of --docker-image or --command")
+    if args.profile and not args.docker_image:
+        parser.error("--profile requires --docker-image")
+    if args.screen_block is not None and not args.docker_image:
+        parser.error("--screen-block requires --docker-image")
     if args.command and not any("{data}" in part for part in args.command):
         parser.error("--command must include {data} for independent persistent test directories")
     results = []
@@ -570,7 +677,7 @@ def main():
             print(result["error"][:2000], flush=True)
     report = {"timestamp_utc": datetime.now(timezone.utc).isoformat(),
               "scope": "Supplementary actual-process JSONL tests; no database Python imports; not official hidden tests or performance results",
-              "target": args.docker_image or args.command,
+              "target": args.docker_image or args.command, "profiling": args.profile, "screen_block": args.screen_block,
               "cases": len(results), "passed_cases": sum(r["passed"] for r in results),
               "requests": sum(r.get("requests", 0) for r in results), "results": results}
     if args.output:

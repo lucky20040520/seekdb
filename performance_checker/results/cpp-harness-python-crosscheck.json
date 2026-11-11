@@ -1,0 +1,96 @@
+{
+  "timestamp_utc": "2026-11-11T02:28:31.645638+00:00",
+  "scope": "Supplementary actual-process JSONL tests; no database Python imports; not official hidden tests or performance results",
+  "target": [
+    "python",
+    "-u",
+    "-m",
+    "minivector",
+    "--data-dir",
+    "{data}"
+  ],
+  "cases": 12,
+  "passed_cases": 11,
+  "requests": 528,
+  "results": [
+    {
+      "case": "crud_and_int64",
+      "passed": true,
+      "requests": 9,
+      "seconds": 0.23300109999999996
+    },
+    {
+      "case": "type_errors_atomicity",
+      "passed": true,
+      "requests": 17,
+      "seconds": 0.15439009999999997
+    },
+    {
+      "case": "invalid_sql_and_schema",
+      "passed": true,
+      "requests": 21,
+      "seconds": 0.12178220000000001
+    },
+    {
+      "case": "schema_permutations",
+      "passed": true,
+      "requests": 43,
+      "seconds": 0.541806
+    },
+    {
+      "case": "float32_and_sorting",
+      "passed": true,
+      "requests": 29,
+      "seconds": 0.46277919999999995
+    },
+    {
+      "case": "transaction_combinations",
+      "passed": true,
+      "requests": 40,
+      "seconds": 0.6706732000000002
+    },
+    {
+      "case": "shutdown_rolls_back",
+      "passed": true,
+      "requests": 20,
+      "seconds": 0.43160489999999996
+    },
+    {
+      "case": "kill_uncommitted",
+      "passed": true,
+      "requests": 19,
+      "seconds": 0.42704270000000033
+    },
+    {
+      "case": "kill_after_commit",
+      "passed": true,
+      "requests": 20,
+      "seconds": 0.4208327999999999
+    },
+    {
+      "case": "missing_index_rebuild",
+      "passed": true,
+      "requests": 9,
+      "seconds": 0.4010522000000001
+    },
+    {
+      "case": "long_input_recovery",
+      "passed": true,
+      "requests": 8,
+      "seconds": 0.7526720999999994
+    },
+    {
+      "case": "randomized_index_truth",
+      "passed": false,
+      "error": "rows mismatch: expected [[3, 'b', [2, 3]], [4, 'a', [-3, -3]], [6, 'a', [2, 3]], [7, 'b', [2, 3]], [10, 'a', [2, 3]], [11, 'b', [2, 3]], [12, 'a', [-1, -4]], [15, 'b', [2, 3]], [16, 'a', [4, 5]], [18, 'a', [2, 3]], [19, 'b', [2, 3]], [22, 'a', [2, 3]], [23, 'b', [2, 3]], [24, 'a', [-2, 5]]] got {'id': 1, 'ok': True, 'columns': ['id', 'tag', 'v'], 'rows': [[3, 'b', [2.0, 3.0]], [4, 'a', [-3.0, -3.0]], [6, 'a', [2.0, 3.0]], [7, 'b', [2.0, 3.0]], [10, 'a', [2.0, 3.0]], [11, 'b', [2.0, 3.0]], [12, 'a', [-1.0, -4.0]], [15, 'b', [2.0, 3.0]], [16, 'a', [4.0, 5.0]], [18, 'a', [2.0, 3.0]], [19, 'b', [2.0, 3.0]], [22, 'a', [2.0, 3.0]], [23, 'b', [2.0, 3.0]], [24, 'a', [-2.0, 5.0]]]}",
+      "traceback": "Traceback (most recent call last):\n  File \"E:\\project\\seekdb-query-optimization\\tools\\test_cpp.py\", line 521, in main\n    case(target)\n  File \"E:\\project\\seekdb-query-optimization\\tools\\test_cpp.py\", line 485, in randomized_index_truth\n    s.sql(\"SELECT id,tag,v FROM t ORDER BY id;\", rows=[[key, *value] for key, value in sorted(committed.items())])\n  File \"E:\\project\\seekdb-query-optimization\\tools\\test_cpp.py\", line 164, in sql\n    assert same(response.get(\"rows\"), rows), \"rows mismatch: expected %r got %r\" % (rows, response)\nAssertionError: rows mismatch: expected [[3, 'b', [2, 3]], [4, 'a', [-3, -3]], [6, 'a', [2, 3]], [7, 'b', [2, 3]], [10, 'a', [2, 3]], [11, 'b', [2, 3]], [12, 'a', [-1, -4]], [15, 'b', [2, 3]], [16, 'a', [4, 5]], [18, 'a', [2, 3]], [19, 'b', [2, 3]], [22, 'a', [2, 3]], [23, 'b', [2, 3]], [24, 'a', [-2, 5]]] got {'id': 1, 'ok': True, 'columns': ['id', 'tag', 'v'], 'rows': [[3, 'b', [2.0, 3.0]], [4, 'a', [-3.0, -3.0]], [6, 'a', [2.0, 3.0]], [7, 'b', [2.0, 3.0]], [10, 'a', [2.0, 3.0]], [11, 'b', [2.0, 3.0]], [12, 'a', [-1.0, -4.0]], [15, 'b', [2.0, 3.0]], [16, 'a', [4.0, 5.0]], [18, 'a', [2.0, 3.0]], [19, 'b', [2.0, 3.0]], [22, 'a', [2.0, 3.0]], [23, 'b', [2.0, 3.0]], [24, 'a', [-2.0, 5.0]]]}\n",
+      "last_sql": "SELECT id,tag,v FROM t ORDER BY id;",
+      "stderr": [
+        [],
+        []
+      ],
+      "requests": 293,
+      "seconds": 1.9320094
+    }
+  ]
+}

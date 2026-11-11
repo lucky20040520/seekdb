@@ -1,4 +1,5 @@
 #include "minivector.hpp"
+#include "profile.hpp"
 #include <fstream>
 #include <iostream>
 #include <cmath>
@@ -99,11 +100,13 @@ void emit(const std::string& id,const Json& fields) {
 }
 void serve(Database& db) {
     std::cout<<"{\"type\":\"ready\"}\n"<<std::flush;
-    std::string line;
+    std::string line; uint64_t sequence=0;
     while(std::getline(std::cin,line)) {
+        profile::Request request_profile("request",++sequence);
         std::string id="null";
         try {
-            Json request=RequestScanner(line).parse(id);
+            Json request;
+            { profile::Scope timer(profile::Phase::protocol_parse); request=RequestScanner(line).parse(id); }
             if(request.value("op",Json())=="shutdown"){db.close();emit(id,{{"ok",true}});return;}
             if(request.value("op",Json())!="execute")fail("unsupported operation","UNSUPPORTED_OP");
             if(!request.contains("sql")||!request["sql"].is_string())fail("SQL string required","PROTOCOL");
@@ -122,13 +125,14 @@ void serve(Database& db) {
             emit(id,{{"ok",false},{"error",{{"code","PROTOCOL"},{"message",error.what()}}}});
         }
     }
-    db.close();
+    {profile::Request close_profile("eof_close",++sequence);db.close();}
 }
 void diagnostic(Database& db,const std::string& mode) {
     std::cout<<"LOCAL_READY\n"<<std::flush;
-    std::string sql; char state='n',delimiter=0,c;
+    std::string sql; char state='n',delimiter=0,c; uint64_t sequence=0;
     auto run=[&](){
         if(sql.find_first_not_of(" \t\r\n")==std::string::npos){sql.clear();return;}
+        profile::Request request_profile("diagnostic",++sequence);
         try {
             auto result=execute(db,sql,mode);
             if(result.query){
@@ -150,7 +154,7 @@ void diagnostic(Database& db,const std::string& mode) {
         else if(state=='s'){if(c=='*'){state='b';continue;}state='n';}
         if(c=='\''||c=='`'){delimiter=c;state='q';}else if(c=='-')state='h';else if(c=='/')state='s';else if(c==';')run();
     }
-    run();db.close();
+    run();{profile::Request close_profile("eof_close",++sequence);db.close();}
 }
 }
 int main(int argc,char** argv) {
@@ -165,7 +169,10 @@ int main(int argc,char** argv) {
             if(arg=="--data-dir")directory=value;else if(arg=="--protocol")protocol=value;else if(arg=="--mode")mode=value;else throw std::runtime_error("unknown argument");
         }
         if((protocol!="jsonl"&&protocol!="diagnostic")||(mode!="exact"&&mode!="ann"))throw std::runtime_error("invalid mode/protocol");
+        auto startup=profile::Clock::time_point{};
+        if(profile::enabled()) {profile::reset();startup=profile::Clock::now();}
         mv::Database db(directory);
+        if(profile::enabled()) profile::report("startup",0,startup);
         if(protocol=="jsonl")serve(db);else diagnostic(db,mode);
     }catch(const std::exception& e){std::cerr<<"fatal: "<<e.what()<<'\n';return 1;}
     return 0;

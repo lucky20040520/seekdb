@@ -38,7 +38,8 @@ def _constant(value):
 
 
 class JsonlSession:
-    def __init__(self, process, startup_timeout=120, request_timeout=60, max_response_bytes=16777216):
+    def __init__(self, process, startup_timeout=120, request_timeout=60, max_response_bytes=16777216,
+                 stderr_line_handler=None, measure_client=False):
         if process.stdin is None or process.stdout is None or process.stderr is None:
             raise ValueError("process must have binary stdin, stdout and stderr pipes")
         if (isinstance(max_response_bytes, bool) or not isinstance(max_response_bytes, int)
@@ -52,6 +53,12 @@ class JsonlSession:
         self.startup_timeout = startup_timeout
         self.request_timeout = request_timeout
         self.max_response_bytes = max_response_bytes
+        self.stderr_line_handler = stderr_line_handler
+        self.measure_client = measure_client
+        self.last_timing = None
+        self._last_decode_ns = 0
+        self._cpu_clock = getattr(time, "thread_time_ns", None) if measure_client else None
+        self._reader_cpu_ns = 0
         self._messages = queue.Queue()
         self._lock = threading.Lock()
         self._ready = False
@@ -65,7 +72,10 @@ class JsonlSession:
     def _read_stdout(self):
         try:
             while True:
+                cpu_start = self._cpu_clock() if self._cpu_clock is not None else None
                 line = self.process.stdout.readline(self.max_response_bytes + 2)
+                if cpu_start is not None:
+                    self._reader_cpu_ns += self._cpu_clock() - cpu_start
                 if not line:
                     self._messages.put(("eof", None))
                     return
@@ -82,6 +92,7 @@ class JsonlSession:
         try:
             stream = self.process.stderr
             read = getattr(stream, "read1", stream.read)
+            pending = bytearray()
             while True:
                 chunk = read(4096)
                 if not chunk:
@@ -89,6 +100,18 @@ class JsonlSession:
                 self._stderr.extend(chunk)
                 if len(self._stderr) > 65536:
                     del self._stderr[:-65536]
+                if self.stderr_line_handler is not None:
+                    pending.extend(chunk)
+                    while b"\n" in pending:
+                        end = pending.index(b"\n")
+                        line = bytes(pending[:end])
+                        del pending[:end + 1]
+                        if line.endswith(b"\r"):
+                            line = line[:-1]
+                        self.stderr_line_handler(line)
+                    if len(pending) > 1048576:
+                        self.stderr_line_handler(bytes(pending))
+                        pending.clear()
         except (OSError, ValueError, TypeError):
             return
 
@@ -105,11 +128,15 @@ class JsonlSession:
             raise ProtocolError("process exited before response")
         if kind == "error":
             raise ProtocolError(value)
+        start = time.perf_counter_ns() if self.measure_client else None
         try:
             obj = json.loads(value.decode("utf-8"), object_pairs_hook=_pairs,
                              parse_float=_float, parse_constant=_constant)
         except (ValueError, UnicodeError, RecursionError) as exc:
             raise ProtocolError(f"invalid JSON response: {exc}") from exc
+        finally:
+            if start is not None:
+                self._last_decode_ns = time.perf_counter_ns() - start
         if not isinstance(obj, dict):
             raise ProtocolError("JSON response must be an object")
         return obj
@@ -129,6 +156,9 @@ class JsonlSession:
                 raise
 
     def _request(self, payload):
+        timing_start = time.perf_counter_ns() if self.measure_client else None
+        cpu_start = self._cpu_clock() if self._cpu_clock is not None else None
+        reader_cpu_start = self._reader_cpu_ns
         if not self._ready or self._broken:
             raise ProtocolError("session is not ready")
         if not self._messages.empty():
@@ -138,21 +168,24 @@ class JsonlSession:
         request_id = self._next_id
         self._next_id += 1
         payload = {"id": request_id, **payload}
+        encode_start = time.perf_counter_ns() if self.measure_client else None
         data = (json.dumps(payload, ensure_ascii=False, allow_nan=False, separators=(",", ":")) + "\n").encode("utf-8")
+        encode_ns = time.perf_counter_ns() - encode_start if encode_start is not None else 0
         sent = queue.Queue(maxsize=1)
 
         def write():
+            writer_start = self._cpu_clock() if self._cpu_clock is not None else None
             try:
                 self.process.stdin.write(data)
                 self.process.stdin.flush()
-                sent.put(None)
+                sent.put((None, self._cpu_clock() - writer_start if writer_start is not None else None))
             except Exception as exc:
-                sent.put(exc)
+                sent.put((exc, self._cpu_clock() - writer_start if writer_start is not None else None))
 
         threading.Thread(target=write, daemon=True).start()
         try:
             try:
-                error = sent.get(timeout=max(0, deadline - time.monotonic()))
+                error, writer_cpu = sent.get(timeout=max(0, deadline - time.monotonic()))
             except queue.Empty as exc:
                 raise TimeoutError("timed out writing JSONL request") from exc
             if error is not None:
@@ -162,6 +195,12 @@ class JsonlSession:
                 raise ProtocolError("response id or its type differs from request")
             if type(response.get("ok")) is not bool:
                 raise ProtocolError("response ok must be a boolean")
+            if timing_start is not None:
+                self.last_timing = {"roundtrip_ns": time.perf_counter_ns() - timing_start,
+                                    "encode_ns": encode_ns, "decode_ns": self._last_decode_ns,
+                                    "main_cpu_ns": self._cpu_clock() - cpu_start if cpu_start is not None else None,
+                                    "writer_cpu_ns": writer_cpu,
+                                    "stdout_reader_cpu_ns": self._reader_cpu_ns - reader_cpu_start if cpu_start is not None else None}
             return response
         except Exception:
             self._broken = True

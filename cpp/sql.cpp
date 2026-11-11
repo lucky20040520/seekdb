@@ -1,4 +1,5 @@
 #include "minivector.hpp"
+#include "profile.hpp"
 #include <algorithm>
 #include <charconv>
 #include <cctype>
@@ -134,12 +135,12 @@ public:
         }
         return conditions;
     }
-    Result run(Database& db,const std::string& mode) {
+    Result run(Database& db,const std::string& mode,profile::Scope& parse_time) {
         auto verb=upper(take());
-        if(verb=="BEGIN"||verb=="COMMIT"||verb=="ROLLBACK") { finish(); if(verb=="BEGIN") db.begin(); else if(verb=="COMMIT") db.commit(); else db.rollback(); return {}; }
+        if(verb=="BEGIN"||verb=="COMMIT"||verb=="ROLLBACK") { finish(); parse_time.stop(); if(verb=="BEGIN") db.begin(); else if(verb=="COMMIT") db.commit(); else db.rollback(); return {}; }
         if(verb=="CREATE") {
             if(eat("VECTOR")) {
-                expect("INDEX"); auto index=identifier(); expect("ON"); auto table=identifier(); expect("("); auto column=identifier(); expect(")"); finish(); db.create_index(index,table,column); return {};
+                expect("INDEX"); auto index=identifier(); expect("ON"); auto table=identifier(); expect("("); auto column=identifier(); expect(")"); finish(); parse_time.stop(); db.create_index(index,table,column); return {};
             }
             expect("TABLE"); auto table=identifier(); expect("("); std::vector<Column> columns; std::optional<std::string> primary;
             while(true) {
@@ -159,14 +160,14 @@ public:
                 bool exists=false; for(auto& column:columns) { if(column.primary) fail("invalid primary key declaration","SCHEMA"); if(column.name==*primary) {column.primary=true;exists=true;} }
                 if(!exists) fail("invalid primary key declaration","SCHEMA");
             }
-            finish(); db.create(table,columns); return {};
+            finish(); parse_time.stop(); db.create(table,columns); return {};
         }
         if(verb=="INSERT") {
             expect("INTO"); auto table=identifier(); std::optional<std::vector<std::string>> columns;
             if(eat("(")) { columns=std::vector<std::string>{identifier()}; while(eat(",")) columns->push_back(identifier()); expect(")"); }
             expect("VALUES"); std::vector<Json> rows;
             do { expect("("); Json row=Json::array(); row.push_back(value()); while(eat(",")) row.push_back(value()); expect(")"); rows.push_back(std::move(row)); } while(eat(","));
-            finish(); Result result; result.affected=db.insert(table,rows,columns); return result;
+            finish(); parse_time.stop(); Result result; result.affected=db.insert(table,rows,columns); return result;
         }
         if(verb=="SELECT") {
             std::optional<std::vector<Projection>> projections;
@@ -174,17 +175,20 @@ public:
             expect("FROM"); auto table=identifier(); auto conditions=where(); std::optional<Order> order;
             if(eat("ORDER")) { expect("BY"); auto expr=expression(); bool desc=eat("DESC"); if(!desc) eat("ASC"); order=Order{std::move(expr),desc}; }
             std::optional<Json> limit; if(eat("LIMIT")) limit=limit_value(); finish();
-            return db.select(table,projections,conditions,order,limit,mode);
+            parse_time.stop(); return db.select(table,projections,conditions,order,limit,mode);
         }
         if(verb=="UPDATE") {
             auto table=identifier(); expect("SET"); std::vector<Assignment> assignments;
             do { auto column=identifier(); expect("="); assignments.push_back({column,value()}); } while(eat(","));
-            auto conditions=where(); finish(); Result result; result.affected=db.modify(table,conditions,assignments); return result;
+            auto conditions=where(); finish(); parse_time.stop(); Result result; result.affected=db.modify(table,conditions,assignments); return result;
         }
-        if(verb=="DELETE") { expect("FROM"); auto table=identifier(); auto conditions=where(); finish(); Result result; result.affected=db.modify(table,conditions,std::nullopt); return result; }
+        if(verb=="DELETE") { expect("FROM"); auto table=identifier(); auto conditions=where(); finish(); parse_time.stop(); Result result; result.affected=db.modify(table,conditions,std::nullopt); return result; }
         fail("unsupported statement","SYNTAX");
     }
 };
 }
-Result execute(Database& database,const std::string& sql,const std::string& mode) { return Parser(sql).run(database,mode); }
+Result execute(Database& database,const std::string& sql,const std::string& mode) {
+    profile::Scope parse_time(profile::Phase::sql_parse);
+    return Parser(sql).run(database,mode,parse_time);
+}
 }

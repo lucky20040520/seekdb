@@ -1,4 +1,5 @@
 #include "minivector.hpp"
+#include "profile.hpp"
 
 #include <algorithm>
 #include <array>
@@ -26,7 +27,6 @@
 namespace mv {
 namespace {
 namespace fs = std::filesystem;
-constexpr size_t kCacheLimit = 16 * 1024 * 1024;
 constexpr char kMagic[8] = {'M','V','F','L','A','T','1','\0'};
 
 [[noreturn]] void io_error(const std::string& message) {
@@ -46,6 +46,7 @@ public:
     }
     void write(const std::string& data) { write(data.data(),data.size()); }
     void durable() {
+        profile::Scope timer(profile::Phase::file_sync);
         if (std::fflush(file_)) io_error("flush failed");
 #ifdef _WIN32
         if (_commit(_fileno(file_))) io_error("file sync failed");
@@ -99,6 +100,11 @@ Row decode_row(const Table& table,const Json& encoded) {
     row.reserve(table.columns.size());
     for (size_t i=0;i<table.columns.size();++i) row.push_back(validate(table.columns[i],encoded[i]));
     return row;
+}
+
+Row decode_line(const Table& table,const std::string& line) {
+    profile::Scope timer(profile::Phase::stored_row_decode);
+    return decode_row(table,Json::parse(line));
 }
 
 // Count Unicode scalar values, including rejection of overlong encodings and
@@ -177,7 +183,7 @@ std::string build_index(const fs::path& directory,const std::string& rows,const 
         while (true) {
             const auto offset=source.tellg();
             if (!std::getline(source,line)) break;
-            const Row row=decode_row(table,Json::parse(line));
+            const Row row=decode_line(table,line);
             put_le(output,static_cast<uint64_t>(std::get<int64_t>(row[pk])),8);
             put_le(output,static_cast<uint64_t>(offset),8);
             for (float value:std::get<std::vector<float>>(row[vector_column])) {
@@ -205,6 +211,7 @@ std::string unique_name(const std::string& prefix,const std::string& suffix) {
 
 void sync_directory(const std::filesystem::path& path) {
 #ifndef _WIN32
+    profile::Scope timer(profile::Phase::directory_sync);
     const int descriptor=::open(path.c_str(),O_RDONLY|O_DIRECTORY);
     if (descriptor<0) io_error("cannot open data directory");
     const int status=::fsync(descriptor), saved=errno;
@@ -241,6 +248,9 @@ Cell validate(const Column& column,const Json& value,bool for_storage) {
     Json decoded;
     const Json* array=&value;
     if (value.is_string()) {
+        // String vectors found inside a stored row are already covered by the
+        // row-decode timer; avoid attributing the same interval twice.
+        profile::Scope timer(profile::Phase::vector_literal_parse,profile::stored_decode_depth==0);
         try { decoded=Json::parse(value.get_ref<const std::string&>()); }
         catch (const Json::exception&) { fail("invalid VECTOR array literal","TYPE"); }
         array=&decoded;
@@ -268,23 +278,25 @@ size_t primary_index(const Table& table) {
     fail("missing primary key","SCHEMA");
 }
 
-std::function<bool(const Row&)> compile_conditions(const Table& table,const std::vector<Condition>& conditions) {
-    struct Test { size_t index; std::string op; Cell value; };
-    std::vector<Test> tests;
+bool Predicate::matches(const Cell& actual) const {
+    return op=="=" ? actual==value : op=="<" ? actual<value : op=="<=" ? actual<=value : op==">" ? actual>value : actual>=value;
+}
+
+bool Predicates::operator()(const Row& row) const {
+    profile::Scope timer(profile::Phase::filter,!tests.empty());
+    for (const auto& test:tests) if (!test.matches(row[test.column])) return false;
+    return true;
+}
+
+Predicates compile_conditions(const Table& table,const std::vector<Condition>& conditions) {
+    Predicates result;
     for (const auto& condition:conditions) {
         const size_t index=column_index(table,condition.column);
         if (table.columns[index].kind=="VECTOR") fail("vector comparison unsupported");
         if (condition.op!="=" && condition.op!="<" && condition.op!="<=" && condition.op!=">" && condition.op!=">=") fail("unsupported comparison operator");
-        tests.push_back({index,condition.op,validate(table.columns[index],condition.value,false)});
+        result.tests.push_back({index,condition.op,validate(table.columns[index],condition.value,false)});
     }
-    return [tests=std::move(tests)](const Row& row) {
-        for (const auto& test:tests) {
-            const auto& actual=row[test.index];
-            const bool passed=test.op=="=" ? actual==test.value : test.op=="<" ? actual<test.value : test.op=="<=" ? actual<=test.value : test.op==">" ? actual>test.value : actual>=test.value;
-            if (!passed) return false;
-        }
-        return true;
-    };
+    return result;
 }
 
 Database::Database(const fs::path& directory) : path(directory) {
@@ -309,6 +321,7 @@ Table Database::table(const std::string& name) const {
 }
 
 void Database::collect() {
+    profile::Scope timer(profile::Phase::collect);
     std::unordered_set<std::string> live;
     const auto add=[&](const Json& catalog) {
         for (const auto& value:catalog) {
@@ -393,7 +406,7 @@ void Database::scan(const Table& table,const RowVisitor& visit) const {
     for (const auto& file:table.files) {
         auto source=input(path/file);
         std::string line;
-        while (std::getline(source,line)) visit(decode_row(table,Json::parse(line)));
+        while (std::getline(source,line)) visit(decode_line(table,line));
         if (source.bad()) io_error("row file read failed");
     }
 }
@@ -403,49 +416,117 @@ Row Database::read_row(const Table& table,const std::string& file,uint64_t offse
     source.seekg(static_cast<std::streamoff>(offset));
     std::string line;
     if (!std::getline(source,line)) io_error("indexed row read failed");
-    return decode_row(table,Json::parse(line));
+    return decode_line(table,line);
 }
 
-std::shared_ptr<const std::vector<Row>> Database::cached_rows(const Table& table) {
+Row VectorCache::materialize(size_t row) const {
+    Row result; result.reserve(columns);
+    for (size_t column=0;column<columns;++column) {
+        if (column==vector_column) result.emplace_back(std::vector<float>(vector(row),vector(row)+dimension));
+        else result.push_back(cell(row,column));
+    }
+    return result;
+}
+
+bool VectorCache::matches(size_t row,const Predicates& conditions) const {
+    profile::Scope timer(profile::Phase::filter,!conditions.tests.empty());
+    for (const auto& test:conditions.tests) if (!test.matches(cell(row,test.column))) return false;
+    return true;
+}
+
+const std::vector<uint32_t>* VectorCache::matching_rows(const Predicates& conditions,size_t* covered) {
+    profile::Scope timer(profile::Phase::filter_lists,!conditions.tests.empty());
+    if (covered) *covered=conditions.tests.size();
+    Posting* best=nullptr;
+    const Predicate* build=nullptr;
+    size_t best_test=0,build_test=0;
+    for (size_t i=0;i<conditions.tests.size();++i) {
+        const auto& test=conditions.tests[i];
+        if (test.op!="=") continue;
+        if (!build) { build=&test; build_test=i; }
+        for (auto& slot:postings) if (slot && slot->column==test.column && slot->value==test.value) {
+            if (!best || slot->rows.size()<best->rows.size()) { best=&*slot; best_test=i; }
+        }
+    }
+    if (best) { best->used=++clock; if (covered) *covered=best_test; return &best->rows; }
+    if (!build) return nullptr;
+    const auto* text=std::get_if<std::string>(&build->value);
+    const size_t key_bytes=text ? text->capacity()+1 : 0;
+    const size_t available=std::min(posting_budget,budget-data_bytes);
+    if (key_bytes>available) return nullptr;
+    size_t count=0;
+    for (size_t row=0;row<size();++row) if (cell(row,build->column)==build->value) {
+        if (++count>(available-key_bytes)/sizeof(uint32_t)) return nullptr;
+    }
+    const size_t bytes=key_bytes+count*sizeof(uint32_t);
+    size_t empty=postings.size();
+    while (true) {
+        size_t oldest=postings.size();
+        for (size_t i=0;i<postings.size();++i) {
+            if (!postings[i]) empty=i;
+            else if (oldest==postings.size() || postings[i]->used<postings[oldest]->used) oldest=i;
+        }
+        if (empty<postings.size() && posting_bytes<=available-bytes) break;
+        posting_bytes-=postings[oldest]->bytes; postings[oldest].reset(); empty=oldest;
+    }
+    Posting posting{build->column,build->value,{},++clock,0};
+    posting.rows.reserve(count);
+    for (size_t row=0;row<size();++row) if (cell(row,build->column)==build->value) posting.rows.push_back(static_cast<uint32_t>(row));
+    const auto* stored_text=std::get_if<std::string>(&posting.value);
+    posting.bytes=posting.rows.capacity()*sizeof(uint32_t)+(stored_text ? stored_text->capacity()+1 : 0);
+    if (posting.bytes>available-posting_bytes) return nullptr;
+    posting_bytes+=posting.bytes; postings[empty]=std::move(posting);
+    if (covered) *covered=build_test;
+    return &postings[empty]->rows;
+}
+
+std::shared_ptr<VectorCache> Database::cached_vectors(const Table& table) {
     if (table.files.empty()) return {};
     if (cache_ && cache_signature_==table.files) return cache_;
     cache_.reset(); cache_signature_.clear();
-    auto rows=std::make_shared<std::vector<Row>>();
-    // Reject tables that cannot fit before parsing their JSON rows. Legacy
-    // tables without .keys still use the incremental bounded build below.
-    if (table.columns.size()>(kCacheLimit-sizeof(Row))/sizeof(Cell)) return {};
-    size_t minimum=sizeof(Row)+table.columns.size()*sizeof(Cell);
-    for (const auto& column:table.columns) if (column.kind=="VECTOR") {
-        if (column.size<0 || uint64_t(column.size)>(kCacheLimit-minimum)/sizeof(float)) return {};
-        minimum+=static_cast<size_t>(column.size)*sizeof(float);
+    auto cache=std::make_shared<VectorCache>();
+    cache->columns=table.columns.size();
+    for (size_t i=0;i<table.columns.size();++i) if (table.columns[i].kind=="VECTOR") {
+        if (table.columns[i].size<=0 || uint64_t(table.columns[i].size)>VectorCache::budget/sizeof(float)) return {};
+        cache->vector_column=i; cache->dimension=static_cast<size_t>(table.columns[i].size);
     }
+    if (!cache->dimension || cache->columns>VectorCache::budget/sizeof(Cell)) return {};
+    const size_t minimum=(cache->columns-1)*sizeof(Cell)+cache->dimension*sizeof(float);
+    size_t overhead=sizeof(VectorCache)+256+table.files.size()*sizeof(std::string);
+    for (const auto& file:table.files) overhead+=file.capacity()+1;
+    if (overhead>VectorCache::budget) return {};
+    const size_t max_rows=(VectorCache::budget-overhead)/minimum;
+    // Row counts let both arrays allocate once. Legacy segments without a key
+    // sidecar retain the streaming path, as do tables that exceed the budget.
     uint64_t count=0;
-    bool count_known=true;
     for (const auto& file:table.files) {
         std::error_code error;
         const auto bytes=fs::file_size(path/(file+".keys"),error);
-        if (error || bytes%8) { count_known=false; break; }
-        if (bytes/8>kCacheLimit/minimum || count>kCacheLimit/minimum-bytes/8) return {};
+        if (error || bytes%8) return {};
+        if (bytes/8>max_rows || count>max_rows-bytes/8) return {};
         count+=bytes/8;
     }
-    if (count_known) rows->reserve(static_cast<size_t>(count));
-    size_t payload=256;
+    cache->vectors.reserve(static_cast<size_t>(count)*cache->dimension);
+    cache->scalars.reserve(static_cast<size_t>(count)*(cache->columns-1));
+    cache->data_bytes=overhead+cache->vectors.capacity()*sizeof(float)+cache->scalars.capacity()*sizeof(Cell);
+    if (cache->data_bytes>VectorCache::budget) return {};
     struct TooLarge {};
     try {
         scan(table,[&](const Row& row) {
-            size_t bytes=row.capacity()*sizeof(Cell);
-            for (const auto& cell:row) {
-                if (std::holds_alternative<std::string>(cell)) bytes+=std::get<std::string>(cell).capacity()+1;
-                else if (std::holds_alternative<std::vector<float>>(cell)) bytes+=std::get<std::vector<float>>(cell).capacity()*sizeof(float);
+            if (cache->size()>=count) throw TooLarge{};
+            for (size_t i=0;i<row.size();++i) if (i!=cache->vector_column) {
+                if (const auto* text=std::get_if<std::string>(&row[i])) {
+                    if (text->capacity()+1>VectorCache::budget-cache->data_bytes) throw TooLarge{};
+                    cache->data_bytes+=text->capacity()+1;
+                }
+                cache->scalars.push_back(row[i]);
             }
-            const size_t capacity=rows->size()==rows->capacity() ? std::max<size_t>(1,rows->capacity()*2) : rows->capacity();
-            if (bytes>kCacheLimit || payload>kCacheLimit-bytes || capacity>(kCacheLimit-payload-bytes)/sizeof(Row)) throw TooLarge{};
-            rows->push_back(row);
-            payload+=bytes;
+            const auto& vector=std::get<std::vector<float>>(row[cache->vector_column]);
+            cache->vectors.insert(cache->vectors.end(),vector.begin(),vector.end());
         });
     } catch (const TooLarge&) { return {}; }
     cache_signature_=table.files;
-    cache_=std::move(rows);
+    cache_=std::move(cache);
     return cache_;
 }
 

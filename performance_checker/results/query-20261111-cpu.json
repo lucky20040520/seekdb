@@ -1,0 +1,150 @@
+{
+  "status": "completed",
+  "scope": "Supplementary Linux-local JSONL comparison; not the primary host driver or a score",
+  "source_sha256": "552d13d27fcee91fd8545f0ccab82a704f84f16e0238400d704f343adfc3f135",
+  "verified_answer_sha256": "63ad788352d9eed2e9bfe4b4898667c87a3dbcfa083e41af469d22d7feccf973",
+  "variants": {
+    "before": {
+      "scope": "Linux in-container JSONL client; profiling off, query-only CPU diagnostic",
+      "block": 0,
+      "rows": 10000,
+      "dimensions": 128,
+      "queries": 1000,
+      "data_seed": 19017,
+      "query_seed": 29017,
+      "cpu_tick_ms": 10.0,
+      "rounds": [
+        {
+          "round": 1,
+          "query_ms": 768.915296,
+          "database_cpu_ms": 540.0,
+          "groups_ms": {
+            "unfiltered": 464.7840140000001,
+            "filtered": 303.09344199999975
+          },
+          "answers_sha256": "63ad788352d9eed2e9bfe4b4898667c87a3dbcfa083e41af469d22d7feccf973"
+        },
+        {
+          "round": 2,
+          "query_ms": 754.562225,
+          "database_cpu_ms": 530.0,
+          "groups_ms": {
+            "unfiltered": 458.94616299999956,
+            "filtered": 294.63107300000013
+          },
+          "answers_sha256": "63ad788352d9eed2e9bfe4b4898667c87a3dbcfa083e41af469d22d7feccf973"
+        },
+        {
+          "round": 3,
+          "query_ms": 769.424872,
+          "database_cpu_ms": 550.0,
+          "groups_ms": {
+            "unfiltered": 470.03969300000006,
+            "filtered": 298.35047200000014
+          },
+          "answers_sha256": "63ad788352d9eed2e9bfe4b4898667c87a3dbcfa083e41af469d22d7feccf973"
+        }
+      ],
+      "medians": {
+        "query_ms": 768.915296,
+        "database_cpu_ms": 540.0
+      },
+      "image_id": "sha256:db4e2a0cf24b56696a7419ce23ac8d0c2465e52a69ccac6d1dc0900996a2ecdd"
+    },
+    "full": {
+      "scope": "Linux in-container JSONL client; profiling off, query-only CPU diagnostic",
+      "block": 0,
+      "rows": 10000,
+      "dimensions": 128,
+      "queries": 1000,
+      "data_seed": 19017,
+      "query_seed": 29017,
+      "cpu_tick_ms": 10.0,
+      "rounds": [
+        {
+          "round": 1,
+          "query_ms": 586.840761,
+          "database_cpu_ms": 380.0,
+          "groups_ms": {
+            "unfiltered": 338.20763200000016,
+            "filtered": 247.65055399999997
+          },
+          "answers_sha256": "63ad788352d9eed2e9bfe4b4898667c87a3dbcfa083e41af469d22d7feccf973"
+        },
+        {
+          "round": 2,
+          "query_ms": 604.621988,
+          "database_cpu_ms": 370.0,
+          "groups_ms": {
+            "unfiltered": 345.5683729999998,
+            "filtered": 258.0275830000002
+          },
+          "answers_sha256": "63ad788352d9eed2e9bfe4b4898667c87a3dbcfa083e41af469d22d7feccf973"
+        },
+        {
+          "round": 3,
+          "query_ms": 601.525198,
+          "database_cpu_ms": 380.0,
+          "groups_ms": {
+            "unfiltered": 344.856462,
+            "filtered": 255.63773399999997
+          },
+          "answers_sha256": "63ad788352d9eed2e9bfe4b4898667c87a3dbcfa083e41af469d22d7feccf973"
+        }
+      ],
+      "medians": {
+        "query_ms": 601.525198,
+        "database_cpu_ms": 380.0
+      },
+      "image_id": "sha256:3527c7474513c31e6960671461ede8a19cd1b2f2b0ab7422882721cece4e3dc9"
+    },
+    "block32": {
+      "scope": "Linux in-container JSONL client; profiling off, query-only CPU diagnostic",
+      "block": 32,
+      "rows": 10000,
+      "dimensions": 128,
+      "queries": 1000,
+      "data_seed": 19017,
+      "query_seed": 29017,
+      "cpu_tick_ms": 10.0,
+      "rounds": [
+        {
+          "round": 1,
+          "query_ms": 652.442294,
+          "database_cpu_ms": 420.0,
+          "groups_ms": {
+            "unfiltered": 386.79459,
+            "filtered": 264.5876180000002
+          },
+          "answers_sha256": "63ad788352d9eed2e9bfe4b4898667c87a3dbcfa083e41af469d22d7feccf973"
+        },
+        {
+          "round": 2,
+          "query_ms": 632.750594,
+          "database_cpu_ms": 410.0,
+          "groups_ms": {
+            "unfiltered": 376.0128199999999,
+            "filtered": 255.74217800000008
+          },
+          "answers_sha256": "63ad788352d9eed2e9bfe4b4898667c87a3dbcfa083e41af469d22d7feccf973"
+        },
+        {
+          "round": 3,
+          "query_ms": 667.581765,
+          "database_cpu_ms": 430.0,
+          "groups_ms": {
+            "unfiltered": 396.55180399999966,
+            "filtered": 269.914808
+          },
+          "answers_sha256": "63ad788352d9eed2e9bfe4b4898667c87a3dbcfa083e41af469d22d7feccf973"
+        }
+      ],
+      "medians": {
+        "query_ms": 652.442294,
+        "database_cpu_ms": 420.0
+      },
+      "image_id": "sha256:3527c7474513c31e6960671461ede8a19cd1b2f2b0ab7422882721cece4e3dc9"
+    }
+  },
+  "answers_match_independently_verified_run": true
+}

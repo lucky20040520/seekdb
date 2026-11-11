@@ -1,0 +1,10 @@
+{
+  "scope": "Direct C++ cache layout and budget checks, tools/test_cache.cpp",
+  "passed": true,
+  "cache_budget_bytes": 16777216,
+  "posting_budget_bytes": 1048576,
+  "dense_lists_retained": 26,
+  "entry_limit": 32,
+  "near_limit_data_bytes": 16747168,
+  "near_limit_posting_bytes": 4
+}

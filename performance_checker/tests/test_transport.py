@@ -2,6 +2,7 @@ import subprocess
 import sys
 import time
 import unittest
+import queue
 
 from performance_checker.transport import JsonlSession, ProtocolError
 
@@ -41,6 +42,25 @@ class TransportTests(unittest.TestCase):
         self.assertEqual(result["rows"], [["你好\n世界", "ann"]])
         self.assertFalse(session.execute("bad")["ok"])
         self.assertTrue(session.shutdown()["ok"])
+
+    def test_optional_client_timing_and_stderr_lines(self):
+        lines = queue.Queue()
+        source = _CHILD.replace("print('{\"type\":\"ready\"}', flush=True)",
+                                "print('partial', end='', file=sys.stderr, flush=True)\n"
+                                "print(' line', file=sys.stderr, flush=True)\n"
+                                "print('{\"type\":\"ready\"}', flush=True)")
+        session = self.spawn(source, stderr_line_handler=lines.put, measure_client=True)
+        session.wait_ready()
+        self.assertTrue(session.execute("SELECT 1")["ok"])
+        self.assertEqual(lines.get(timeout=2), b"partial line")
+        self.assertGreater(session.last_timing["roundtrip_ns"], 0)
+        self.assertGreater(session.last_timing["encode_ns"], 0)
+        self.assertGreater(session.last_timing["decode_ns"], 0)
+        if hasattr(time, "thread_time_ns"):
+            self.assertGreaterEqual(session.last_timing["main_cpu_ns"], 0)
+            self.assertGreaterEqual(session.last_timing["writer_cpu_ns"], 0)
+            self.assertGreaterEqual(session.last_timing["stdout_reader_cpu_ns"], 0)
+        session.shutdown()
 
     def test_invalid_handshake(self):
         session = self.spawn("print('{\"type\":\"ready\",\"extra\":1}', flush=True)")
