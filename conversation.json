@@ -301,6 +301,12 @@
       "source": "项目对话：分析存储机制与向量查询",
       "topic": "正式用例反馈",
       "content": "缺少正式失败的具体用例和错误信息，不能推断根因。公开测试和自建补充测试可以缩小范围，但不能替代正式结果；继续检查协议、SQL 语义、边界和持久化。"
+    },
+    {
+      "id": "student-root-path-followup",
+      "role": "student",
+      "source": "用户原话节选",
+      "content": "conversation文件官网是放在根目录上的，你这样放有没有什么影响"
     }
   ],
   "experiments": [
@@ -611,6 +617,13 @@
       "output": "10,000 行、128 维、1,000 次查询、3 轮，关闭分项统计。完整计算路径中位数 1514.01 ms → 1422.78 ms，结果一致；block32 端到端中位数 1388.85 ms。额外 Linux 容器内 CPU 诊断中位数：完整计算 380 ms，block32 420 ms。",
       "interpretation": "不同运行环境与计量范围不能直接合并。block32 端到端中位数较快，但三轮只有一轮快于完整计算，CPU 诊断也未显示优势，因此保留完整计算为默认；均为本地实验。",
       "evidence": "performance_checker/results/query-20261111-paired/result.json; performance_checker/results/query-20261111-cpu.json"
+    },
+    {
+      "id": "platform-root-material-audit-001",
+      "actor": "agent_with_tools",
+      "status": "executed",
+      "output": "Platform screenshot for f1b9f4e: MySQL formal cases passed, performance E=641.662650; Agent Prompt did not rank with generic invalid/review/out-of-range/missing-summary message. git ls-tree showed official f4d4e26 root conversation.json empty template, f1b9f4e only agent/conversation.json, teammate 8c2bbca both files. The latter root and agent objects differed only in scope; neither had a summary key. Added factual summary and synchronized both paths.",
+      "interpretation": "用户首先质疑材料路径，Git提交树证实旧版没有根目录文件。平台提示不能证实具体根因或摘要字段约定；本次以官网模板路径提供材料，并让两个已使用路径的内容一致，不填写评审分数。"
     }
   ],
   "retrospective": {
@@ -643,5 +656,6 @@
     "evidence_policy": "在单个 JSON 中记录学生问题与决策、Agent 回应和工具实验结果，区分各自角色；同一问题或修正链不拆分为多个独立计分实例。评审与分数以官方结果为准。",
     "aggregation": "独立三轮，各维度取三次中位数后相加；不是取最好一轮，也不是合并三轮实例。原始分用于排名；赛事分按名次折算。",
     "admission": "全部正式MySQL case通过，材料有效且评审/复核完成后方能参与该榜；无官方成绩不宣称已得40分。"
-  }
+  },
+  "summary": "本材料记录 MiniVectorDB 的需求拆解、官方 JSONL 协议适配、正确性验证和性能迭代。此前 Python 提交 f1b9f4e204f08f5043b315ba1ebec500ad7af255 已通过平台 MySQL 正式用例，性能原始指标为 641.662650。平台未给出 Agent Prompt 不参与排名的具体原因。后续 C++ 版本由队友提交，已执行公开检查和本地性能对照。记录区分用户原话、Agent 工作及实际结果。"
 }

@@ -2,7 +2,7 @@ name: MiniVectorDB local acceptance
 on:
   push:
     branches: [2026-competition-round2]
-    paths: [cpp/**, minivector/**, tests/**, tools/**, mysqltest/**, agent/**, Dockerfile, Dockerfile.python, requirements.txt, .github/workflows/minivector.yml]
+    paths: [cpp/**, minivector/**, tests/**, tools/**, mysqltest/**, agent/**, conversation.json, Dockerfile, Dockerfile.python, requirements.txt, .github/workflows/minivector.yml]
   workflow_dispatch:
 permissions:
   contents: read
@@ -13,7 +13,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Validate learning material
-        run: python3 tools/validate_material.py
+        run: |
+          python3 tools/validate_material.py conversation.json
+          cmp conversation.json agent/conversation.json
       - name: Build C++ database from source
         run: docker build -t minivector-local .
       - name: Check C++ entrypoint examples and runtime file scope
