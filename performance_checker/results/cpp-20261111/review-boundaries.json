@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "requests": 15,
+  "checks": [
+    "5000 digit integer ID echo",
+    "structured/bool/null/escaped string ID echo",
+    "aliases overriding columns",
+    "descending equal-distance primary-key tie order",
+    "VECTOR order rejected even with LIMIT 0",
+    "zero and arbitrary-size LIMIT"
+  ],
+  "image": "minivector-cpp:20261111"
+}

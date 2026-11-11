@@ -1,0 +1,120 @@
+{
+  "ok": true,
+  "image": "minivector-cpp:20261111",
+  "directory": "E:\\project\\seekdb-query-optimization\\performance_checker\\results\\cpp-20261111\\storage-compat-0v16smyw",
+  "checks": [
+    "Python data and index readable by C++",
+    "missing index rebuilt before readiness",
+    "int64 min/max and Unicode roundtrip",
+    "transaction rollback",
+    "duplicate batch statement atomicity",
+    "commit and C++ index readable by Python"
+  ],
+  "responses": [
+    {
+      "type": "ready"
+    },
+    {
+      "id": 0,
+      "ok": true,
+      "columns": [
+        "id",
+        "s",
+        "v"
+      ],
+      "rows": [
+        [
+          -9223372036854775808,
+          "你好",
+          [
+            1.0,
+            2.0
+          ]
+        ],
+        [
+          9223372036854775807,
+          "🙂",
+          [
+            3.0,
+            4.0
+          ]
+        ]
+      ]
+    },
+    {
+      "id": 1,
+      "affected_rows": 0,
+      "ok": true
+    },
+    {
+      "id": 2,
+      "affected_rows": 1,
+      "ok": true
+    },
+    {
+      "id": 3,
+      "affected_rows": 0,
+      "ok": true
+    },
+    {
+      "id": 4,
+      "affected_rows": 0,
+      "ok": true
+    },
+    {
+      "id": 5,
+      "affected_rows": 1,
+      "ok": true
+    },
+    {
+      "id": 6,
+      "error": {
+        "code": "DUPLICATE",
+        "message": "duplicate primary key"
+      },
+      "ok": false
+    },
+    {
+      "id": 7,
+      "affected_rows": 0,
+      "ok": true
+    },
+    {
+      "id": 8,
+      "ok": true,
+      "columns": [
+        "id"
+      ],
+      "rows": [
+        [
+          9223372036854775807
+        ],
+        [
+          -9223372036854775808
+        ]
+      ]
+    },
+    {
+      "id": "done",
+      "ok": true
+    }
+  ],
+  "python_reopened_rows": [
+    [
+      -9223372036854775808,
+      "你好",
+      [
+        1.0,
+        2.0
+      ]
+    ],
+    [
+      9223372036854775807,
+      "🙂",
+      [
+        0.25,
+        0.5
+      ]
+    ]
+  ]
+}

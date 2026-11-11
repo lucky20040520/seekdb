@@ -2,7 +2,7 @@ name: MiniVectorDB local acceptance
 on:
   push:
     branches: [2026-competition-round2]
-    paths: [minivector/**, tests/**, tools/**, mysqltest/**, agent/**, Dockerfile, requirements.txt, .github/workflows/minivector.yml]
+    paths: [cpp/**, minivector/**, tests/**, tools/**, mysqltest/**, agent/**, Dockerfile, Dockerfile.python, requirements.txt, .github/workflows/minivector.yml]
   workflow_dispatch:
 permissions:
   contents: read
@@ -14,36 +14,19 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validate learning material
         run: python3 tools/validate_material.py
-      - name: Build from source with locked dependencies
+      - name: Build C++ database from source
         run: docker build -t minivector-local .
-      - name: Check delivered versions examples and runtime file scope
+      - name: Check C++ entrypoint examples and runtime file scope
         run: python3 tools/check_delivery.py --image minivector-local
-      - name: Run self-tests offline in Linux container
-        run: >-
-          docker run --rm --network none --cpus 1 --memory 256m --memory-swap 256m
-          --entrypoint python -e TMPDIR=/data
-          -v "$GITHUB_WORKSPACE/tests:/app/tests:ro"
-          -v "$GITHUB_WORKSPACE/tools:/app/tools:ro"
-          minivector-local -m unittest discover -s tests -v
-      - name: Check published SQL assertions through core API
-        run: >-
-          docker run --rm --network none --cpus 1 --memory 256m --memory-swap 256m
-          --entrypoint python -e TMPDIR=/data
-          -v "$GITHUB_WORKSPACE/tools:/app/tools:ro"
-          -v "$GITHUB_WORKSPACE/mysqltest:/app/mysqltest:ro"
-          minivector-local tools/run_public.py
+      - name: Check actual C++ transactions recovery and boundaries
+        run: python3 tools/test_cpp.py --docker-image minivector-local --output protocol-results/cpp-regression.json
+      - name: Run published JSONL assertions against C++
+        run: python3 protocol_check/run.py --image minivector-local --output protocol-results/cpp-public
       - name: Explain scope
         run: echo 'These are self-tests, not official MySQL admission or platform scores.'
-      - name: Check public assertions through diagnostic stdin stdout pipes
-        run: >-
-          docker run --rm --network none --cpus 1 --memory 256m --memory-swap 256m
-          --entrypoint python -e TMPDIR=/data
-          -v "$GITHUB_WORKSPACE/tools:/app/tools:ro"
-          -v "$GITHUB_WORKSPACE/mysqltest:/app/mysqltest:ro"
-          minivector-local tools/run_stdio_public.py
-      - name: Verify data larger than process memory with transactions
-        run: >-
-          docker run --rm --network none --cpus 1 --memory 256m --memory-swap 256m
-          --entrypoint python
-          -v "$GITHUB_WORKSPACE/tools:/app/tools:ro"
-          minivector-local tools/verify_resources.py --data-dir /data/resource-probe --load-via-sql --with-vector-index
+      - name: Preserve C++ reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: minivector-cpp-regression
+          path: protocol-results/

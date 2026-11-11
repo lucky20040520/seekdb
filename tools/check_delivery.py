@@ -16,9 +16,9 @@ def main():
     parser.add_argument('--image', required=True)
     args = parser.parse_args()
     assert docker('image', 'inspect', '--format', '{{.Architecture}}', args.image).strip() == 'amd64'
-    versions = json.loads(docker('run', '--rm', '--network', 'none', '--entrypoint', 'python',
-        args.image, '-c', 'import sys,json,numpy;print(json.dumps([sys.version.split()[0],numpy.__version__]))'))
-    assert versions == ['3.12.8', '1.26.4'], 'delivered dependency versions differ'
+    entrypoint = json.loads(docker('image', 'inspect', '--format', '{{json .Config.Entrypoint}}', args.image))
+    assert entrypoint == ['/usr/local/bin/minivector', '--data-dir', '/data'], 'delivered C++ entrypoint differs'
+    assert 'minivector --data-dir' in docker('run', '--rm', '--network', 'none', args.image, '--help')
     token = 'minivector-delivery-' + uuid.uuid4().hex
     volume, names = token + '-data', [token + '-first', token + '-restart']
     docker('volume', 'create', volume)
@@ -39,7 +39,7 @@ def main():
                 assert len(docker('exec', names[index], 'cat', path).splitlines()) == 1, 'unexpected network socket'
             session.close()
             session = None
-        print(json.dumps({'status':'PASS','architecture':'amd64','versions':versions,
+        print(json.dumps({'status':'PASS','architecture':'amd64','entrypoint':entrypoint,
               'verified':'empty volume,documented examples,EOF rollback,restart persistence,no network sockets,no writes outside data volume'}))
     finally:
         if session is not None:

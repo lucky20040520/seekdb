@@ -2,7 +2,7 @@ name: MiniVectorDB published protocol check
 on:
   push:
     branches: [2026-competition-round2]
-    paths: [minivector/**, protocol_check/**, mysqltest/**, Dockerfile, requirements.txt, .github/workflows/minivector-official-protocol.yml]
+    paths: [cpp/**, minivector/**, protocol_check/**, mysqltest/**, Dockerfile, requirements.txt, .github/workflows/minivector-official-protocol.yml]
   workflow_dispatch:
 permissions:
   contents: read

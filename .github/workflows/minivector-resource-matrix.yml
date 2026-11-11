@@ -1,4 +1,4 @@
-name: MiniVectorDB over-container-memory probe
+name: MiniVectorDB legacy Python over-container-memory probe
 on:
   push:
     branches: [2026-competition-round2]
@@ -12,7 +12,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - run: docker build --platform linux/amd64 -t minivector-resource .
+      - run: docker build --platform linux/amd64 -f Dockerfile.python -t minivector-resource .
       - name: SQL data exceeds both process and container memory
         run: |
           mkdir -p resource-output

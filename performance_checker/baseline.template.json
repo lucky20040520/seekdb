@@ -1,0 +1,5 @@
+{
+  "note": "Template only: replace null values with real, comparable baseline measurements.",
+  "write": {"time_ms": null, "io_bytes": null, "memory_bytes": null},
+  "query": {"time_ms": null, "io_bytes": null, "memory_bytes": null}
+}

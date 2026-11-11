@@ -1,0 +1,233 @@
+{
+  "scope": "local diagnostic; not an official performance score",
+  "limitations": [
+    "Synthetic dataset and seeds are not verified to be the official workload.",
+    "Cold-cache preparation, the dedicated device and cgroup writeback attribution are not independently verified.",
+    "Resource counters are read before shutdown; subsequent writes may be omitted.",
+    "docker exec collection helpers share the measured cgroup and affect its counters.",
+    "The official frozen resource limits, baseline, score and ranking are not established by this tool."
+  ],
+  "configuration": {
+    "image": "minivector-cpp:20261111",
+    "mode": "exact",
+    "create_index": false,
+    "rows": 10000,
+    "dimensions": 128,
+    "queries": 1000,
+    "k": 10,
+    "rounds": 3,
+    "data_seed": 19017,
+    "query_seed": 29017,
+    "io_device": "8:48",
+    "cpus": "2",
+    "memory": "2g",
+    "pids": 128
+  },
+  "rounds": [
+    {
+      "write": {
+        "time_ms": 5142.2591999999995,
+        "io_bytes": 26849280,
+        "memory_bytes": 35037184,
+        "startup_ms": 292.0936999999999,
+        "load_ms": 5142.2591999999995,
+        "preparation_ms": null,
+        "raw_resources": {
+          "sync_exit_code": 0,
+          "sync_stderr": "",
+          "io_stat": "8:48 rbytes=139264 wbytes=26710016 rios=5 wios=301 dbytes=0 dios=0\n",
+          "memory_peak": "35037184\n",
+          "data_device": "8:48",
+          "errors": []
+        },
+        "persisted": true,
+        "recall": {},
+        "query_counts": {
+          "unfiltered": 0,
+          "filtered": 0
+        }
+      },
+      "query": {
+        "time_ms": 1845.7392000000007,
+        "io_bytes": 26710016,
+        "memory_bytes": 39608320,
+        "startup_ms": 278.84269999999844,
+        "load_ms": 5198.980699999998,
+        "preparation_ms": 262.9684000000019,
+        "raw_resources": {
+          "sync_exit_code": 0,
+          "sync_stderr": "",
+          "io_stat": "8:48 rbytes=0 wbytes=26710016 rios=0 wios=301 dbytes=0 dios=0\n",
+          "memory_peak": "39608320\n",
+          "data_device": "8:48",
+          "errors": []
+        },
+        "persisted": true,
+        "recall": {
+          "unfiltered": 1.0,
+          "filtered": 1.0
+        },
+        "query_counts": {
+          "unfiltered": 500,
+          "filtered": 500
+        }
+      },
+      "checks": {
+        "write_correct": true,
+        "query_correct": true,
+        "resources_ok": true,
+        "recall_unfiltered": 1.0,
+        "recall_filtered": 1.0
+      }
+    },
+    {
+      "write": {
+        "time_ms": 5126.7608,
+        "io_bytes": 26701824,
+        "memory_bytes": 34959360,
+        "startup_ms": 287.0417000000032,
+        "load_ms": 5126.7608,
+        "preparation_ms": null,
+        "raw_resources": {
+          "sync_exit_code": 0,
+          "sync_stderr": "",
+          "io_stat": "8:48 rbytes=0 wbytes=26701824 rios=0 wios=301 dbytes=0 dios=0\n",
+          "memory_peak": "34959360\n",
+          "data_device": "8:48",
+          "errors": []
+        },
+        "persisted": true,
+        "recall": {},
+        "query_counts": {
+          "unfiltered": 0,
+          "filtered": 0
+        }
+      },
+      "query": {
+        "time_ms": 1752.0987999999988,
+        "io_bytes": 26710016,
+        "memory_bytes": 39735296,
+        "startup_ms": 276.93120000000704,
+        "load_ms": 5139.4540999999945,
+        "preparation_ms": 243.93630000000144,
+        "raw_resources": {
+          "sync_exit_code": 0,
+          "sync_stderr": "",
+          "io_stat": "8:48 rbytes=0 wbytes=26710016 rios=0 wios=301 dbytes=0 dios=0\n",
+          "memory_peak": "39735296\n",
+          "data_device": "8:48",
+          "errors": []
+        },
+        "persisted": true,
+        "recall": {
+          "unfiltered": 1.0,
+          "filtered": 1.0
+        },
+        "query_counts": {
+          "unfiltered": 500,
+          "filtered": 500
+        }
+      },
+      "checks": {
+        "write_correct": true,
+        "query_correct": true,
+        "resources_ok": true,
+        "recall_unfiltered": 1.0,
+        "recall_filtered": 1.0
+      }
+    },
+    {
+      "write": {
+        "time_ms": 5083.569899999986,
+        "io_bytes": 26710016,
+        "memory_bytes": 35598336,
+        "startup_ms": 294.5397000000298,
+        "load_ms": 5083.569899999986,
+        "preparation_ms": null,
+        "raw_resources": {
+          "sync_exit_code": 0,
+          "sync_stderr": "",
+          "io_stat": "8:48 rbytes=0 wbytes=26710016 rios=0 wios=301 dbytes=0 dios=0\n",
+          "memory_peak": "35598336\n",
+          "data_device": "8:48",
+          "errors": []
+        },
+        "persisted": true,
+        "recall": {},
+        "query_counts": {
+          "unfiltered": 0,
+          "filtered": 0
+        }
+      },
+      "query": {
+        "time_ms": 1753.0275000000302,
+        "io_bytes": 26710016,
+        "memory_bytes": 39706624,
+        "startup_ms": 275.4545999999891,
+        "load_ms": 5160.785699999962,
+        "preparation_ms": 232.87649999997484,
+        "raw_resources": {
+          "sync_exit_code": 0,
+          "sync_stderr": "",
+          "io_stat": "8:48 rbytes=0 wbytes=26710016 rios=0 wios=301 dbytes=0 dios=0\n",
+          "memory_peak": "39706624\n",
+          "data_device": "8:48",
+          "errors": []
+        },
+        "persisted": true,
+        "recall": {
+          "unfiltered": 1.0,
+          "filtered": 1.0
+        },
+        "query_counts": {
+          "unfiltered": 500,
+          "filtered": 500
+        }
+      },
+      "checks": {
+        "write_correct": true,
+        "query_correct": true,
+        "resources_ok": true,
+        "recall_unfiltered": 1.0,
+        "recall_filtered": 1.0
+      }
+    }
+  ],
+  "status": "completed",
+  "efficiency": {
+    "available": true,
+    "scope": "local estimate; not an official performance score or rank",
+    "baseline": {
+      "write": {
+        "time_ms": 7209.061999999999,
+        "io_bytes": 39202816,
+        "memory_bytes": 53776384
+      },
+      "query": {
+        "time_ms": 3760.7783999999924,
+        "io_bytes": 47017984,
+        "memory_bytes": 78655488
+      }
+    },
+    "eligible": true,
+    "reasons": [],
+    "rounds": [
+      {
+        "write": 0.5889321675482138,
+        "query": 0.661659930647152,
+        "efficiency": 0.637417342947506
+      },
+      {
+        "write": 0.5897315558597809,
+        "query": 0.6683535517154123,
+        "efficiency": 0.6421462197635351
+      },
+      {
+        "write": 0.5901058016655556,
+        "query": 0.6683161337240863,
+        "efficiency": 0.6422460230379093
+      }
+    ],
+    "median_efficiency": 0.642146
+  }
+}

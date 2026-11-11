@@ -1,13 +1,18 @@
-# MiniVectorDB correctness baseline
+# MiniVectorDB C++
 
-当前阶段：官方分支f4d4e26已发布STDIO_PROTOCOL.md及protocol_check，默认入口现已对接JSONL，实际Docker镜像已通过官方交互式握手、shutdown及20公开例，完整回归通过。此前协议无关验证及其实际结果保留，尚无正式29例准入或比赛成绩。运行时Python3.12.8、NumPy1.26.4，存储、查询、索引和事务核心自行实现。
+默认 Docker 入口现为 C++17 可执行程序 `/usr/local/bin/minivector`，存储、SQL、向量检索与事务核心均自行实现。仅使用 nlohmann/json 进行 JSON 解析与序列化，不使用外部数据库或向量索引库。构建使用 Debian bookworm 的 GCC 12、`-O3 -ffp-contract=off`，不启用 fast-math。运行镜像沿用此前的 Debian/Python 基础层以便本地对照，数据库进程不调用 Python。原 Python 实现保留在 `minivector/`，可用 `Dockerfile.python` 构建参考镜像。
+
+实现分为 `cpp/main.cpp`（JSONL 与诊断协议）、`cpp/sql.cpp`（SQL 解析）、`cpp/storage.cpp`（存储与事务）、`cpp/query.cpp`（过滤、排序和向量 TopK）。`performance_checker/` 是独立的性能测量与评分工具，不属于数据库核心。正式协议见 [STDIO_PROTOCOL.md](STDIO_PROTOCOL.md)。
 
 ```powershell
-python -m unittest discover -s tests -v
-python -m minivector --data-dir ./data --protocol diagnostic
+docker build -t minivector-cpp .
+python tools/test_cpp.py --docker-image minivector-cpp --output protocol-results/cpp-regression.json
+# 官方检查器依赖 Linux 进程接口，请在 Linux 或检查器容器中运行：
+python protocol_check/run.py --image minivector-cpp --output protocol-results/cpp-public
 python tools/validate_material.py
-python tools/run_public.py
 ```
+
+`tests/` 中原有测试多数直接调用 Python 模块，不能作为 C++ 通过的证据。C++ 的实际进程回归使用 `tools/test_cpp.py`，涵盖类型/协议边界、事务、提交后与未提交强杀、索引维护和重建，以及超过缓存容量的排序。它不等同于正式隐藏用例，也没有覆盖每个 fsync/rename 故障注入窗口。CMake 构建入口为 `cpp/CMakeLists.txt`（需要 C++17 编译器、CMake、Make 和 nlohmann-json3-dev）。
 
 默认入口读取JSON Lines：恢复完成后输出`{"type":"ready"}`，每请求一行、每响应一行，支持execute及shutdown，逐请求search_mode默认exact。详见原样保留的 [官方协议](STDIO_PROTOCOL.md)。
 
@@ -27,7 +32,7 @@ DELETE FROM docs WHERE id=2;
 COMMIT;
 ```
 
-EOF 正常关闭并放弃未提交事务。再次用同一目录启动即可读取提交状态。容器构建 `docker build -t minivector-local .`；运行 `docker run --rm -i --network none -v minivector-data:/data minivector-local`，不启动网络服务。GitHub Actions 已验证该镜像从源码构建，并在禁网、1 CPU、256 MiB 内存、禁用 swap 的容器中执行自建验收；不是正式功能准入。
+EOF 正常关闭并放弃未提交事务。再次用同一目录启动即可读取提交状态。容器构建 `docker build -t minivector-local .`；运行 `docker run --rm -i --network none -v minivector-data:/data minivector-local`，不启动网络服务。GitHub Actions 的默认验收已改为针对真实 C++ 进程运行；历史 Python 容器验收不能代替 C++ 验证，也不代表正式功能准入。
 
 完整的空目录到重启示例（在Linux宿主、仓库根目录执行）：
 
@@ -48,9 +53,9 @@ docker run --rm -i --network none -v "$demo_data:/data" minivector-local --proto
 
 ## 查询和当前限制
 
-流式过滤后计算存储为 float32 的向量与查询向量之间的欧氏距离，以主键升序打破并列。小 K 且完整候选行内存估算不超过2 MiB时使用堆，其余排序使用磁盘分段归并。排序分段目标约 2 MiB 序列化数据，归并扇入最多 32；Python 对象开销和单行最大尺寸另计。单条输入 SQL 及其批量 INSERT 值目前仍整体解析，最大语句内存需按题包约束进一步检查。
+流式过滤后计算存储为 float32 的向量与查询向量之间的欧氏距离，以主键升序打破并列。小 K 且完整候选行内存估算不超过2 MiB时使用堆，其余排序使用磁盘分段归并。排序分段目标约 2 MiB 解码候选内存，归并扇入最多 32；单行最大尺寸和序列化临时内存另计。单条输入 SQL 及其批量 INSERT 值仍整体解析。
 
-小表的向量 TopK 可使用最多 16 MiB 的 NumPy float32 数据缓存，float64 分块计算距离，再以 scalar math.fsum 对边界候选精确重排，保持与基线路径一致的距离和主键并列规则。缓存按不可变数据段签名定位，更新、回滚、提交后的可见数据不同即使用不同缓存；超出预算或没有 NumPy 时退回流式扫描。预算只约束缓存估算量，不代表总进程或容器内存上限。
+小表的向量 TopK 使用最多 16 MiB 估算容量的 C++ 类型化行缓存，向量保存为 float32。距离在 double 中计算平方，用非重叠部分和精确累加；仅对明显无法进入 TopK 的候选使用带保守误差容限的预筛，边界候选仍精确计算。每条候选向量仍会被扫描，这不是 ANN 剪枝。缓存按不可变数据段签名定位，更新、回滚、提交后的可见数据不同即使用不同缓存；超出预算退回流式扫描。预算不代表总进程或容器内存上限。
 
 CREATE VECTOR INDEX 已实现实际磁盘Flat L2索引：保存主键、float32向量和行位置，随数据修改同步维护；同一清单原子提交，支持回滚、重启及启动前重建。exact和ann入口均可通过该精确Flat路径返回结果，**未实现近似剪枝加速，不能据此宣称满足尚未冻结的ANN预算或性能达标**。INSERT 已改成数据段追加，主键查重不再解析向量；UPDATE/DELETE 仍重写表，数据段数量增长与元数据/I/O 开销尚需按正式限制验证。当前不把本地加速比换算成平台排名。
 
@@ -68,4 +73,15 @@ SQL 支持建表、增删改查、AND 比较、单项 ORDER BY、LIMIT、L2_DIST
 
 默认JSONL示例：同一数据卷依次输入 `examples/first-run.jsonl` 和 `examples/after-restart.jsonl`，无需 `--protocol diagnostic`。实际验证与新旧说明冲突处理见 [官方JSONL对接](docs/官方JSONL对接.md)。
 
-官方JSONL默认入口已完成三轮10000行/128维/1000查询完整负载、每批100行显式提交、全部查询真值及重启内容核对。写入中位4.576秒，1000查询中位3.689秒；详细资源、超时与正式成绩边界见 [官方JSONL完整负载验证](docs/官方JSONL完整负载验证.md)。
+历史 Python 默认入口的三轮负载记录见 [官方JSONL完整负载验证](docs/官方JSONL完整负载验证.md)，其中数字不代表新 C++ 实现。2026-11-11 本地 C++ 镜像通过官方 20 项公开用例和 14 组补充回归（581 次 JSONL 请求），并完成与 Python 相同的三轮 10000 条/128 维/1000 查询负载。均为 exact、无索引、2 CPU/2 GiB，同一批数据及查询种子；两组平均 Recall@10 均为 1.0。
+
+| 三轮中位数 | Python 基线 | C++ |
+| --- | ---: | ---: |
+| 写入耗时 | 7.209 秒 | 5.127 秒 |
+| 1000 次查询耗时 | 3.761 秒 | 1.753 秒 |
+| 写入 I/O | 37.39 MiB | 25.47 MiB |
+| 查询阶段 I/O | 44.84 MiB | 25.47 MiB |
+| 写入峰值内存 | 51.29 MiB | 33.41 MiB |
+| 查询峰值内存 | 75.01 MiB | 37.87 MiB |
+
+原始数据见 [Python 对照](performance_checker/results/run-20261111/result.json)、[C++ 三轮结果](performance_checker/results/run-20261111-cpp/result.json) 和 [比较及源码哈希](performance_checker/results/run-20261111-cpp/comparison.json)。C++ 相对该 Python 基线的综合指标为 **0.642146**，Python 自比较为 **0.502201**。没有官方性能基线，这些不是官方成绩或排名。I/O/内存为本地容器累计观测，查询阶段包括装载和准备；详细限制保存在原始 JSON 中。

@@ -1,4 +1,4 @@
-name: MiniVectorDB full-size local benchmark
+name: MiniVectorDB legacy Python core benchmark
 on:
   push:
     branches: [2026-competition-round2]
@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build locked runtime from source
-        run: docker build -t minivector-benchmark .
+        run: docker build -f Dockerfile.python -t minivector-benchmark .
       - name: Three rounds of exact queries at full default scale
         run: |
           mkdir -p benchmark-output

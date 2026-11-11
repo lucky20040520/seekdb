@@ -1,0 +1,94 @@
+{
+  "timestamp_utc": "2026-11-11T02:31:51.300149+00:00",
+  "scope": "Supplementary actual-process JSONL tests; no database Python imports; not official hidden tests or performance results",
+  "target": "minivector-cpp:20261111",
+  "cases": 14,
+  "passed_cases": 14,
+  "requests": 581,
+  "results": [
+    {
+      "case": "crud_and_int64",
+      "passed": true,
+      "requests": 9,
+      "seconds": 0.697735
+    },
+    {
+      "case": "type_errors_atomicity",
+      "passed": true,
+      "requests": 17,
+      "seconds": 0.6042095000000001
+    },
+    {
+      "case": "invalid_sql_and_schema",
+      "passed": true,
+      "requests": 21,
+      "seconds": 0.6217454999999998
+    },
+    {
+      "case": "schema_permutations",
+      "passed": true,
+      "requests": 43,
+      "seconds": 1.0174800999999998
+    },
+    {
+      "case": "float32_and_sorting",
+      "passed": true,
+      "requests": 29,
+      "seconds": 0.807239
+    },
+    {
+      "case": "transaction_combinations",
+      "passed": true,
+      "requests": 40,
+      "seconds": 1.7603326999999998
+    },
+    {
+      "case": "shutdown_rolls_back",
+      "passed": true,
+      "requests": 20,
+      "seconds": 1.6656474000000001
+    },
+    {
+      "case": "kill_uncommitted",
+      "passed": true,
+      "requests": 19,
+      "seconds": 1.7897510999999993
+    },
+    {
+      "case": "kill_after_commit",
+      "passed": true,
+      "requests": 20,
+      "seconds": 1.7794697
+    },
+    {
+      "case": "missing_index_rebuild",
+      "passed": true,
+      "requests": 9,
+      "seconds": 2.5315405
+    },
+    {
+      "case": "protocol_boundaries",
+      "passed": true,
+      "requests": 36,
+      "seconds": 0.8201184999999995
+    },
+    {
+      "case": "long_input_recovery",
+      "passed": true,
+      "requests": 8,
+      "seconds": 1.6735153999999994
+    },
+    {
+      "case": "randomized_index_truth",
+      "passed": true,
+      "requests": 294,
+      "seconds": 4.333316299999998
+    },
+    {
+      "case": "wide_records_fallback",
+      "passed": true,
+      "requests": 16,
+      "seconds": 6.068820500000001
+    }
+  ]
+}
