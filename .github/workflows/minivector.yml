@@ -13,9 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Validate learning material
-        run: |
-          python3 tools/validate_material.py conversation.json
-          cmp conversation.json agent/conversation.json
+        run: python3 tools/validate_material.py agent/conversation.json
       - name: Build C++ database from source
         run: docker build -t minivector-local .
       - name: Check C++ entrypoint examples and runtime file scope

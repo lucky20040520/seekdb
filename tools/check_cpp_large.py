@@ -37,6 +37,7 @@ def main():
     text = "'" + "x" * 1024 + "'"
     order = f"ORDER BY L2_DISTANCE(v,{vector}) LIMIT 10;"
     query = "SELECT id FROM t " + order
+    passed = False
     try:
         session.start()
         request("schema", "CREATE TABLE t(id BIGINT PRIMARY KEY,payload VARCHAR(1024),v VECTOR(8));")
@@ -66,9 +67,10 @@ def main():
         request("duplicate_after_restart", f"INSERT INTO t VALUES(4,'duplicate',{vector});", ok=False)
         assert request("topk_after_restart", query, "ann")["rows"] == [[key] for key in range(4, 14)]
         session.shutdown()
+        passed = True
     finally:
         session.close()
-        result = {"image": args.image, "rows": count, "payload_bytes": count * 1024,
+        result = {"image": args.image, "passed": passed, "rows": count, "payload_bytes": count * 1024,
                   "container_memory": config["memory"], "config": config,
                   "phases": {phase: {"requests": len(samples), "total_seconds": sum(samples),
                                     "max_seconds": max(samples)}

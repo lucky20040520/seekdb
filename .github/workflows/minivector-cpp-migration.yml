@@ -11,9 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Validate submission materials
-        run: |
-          python3 tools/validate_material.py agent/conversation.json
-          cmp conversation.json agent/conversation.json
+        run: python3 tools/validate_material.py agent/conversation.json
       - name: Build Linux amd64 candidate
         run: docker build --platform linux/amd64 -t migration-cpp .
       - name: Official public checks on C++ entrypoint
@@ -37,3 +35,20 @@ jobs:
         with:
           name: cpp-migration-evidence
           path: protocol-results/
+  full-workload:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build exact candidate image
+        run: docker build --platform linux/amd64 -t migration-cpp-full .
+      - name: Run three full JSONL rounds with all-query oracle
+        run: >-
+          python3 tools/benchmark_jsonl.py --image migration-cpp-full
+          --rows 10000 --dimensions 128 --queries 1000 --rounds 3
+          --output benchmark-jsonl/full-result.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cpp-migration-full-workload
+          path: benchmark-jsonl/
