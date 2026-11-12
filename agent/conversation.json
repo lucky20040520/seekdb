@@ -1,8 +1,8 @@
 {
   "rule_version": "agent-learning-evidence-v3-unbounded",
   "synthetic": false,
-  "status": "in_progress",
-  "scope": "开发过程阶段性真实摘录。包含用户原话、必要Agent回应和实际工具结果；非完整导出。已运行官方9f6df2b公开题包的20例/95条SQL（自建核心API执行器），未取得正式29例准入或两榜成绩。",
+  "status": "ready_for_review",
+  "scope": "从本人项目对话摘录，保留既有阶段性记录并追加后续结果。学生、Agent 和工具结果分开标记。原始平台截图仅摘录与题目相关的结果，省略账户界面信息。历史实验状态保留其当时语境。",
   "conversations": [
     {
       "id": "student-001",
@@ -147,6 +147,30 @@
       "role": "student",
       "source": "用户原话，明确工作优先级；不扩写为实验设计",
       "content": "先完成不依赖官方协议的工作"
+    },
+    {
+      "id": "student-formal-timeout",
+      "role": "student",
+      "source": "本次聊天学生原文",
+      "content": "正确性门槛未通过（失败用例数：1）。原因：JSON response timeout（未及时收到JSON响应，请检查换行、flush和程序阻塞） × 1。未执行性能评测。正确性门槛未通过（失败用例数：1）。原因：JSON response timeout（未及时收到JSON响应，请检查换行、flush和程序阻塞） × 1。未执行Agent Prompt评测。"
+    },
+    {
+      "id": "student-long-case",
+      "role": "student",
+      "source": "本次聊天学生原文。此前讨论串起连续写入、过滤 TopK、事务与强杀恢复并测量整例时间",
+      "content": "请跑这组长用例，查找失败原因"
+    },
+    {
+      "id": "student-language",
+      "role": "student",
+      "source": "本次聊天学生原文",
+      "content": "你觉得用python还是c++更好一些"
+    },
+    {
+      "id": "student-cpp-advantage",
+      "role": "student",
+      "source": "本次聊天学生原文",
+      "content": "c++的优势在哪"
     }
   ],
   "experiments": [
@@ -433,6 +457,25 @@
       "status": "executed",
       "output": "{\"source_commit\": \"c24ab5b967bd1e9c8b7675a79f9e5c5b8f7fe695\", \"result\": {\"rounds\": [{\"round\": 0, \"rows\": 10000, \"dimensions\": 128, \"queries\": 1000, \"mode\": \"exact\", \"half_filtered\": true, \"transport\": \"unmodified protocol_check/_transport.py\", \"config\": {\"startup_timeout\": 120, \"request_timeout\": 60, \"case_timeout\": 600, \"max_response_bytes\": 16777216, \"cpus\": \"2\", \"memory\": \"2g\", \"pids_limit\": 128, \"abs_tol\": 1e-05, \"rel_tol\": 1e-05, \"error_codes\": {}}, \"write_batch_size\": 100, \"explicit_batch_commit\": true, \"write_startup_seconds\": 0.16862805399999914, \"write_seconds\": 4.936051489000004, \"write_latency\": {\"count\": 300, \"max_seconds\": 0.06450328700000085, \"median_seconds\": 0.0028030914999988, \"p95_seconds\": 0.051582224000000565}, \"write_resources\": {\"scope\": \"DB container cgroup including Docker-exec cat helpers; before EOF\", \"physical_io_attribution\": \"Unverified shared CI device; raw counters only; no official B\", \"memory_peak_bytes\": 42115072, \"io_stat\": \"8:0 rbytes=0 wbytes=26664960 rios=0 wios=301 dbytes=471040 dios=100\"}, \"restart_seconds\": 0.15599551900000108, \"warmup_seconds\": 0.7026247900000016, \"query_seconds\": 3.7079324179999986, \"query_latency\": {\"count\": 1000, \"max_seconds\": 0.007372889999999188, \"median_seconds\": 0.004456182999998504, \"p95_seconds\": 0.00524969800000008}, \"query_resources\": {\"scope\": \"DB container cgroup including Docker-exec cat helpers; before EOF\", \"physical_io_attribution\": \"Unverified shared CI device; raw counters only; no official B\", \"memory_peak_bytes\": 30724096, \"io_stat\": \"\"}, \"session_elapsed_before_shutdown_seconds\": 33.023231380000084, \"verification_seconds\": 74.42765254999999, \"verified_queries\": 1000, \"verified_records_before_and_after_restart\": 10000, \"recall_unfiltered\": 1.0, \"recall_filtered\": 1.0}, {\"round\": 1, \"rows\": 10000, \"dimensions\": 128, \"queries\": 1000, \"mode\": \"exact\", \"half_filtered\": true, \"transport\": \"unmodified protocol_check/_transport.py\", \"config\": {\"startup_timeout\": 120, \"request_timeout\": 60, \"case_timeout\": 600, \"max_response_bytes\": 16777216, \"cpus\": \"2\", \"memory\": \"2g\", \"pids_limit\": 128, \"abs_tol\": 1e-05, \"rel_tol\": 1e-05, \"error_codes\": {}}, \"write_batch_size\": 100, \"explicit_batch_commit\": true, \"write_startup_seconds\": 0.1612734850000095, \"write_seconds\": 4.576263776000019, \"write_latency\": {\"count\": 300, \"max_seconds\": 0.04720320699999547, \"median_seconds\": 0.002687541999989662, \"p95_seconds\": 0.04430779899999493}, \"write_resources\": {\"scope\": \"DB container cgroup including Docker-exec cat helpers; before EOF\", \"physical_io_attribution\": \"Unverified shared CI device; raw counters only; no official B\", \"memory_peak_bytes\": 41975808, \"io_stat\": \"8:0 rbytes=0 wbytes=26664960 rios=0 wios=301 dbytes=471040 dios=100\"}, \"restart_seconds\": 0.15423407699998393, \"warmup_seconds\": 0.6923350329999778, \"query_seconds\": 3.6017120639999973, \"query_latency\": {\"count\": 1000, \"max_seconds\": 0.007104921000006925, \"median_seconds\": 0.00432670349999853, \"p95_seconds\": 0.0050943290000020625}, \"query_resources\": {\"scope\": \"DB container cgroup including Docker-exec cat helpers; before EOF\", \"physical_io_attribution\": \"Unverified shared CI device; raw counters only; no official B\", \"memory_peak_bytes\": 30642176, \"io_stat\": \"\"}, \"session_elapsed_before_shutdown_seconds\": 32.385088730999996, \"verification_seconds\": 74.111842351, \"verified_queries\": 1000, \"verified_records_before_and_after_restart\": 10000, \"recall_unfiltered\": 1.0, \"recall_filtered\": 1.0}, {\"round\": 2, \"rows\": 10000, \"dimensions\": 128, \"queries\": 1000, \"mode\": \"exact\", \"half_filtered\": true, \"transport\": \"unmodified protocol_check/_transport.py\", \"config\": {\"startup_timeout\": 120, \"request_timeout\": 60, \"case_timeout\": 600, \"max_response_bytes\": 16777216, \"cpus\": \"2\", \"memory\": \"2g\", \"pids_limit\": 128, \"abs_tol\": 1e-05, \"rel_tol\": 1e-05, \"error_codes\": {}}, \"write_batch_size\": 100, \"explicit_batch_commit\": true, \"write_startup_seconds\": 0.15767000499999995, \"write_seconds\": 4.497045106999991, \"write_latency\": {\"count\": 300, \"max_seconds\": 0.04553799699999672, \"median_seconds\": 0.0024508680000110417, \"p95_seconds\": 0.04373125600000094}, \"write_resources\": {\"scope\": \"DB container cgroup including Docker-exec cat helpers; before EOF\", \"physical_io_attribution\": \"Unverified shared CI device; raw counters only; no official B\", \"memory_peak_bytes\": 41635840, \"io_stat\": \"8:0 rbytes=0 wbytes=26664960 rios=0 wios=301 dbytes=471040 dios=100\"}, \"restart_seconds\": 0.14359506300002067, \"warmup_seconds\": 0.6991557970000031, \"query_seconds\": 3.689296761000037, \"query_latency\": {\"count\": 1000, \"max_seconds\": 0.007034244999999828, \"median_seconds\": 0.004450223500015227, \"p95_seconds\": 0.005206493000002865}, \"query_resources\": {\"scope\": \"DB container cgroup including Docker-exec cat helpers; before EOF\", \"physical_io_attribution\": \"Unverified shared CI device; raw counters only; no official B\", \"memory_peak_bytes\": 30576640, \"io_stat\": \"\"}, \"session_elapsed_before_shutdown_seconds\": 32.25129260500012, \"verification_seconds\": 75.24442709600004, \"verified_queries\": 1000, \"verified_records_before_and_after_restart\": 10000, \"recall_unfiltered\": 1.0, \"recall_filtered\": 1.0}], \"median_write_seconds\": 4.576263776000019, \"median_query_seconds\": 3.689296761000037, \"scope\": \"Official JSONL transport/config, custom full workload, all-query scalar oracle\", \"limitations\": \"No official benchmark seed/baseline/E/rank. Host cache not reset. cgroup cat helper included in peaks; shared-device I/O attribution not verified. Write/query snapshots before shutdown; correct COMMIT fsync is relied on, not power-loss tested. Case deadline covers SQL/restart/validation; oracle runs after DB shutdown outside container.\"}, \"ci\": {\"run\": {\"id\": 42805263389, \"head_sha\": \"c24ab5b967bd1e9c8b7675a79f9e5c5b8f7fe695\", \"status\": \"completed\", \"conclusion\": \"success\", \"html_url\": \"https://github.com/lucky20040520/seekdb/actions/runs/42805263389\"}, \"jobs\": [{\"id\": 129792644481, \"conclusion\": \"success\", \"steps\": [{\"name\": \"Set up job\", \"conclusion\": \"success\"}, {\"name\": \"Run actions/checkout@v4\", \"conclusion\": \"success\"}, {\"name\": \"Build actual Linux amd64 submission entry\", \"conclusion\": \"success\"}, {\"name\": \"Smoke test using official transport and unchanged config\", \"conclusion\": \"success\"}, {\"name\": \"Three full rounds of official JSONL workload and all-query truth\", \"conclusion\": \"success\"}, {\"name\": \"Publish actual JSONL results and stderr logs\", \"conclusion\": \"success\"}, {\"name\": \"Post Run actions/checkout@v4\", \"conclusion\": \"success\"}, {\"name\": \"Complete job\", \"conclusion\": \"success\"}]}], \"artifacts\": [{\"id\": 13758162732, \"name\": \"minivector-official-jsonl-full\", \"digest\": \"sha256:168096424dc1c49a89d8e5c0266542e2461385afa1fe5b6fd66d8a28a85539e6\", \"size_in_bytes\": 2020}]}, \"regression\": {\"run\": {\"id\": 42805262715, \"head_sha\": \"c24ab5b967bd1e9c8b7675a79f9e5c5b8f7fe695\", \"status\": \"completed\", \"conclusion\": \"success\", \"html_url\": \"https://github.com/lucky20040520/seekdb/actions/runs/42805262715\"}, \"jobs\": [{\"id\": 129792638119, \"conclusion\": \"success\", \"steps\": [{\"name\": \"Set up job\", \"conclusion\": \"success\"}, {\"name\": \"Run actions/checkout@v4\", \"conclusion\": \"success\"}, {\"name\": \"Validate learning material\", \"conclusion\": \"success\"}, {\"name\": \"Build from source with locked dependencies\", \"conclusion\": \"success\"}, {\"name\": \"Check delivered versions examples and runtime file scope\", \"conclusion\": \"success\"}, {\"name\": \"Run self-tests offline in Linux container\", \"conclusion\": \"success\"}, {\"name\": \"Check published SQL assertions through core API\", \"conclusion\": \"success\"}, {\"name\": \"Explain scope\", \"conclusion\": \"success\"}, {\"name\": \"Check public assertions through diagnostic stdin stdout pipes\", \"conclusion\": \"success\"}, {\"name\": \"Verify data larger than process memory with transactions\", \"conclusion\": \"success\"}, {\"name\": \"Post Run actions/checkout@v4\", \"conclusion\": \"success\"}, {\"name\": \"Complete job\", \"conclusion\": \"success\"}]}], \"artifacts\": []}, \"conclusion\": \"All three full workloads and scalar truths passed under unmodified published transport/config. Suitable to proceed to platform functional admission; no assertion of official performance validity or rank.\"}",
       "interpretation": "新JSONL入口完整默认规模三轮全部通过，共3000查询匹配独立标量真值、每轮10000记录关闭前及重启后内容核对。批次明确BEGIN/INSERT100/COMMIT。写入中位4.576秒、1000查询中位3.689秒，启动/逐请求/600秒总会话及2GiB均在本地官方配置范围内。写入峰值最高42115072字节，查询最高30724096字节，含探测进程。查询io.stat仍为空，不算零开销；共享CI设备没有冻结官方基线和冷缓存流程，不计算E/排名，不把本地性能成功冒充正式性能有效。结果由Agent执行解释；用户授权实验不证明学生已解释机制。"
+    },
+    {
+      "id": "formal-python-f1b9f4e",
+      "source": "用户提供的真实平台提测截图及 Prompt 详情原文",
+      "status": "executed",
+      "commit": "f1b9f4e204f08f5043b315ba1ebec500ad7af255",
+      "output": "MySQL 正式用例通过。性能评测完成，原始指标 E = 641.662650。Prompt结果无效、待复核、超出平台0–100范围或缺少材料摘要，本项不参与排名；未截断或换算本地分数。"
+    },
+    {
+      "id": "long-case-python-cpp",
+      "source": "GitHub Actions 43200708937，分别构建 Python 正式通过提交和 C++ 28d7bf0418ee3f3a82dbb498522ba1905d66a3ef",
+      "status": "executed",
+      "output": "公开驱动 600 秒整例预算，Linux 1 核 / 128 MiB，15 万条写入、240 次带 WHERE 的 TopK，并在有未提交删除时强杀重启。两版全部通过独立真值与回滚检查。Python 写入 66.616 秒，TopK 398.557 秒，整例 475.321 秒；C++ 写入 19.388 秒，TopK 468.347 秒，整例 498.376 秒。两版均未复现正式超时。"
+    },
+    {
+      "id": "agent-interpretation-long-case",
+      "source": "Agent 对实验结果的解释",
+      "status": "executed",
+      "output": "C++ 写入省下约 47 秒，过滤查询却多花约 70 秒。最慢的 C++ 单条 SQL 是事务内的 DELETE，约 4.23 秒，低于公开驱动的 60 秒单请求限时。结果支持优先排查过滤查询累计耗时；平台实际失败请求仍未知。"
     }
   ],
   "retrospective": {
@@ -450,7 +493,8 @@
     "当前学生贡献仅限已记录原话，尚无学生解释实验结果的记录。",
     "旧聊天仅用于方法复盘，不将旧题成功结果作为本题已验证证据。",
     "材料为持续维护的阶段性摘录，官方Docker公开协议检查已通过、仍待正式29例验证的阶段性交付。未包含密钥、访问令牌或隐藏思维链。",
-    "学生尚未亲自解释本轮实验和技术结果；Agent设计、测试、修复与解释均不能冒充学生贡献，不自评学习得分。"
+    "学生尚未亲自解释本轮实验和技术结果；Agent设计、测试、修复与解释均不能冒充学生贡献，不自评学习得分。",
+    "正式平台只给出了 C++ JSON response timeout 汇总，无法由本地长用例确定触发请求。历史 Python Prompt 未计分的提示包含多个条件，未确认具体原因。"
   ],
   "reference_rules": {
     "source": "用户本轮粘贴的详细题面3.4节，属于第三方规则上下文，不作为学生原创技术贡献",
@@ -465,5 +509,6 @@
     "evidence_policy": "单个JSON内保留真实原话和实际结果。学生、Agent、工具区分。同一问题或修正链不得拆分或跨维度重复计分。分档与引用字段是评审报告要求，不伪造学生解释或评分报告。",
     "aggregation": "独立三轮，各维度取三次中位数后相加；不是取最好一轮，也不是合并三轮实例。原始分用于排名；赛事分按名次折算。",
     "admission": "全部正式MySQL case通过，材料有效且评审/复核完成后方能参与该榜；无官方成绩不宣称已得40分。"
-  }
+  },
+  "summary": "本材料汇总本人 MiniVectorDB 开发中的真实对话与实验记录。记录从优先覆盖正式准入、识别通信协议风险，到在已通过正式用例的 Python 版本与 C++ 候选之间验证写入、连续过滤 TopK 和崩溃恢复的过程。正式 Python 提测已通过 MySQL 用例，性能原始指标为 641.662650，Agent Prompt 未计分，具体原因尚未定位。"
 }
