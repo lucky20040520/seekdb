@@ -2,7 +2,7 @@ name: MiniVectorDB long case differential
 on:
   push:
     branches: [codex/minivectordb-cpp-migration]
-    paths: [tools/compare_long_case.py, .github/workflows/minivector-long-case.yml]
+    paths: [cpp/**, tools/compare_long_case.py, .github/workflows/minivector-long-case.yml]
 permissions:
   contents: read
 jobs:
@@ -11,10 +11,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: python
-            sha: f1b9f4e204f08f5043b315ba1ebec500ad7af255
-          - name: cpp
+          - name: cpp-baseline
             sha: 28d7bf0418ee3f3a82dbb498522ba1905d66a3ef
+          - name: cpp-candidate
+            sha: ${{ github.sha }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -23,9 +23,11 @@ jobs:
         env:
           SOURCE_SHA: ${{ matrix.sha }}
         run: |
-          git fetch --depth=1 origin "$SOURCE_SHA"
+          if ! git cat-file -e "$SOURCE_SHA^{commit}"; then
+            git fetch --depth=1 origin "$SOURCE_SHA"
+          fi
           mkdir build-source
-          git archive "$SOURCE_SHA" Dockerfile requirements.txt minivector $(if [ "${{ matrix.name }}" = cpp ]; then printf cpp; fi) | tar -x -C build-source
+          git archive "$SOURCE_SHA" Dockerfile cpp | tar -x -C build-source
           docker build --platform linux/amd64 -t replay build-source
       - name: Run long SQL case under the public driver deadline
         run: python3 tools/compare_long_case.py --image replay --output results/result.json

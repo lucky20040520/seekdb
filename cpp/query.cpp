@@ -212,6 +212,8 @@ void indexed_candidates(Database& db,const Table& table,const Json& descriptor,c
         std::array<char,16> header{}; source.read(header.data(),header.size());
         if(source.gcount()!=16||std::memcmp(header.data(),"MVFLAT1\0",8)!=0||read_u32(header.data()+8)!=dimension||read_u32(header.data()+12)!=order.index) fail("flat index header mismatch","storage_error");
         std::ifstream rows;
+        uint64_t next_row_offset=0;
+        std::string line;
         if(filtered) {rows.open(db.path/row_file,std::ios::binary);if(!rows) fail("cannot open indexed rows","storage_error");}
         while(true) {
             source.read(buffer.data(),static_cast<std::streamsize>(buffer.size()));
@@ -219,8 +221,14 @@ void indexed_candidates(Database& db,const Table& table,const Json& descriptor,c
             if(size_t(source.gcount())!=buffer.size()) fail("truncated flat index record","storage_error");
             uint64_t key=read_u64(buffer.data()),offset=read_u64(buffer.data()+8); int64_t primary; std::memcpy(&primary,&key,sizeof(primary));
             if(filtered) {
-                rows.clear(); rows.seekg(static_cast<std::streamoff>(offset)); std::string line;
+                // Index entries follow their segment's physical row order.
+                // Preserve the stream's read buffer between adjacent rows.
+                if(offset!=next_row_offset) {
+                    rows.clear();
+                    rows.seekg(static_cast<std::streamoff>(offset));
+                }
                 if(!std::getline(rows,line)) fail("invalid flat index row location","storage_error");
+                next_row_offset=offset+line.size()+1;
                 Row decoded;
                 {profile::Scope timer(profile::Phase::stored_row_decode); decoded=decode_row(table,Json::parse(line));}
                 if(!matches(decoded)) continue;
