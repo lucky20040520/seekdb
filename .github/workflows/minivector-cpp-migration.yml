@@ -2,6 +2,8 @@ name: MiniVectorDB C++ migration verification
 on:
   push:
     branches: [codex/minivectordb-cpp-migration]
+    paths: [cpp/**, Dockerfile, protocol_check/**, mysqltest/**, tools/check_cpp_large.py, tools/test_cpp.py, tools/benchmark_jsonl.py, agent/**, conversation.json]
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:

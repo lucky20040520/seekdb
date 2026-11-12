@@ -1,0 +1,37 @@
+name: MiniVectorDB Python and C++ index path comparison
+on:
+  push:
+    branches: [codex/minivectordb-cpp-migration]
+    paths: [tools/compare_index_paths.py, .github/workflows/minivector-index-path-comparison.yml]
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the exact two platform submissions
+        run: |
+          python_sha=f1b9f4e204f08f5043b315ba1ebec500ad7af255
+          cpp_sha=9f8e25f8d1bf656cdb6aa2b41b9f38695278e653
+          git fetch --depth=1 origin "$python_sha" "$cpp_sha"
+          python_root=$(mktemp -d)
+          cpp_root=$(mktemp -d)
+          git archive "$python_sha" Dockerfile requirements.txt minivector | tar -x -C "$python_root"
+          git archive "$cpp_sha" Dockerfile cpp | tar -x -C "$cpp_root"
+          docker build --platform linux/amd64 -t index-path-python "$python_root"
+          docker build --platform linux/amd64 -t index-path-cpp "$cpp_root"
+      - name: Replay index creation filtered queries and forced rebuild
+        run: |
+          python_status=0
+          cpp_status=0
+          python3 tools/compare_index_paths.py --image index-path-python --output index-results/python/result.json || python_status=$?
+          python3 tools/compare_index_paths.py --image index-path-cpp --output index-results/cpp/result.json || cpp_status=$?
+          echo "Python exit = $python_status, C++ exit = $cpp_status"
+          test "$python_status" -eq 0 && test "$cpp_status" -eq 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: python-cpp-index-paths
+          path: index-results/
