@@ -11,9 +11,9 @@ jobs:
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
-      - name: Build the qualified baseline and candidate
+      - name: Build the previous Python candidate and query optimization
         run: |
-          baseline=f1b9f4e204f08f5043b315ba1ebec500ad7af255
+          baseline=8fb34b76eae604666536819c3945a9cd411a20c1
           git fetch --depth=1 origin "$baseline"
           source=$(mktemp -d)
           git archive "$baseline" Dockerfile requirements.txt minivector | tar -x -C "$source"

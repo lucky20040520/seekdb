@@ -96,6 +96,24 @@ class OptimizedPaths(unittest.TestCase):
                     scalar=list(execute(db,query)[1])
                 self.assertEqual(scalar,fast,query)
 
+    def test_cached_distance_projection_across_blocks(self):
+        with tempfile.TemporaryDirectory() as root:
+            db = Database(root)
+            execute(db, "CREATE TABLE t(id BIGINT PRIMARY KEY, v VECTOR(2));")
+            db.insert("t", [[key, [key % 17, key % 3]] for key in range(530, -1, -1)])
+            for query in (
+                "SELECT id,L2_DISTANCE(v,[0,0]) AS d FROM t ORDER BY d LIMIT 10;",
+                "SELECT v,L2_DISTANCE(v,[1,1]) AS other,L2_DISTANCE(v,[0,0]) AS d "
+                "FROM t WHERE id>=3 ORDER BY d LIMIT 10;",
+                "SELECT L2_DISTANCE(v,[1,1]) AS d,L2_DISTANCE(v,[0,0]) AS d "
+                "FROM t ORDER BY d LIMIT 10;",
+            ):
+                cached = list(execute(db, query)[1])
+                db.query_cache.clear()
+                db.query_cache_bytes = 0
+                with patch.dict(os.environ, MINIVECTOR_NO_NUMPY="1"):
+                    self.assertEqual(list(execute(db, query)[1]), cached, query)
+
     def test_cache_invalidation_and_budget(self):
         with tempfile.TemporaryDirectory() as root:
             db=Database(root)

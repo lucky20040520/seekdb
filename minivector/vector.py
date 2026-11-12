@@ -54,7 +54,7 @@ class VectorCache:
             return None
         return obj
 
-    def topk(self, conditions, query, count):
+    def topk(self, conditions, query, count, include_vector):
         np = self.np
         mask = np.ones(len(self.rows), dtype=bool) if conditions else None
         functions = {'=': np.equal, '<': np.less, '<=': np.less_equal,
@@ -66,13 +66,15 @@ class VectorCache:
         if not size or count == 0:
             return []
         distances = np.empty(size, dtype=np.float64)
-        query = np.asarray(query, dtype=np.float64)
+        query_array = np.asarray(query, dtype=np.float64)
+        scratch = np.empty((min(size, 512), len(query)), dtype=np.float64)
         # Float64 subtraction avoids float32 overflow and cancellation from
         # norm(x)^2 + norm(q)^2 - 2 dot(x,q). Bound temporary matrices to 512 rows.
         for start in range(0, size, 512):
             end = min(start + 512, size)
             vectors = self.vectors[start:end] if indexes is None else self.vectors[indexes[start:end]]
-            delta = np.subtract(vectors, query, dtype=np.float64)
+            delta = scratch[:end-start]
+            np.subtract(vectors, query_array, out=delta, dtype=np.float64)
             np.einsum('ij,ij->i', delta, delta, out=distances[start:end])
         # Include the entire boundary tie before primary-key ordering. Pure
         # argpartition[:K] would pick arbitrary IDs for equal-distance vectors.
@@ -82,18 +84,19 @@ class VectorCache:
             candidates = np.flatnonzero(distances <= np.nextafter(boundary + tolerance, np.inf))
         else:
             candidates = range(size)
-        def exact_key(position):
-            index = int(position if indexes is None else indexes[position])
-            vector = self.vectors[index]
-            distance = math.sqrt(math.fsum((float(a)-float(b))**2 for a,b in zip(vector,query)))
-            return distance, int(self.keys[index])
-        # Re-evaluate the candidate boundary using the same accurate scalar sum
-        # as the reference path. SIMD reduction order must not change tied IDs.
-        chosen_positions = heapq.nsmallest(count, candidates, key=exact_key)
+        def exact_candidates():
+            for position in candidates:
+                index = int(position if indexes is None else indexes[position])
+                vector = self.vectors[index].tolist()
+                distance = math.sqrt(math.fsum((a-b)**2 for a, b in zip(vector, query)))
+                yield distance, int(self.keys[index]), index
+
+        # Re-evaluate boundary candidates with the scalar calculation. Keep
+        # the exact distance for projections using the same expression.
         result = []
-        for position in chosen_positions:
-            index = int(position if indexes is None else indexes[position])
+        for distance, _, index in heapq.nsmallest(count, exact_candidates()):
             row = list(self.rows[index])
-            row[self.column] = self.vectors[index].tolist()
-            result.append(row)
+            if include_vector:
+                row[self.column] = self.vectors[index].tolist()
+            result.append((row, distance))
         return result

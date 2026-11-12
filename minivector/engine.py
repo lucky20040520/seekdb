@@ -513,6 +513,7 @@ class Database:
                 if matches(row):
                     yield row
         source = filtered_rows()
+        cached_distance_columns = None
         if order is not None:
             expr, descending = order
             # Heap candidates retain full decoded rows, not just ordering keys.
@@ -532,7 +533,7 @@ class Database:
             order_fn = expression(expr, resolve_alias=True)
             distance_expr = expr
             if expr[0] == "column":
-                distance_expr = next((projection for projection, alias in projections if alias == expr[1]), expr)
+                distance_expr = next((projection for projection, alias in reversed(projections) if alias == expr[1]), expr)
             if distance_expr[0] == "column" and distance_expr[1] in columns and columns[distance_expr[1]][1]["kind"] == "VECTOR":
                 fail("ordering VECTOR unsupported")
             cache = None
@@ -555,13 +556,23 @@ class Database:
             elif cache is not None:
                 query_column = columns[distance_expr[1]][1]
                 query = self.validate(query_column, distance_expr[2])
-                source = iter(cache.topk(conditions, query, limit))
+                cached_distance_columns = [projection == distance_expr for projection, _ in projections]
+                include_vector = any(
+                    projection[1] == distance_expr[1] and not use_distance
+                    for (projection, _), use_distance in zip(projections, cached_distance_columns)
+                )
+                source = iter(cache.topk(conditions, query, limit, include_vector))
             else:
                 source = (iter(heapq.nsmallest(limit, source, key=key)) if bounded_candidates
                           else self.external_sort(source, key))
         def projected():
             try:
                 if limit == 0:
+                    return
+                if cached_distance_columns is not None:
+                    for row, distance in source:
+                        yield [distance if use_distance else fn(row)
+                               for fn, use_distance in zip(functions, cached_distance_columns)]
                     return
                 count = 0
                 for row in source:
