@@ -13,7 +13,7 @@
 
 namespace mv {
 double l2_distance(const std::vector<float>& a,const std::vector<float>& b) {
-    if(a.size()!=b.size()) fail("VECTOR dimension mismatch","TYPE");
+    if(a.size()!=b.size()) fail("VECTOR dimension mismatch","dimension_mismatch");
     return l2_distance(a.data(),b.data(),a.size());
 }
 double l2_distance(const float* a,const float* b,size_t dimension) {
@@ -73,7 +73,7 @@ struct Compiled {
         if(distance) return l2_distance(std::get<std::vector<float>>(row[index]),vector);
         if(kind=="BIGINT") return std::get<int64_t>(row[index]);
         if(kind=="VARCHAR") return std::get<std::string>(row[index]);
-        fail("ordering VECTOR unsupported");
+        fail("ordering VECTOR unsupported","unsupported_sql");
     }
 };
 Compiled compile_expression(const Table& table,const Expr& expression) {
@@ -81,13 +81,13 @@ Compiled compile_expression(const Table& table,const Expr& expression) {
     const auto& column=table.columns[i];
     Compiled result; result.index=i; result.distance=expression.distance; result.kind=column.kind;
     if(expression.distance) {
-        if(column.kind!="VECTOR") fail("distance requires VECTOR","TYPE");
+        if(column.kind!="VECTOR") fail("distance requires VECTOR","type_error");
         result.vector=std::get<std::vector<float>>(validate(column,expression.vector));
     }
     return result;
 }
 Row decode_row(const Table& table,const Json& value) {
-    if(!value.is_array()||value.size()!=table.columns.size()) fail("invalid stored row","STORAGE");
+    if(!value.is_array()||value.size()!=table.columns.size()) fail("invalid stored row","storage_error");
     Row row; row.reserve(value.size());
     for(size_t i=0;i<value.size();++i) row.push_back(validate(table.columns[i],value[i]));
     return row;
@@ -140,9 +140,9 @@ class ExternalSort {
     void spill() {
         std::sort(batch.begin(),batch.end(),less);
         auto path=new_path(); std::ofstream output(path,std::ios::binary);
-        if(!output) fail("cannot create sort run","STORAGE");
+        if(!output) fail("cannot create sort run","storage_error");
         for(const auto& value:batch) output<<candidate_json(value).dump()<<'\n';
-        output.close(); if(!output) fail("cannot write sort run","STORAGE");
+        output.close(); if(!output) fail("cannot write sort run","storage_error");
         paths.push_back(path); batch.clear(); bytes=0;
     }
     void merge(const std::vector<std::filesystem::path>& group,const std::function<bool(const Candidate&)>& consume) {
@@ -156,9 +156,9 @@ class ExternalSort {
                 auto candidate=decode_candidate(Json::parse(line),table,order);
                 profile::Scope timer(profile::Phase::heap); heap.push({std::move(candidate),index});
             }
-            else if(!readers[index].eof()) fail("cannot read sort run","STORAGE");
+            else if(!readers[index].eof()) fail("cannot read sort run","storage_error");
         };
-        for(size_t i=0;i<group.size();++i) { readers.emplace_back(group[i],std::ios::binary); if(!readers.back()) fail("cannot open sort run","STORAGE"); advance(i); }
+        for(size_t i=0;i<group.size();++i) { readers.emplace_back(group[i],std::ios::binary); if(!readers.back()) fail("cannot open sort run","storage_error"); advance(i); }
         while(!heap.empty()) {
             Head head;
             {profile::Scope timer(profile::Phase::heap); head=heap.top(); heap.pop();}
@@ -178,9 +178,9 @@ public:
             for(size_t begin=0;begin<paths.size();begin+=32) {
                 size_t end=std::min(paths.size(),begin+32);
                 std::vector<std::filesystem::path> group(paths.begin()+begin,paths.begin()+end);
-                auto path=new_path(); std::ofstream target(path,std::ios::binary); if(!target) fail("cannot create merge run","STORAGE");
-                merge(group,[&](const Candidate& value){target<<candidate_json(value).dump()<<'\n'; if(!target) fail("cannot write merge run","STORAGE"); return true;});
-                target.close(); if(!target) fail("cannot finish merge run","STORAGE");
+                auto path=new_path(); std::ofstream target(path,std::ios::binary); if(!target) fail("cannot create merge run","storage_error");
+                merge(group,[&](const Candidate& value){target<<candidate_json(value).dump()<<'\n'; if(!target) fail("cannot write merge run","storage_error"); return true;});
+                target.close(); if(!target) fail("cannot finish merge run","storage_error");
                 next.push_back(path);
                 for(auto& old:group) {std::error_code error; std::filesystem::remove(old,error);}
             }
@@ -195,23 +195,23 @@ void indexed_candidates(Database& db,const Table& table,const Json& descriptor,c
                         const std::function<bool(const Row&)>& matches,bool filtered,
                         const std::function<void(Candidate)>& accept) {
     size_t dimension=order.vector.size();
-    if(dimension>(std::numeric_limits<size_t>::max()-16)/4) fail("invalid index dimension","STORAGE");
+    if(dimension>(std::numeric_limits<size_t>::max()-16)/4) fail("invalid index dimension","storage_error");
     std::vector<char> buffer(16+4*dimension); std::vector<float> vector(dimension);
     for(auto segment=descriptor.at("segments").begin();segment!=descriptor.at("segments").end();++segment) {
         std::string row_file=segment.key(); std::string index_file=segment.value().get<std::string>();
-        std::ifstream source(db.path/index_file,std::ios::binary); if(!source) fail("cannot open flat index","STORAGE");
+        std::ifstream source(db.path/index_file,std::ios::binary); if(!source) fail("cannot open flat index","storage_error");
         std::array<char,16> header{}; source.read(header.data(),header.size());
-        if(source.gcount()!=16||std::memcmp(header.data(),"MVFLAT1\0",8)!=0||read_u32(header.data()+8)!=dimension||read_u32(header.data()+12)!=order.index) fail("flat index header mismatch","STORAGE");
+        if(source.gcount()!=16||std::memcmp(header.data(),"MVFLAT1\0",8)!=0||read_u32(header.data()+8)!=dimension||read_u32(header.data()+12)!=order.index) fail("flat index header mismatch","storage_error");
         std::ifstream rows;
-        if(filtered) {rows.open(db.path/row_file,std::ios::binary);if(!rows) fail("cannot open indexed rows","STORAGE");}
+        if(filtered) {rows.open(db.path/row_file,std::ios::binary);if(!rows) fail("cannot open indexed rows","storage_error");}
         while(true) {
             source.read(buffer.data(),static_cast<std::streamsize>(buffer.size()));
             if(source.gcount()==0&&source.eof()) break;
-            if(size_t(source.gcount())!=buffer.size()) fail("truncated flat index record","STORAGE");
+            if(size_t(source.gcount())!=buffer.size()) fail("truncated flat index record","storage_error");
             uint64_t key=read_u64(buffer.data()),offset=read_u64(buffer.data()+8); int64_t primary; std::memcpy(&primary,&key,sizeof(primary));
             if(filtered) {
                 rows.clear(); rows.seekg(static_cast<std::streamoff>(offset)); std::string line;
-                if(!std::getline(rows,line)) fail("invalid flat index row location","STORAGE");
+                if(!std::getline(rows,line)) fail("invalid flat index row location","storage_error");
                 Row decoded;
                 {profile::Scope timer(profile::Phase::stored_row_decode); decoded=decode_row(table,Json::parse(line));}
                 if(!matches(decoded)) continue;
@@ -236,13 +236,13 @@ struct LimitReached {};
 Result Database::select(const std::string& name,const std::optional<std::vector<Projection>>& requested,
                         const std::vector<Condition>& conditions,const std::optional<Order>& order,
                         const std::optional<Json>& requested_limit,const std::string& mode) {
-    if(mode!="exact"&&mode!="ann") fail("unknown search mode");
+    if(mode!="exact"&&mode!="ann") fail("unknown search mode","invalid_search_mode");
     Table selected=table(name); size_t pk=primary_index(selected);
     auto matches=compile_conditions(selected,conditions);
     std::optional<uint64_t> limit;
     if(requested_limit) {
         const Json& value=*requested_limit;
-        if(!value.is_number_integer()||(!value.is_number_unsigned()&&value.get<int64_t>()<0)) fail("nonnegative integer LIMIT required");
+        if(!value.is_number_integer()||(!value.is_number_unsigned()&&value.get<int64_t>()<0)) fail("nonnegative integer LIMIT required","invalid_limit");
         limit=value.get<uint64_t>();
     }
     std::vector<Projection> projections;
@@ -258,7 +258,7 @@ Result Database::select(const std::string& name,const std::optional<std::vector<
         descending=order->descending;
         auto alias=aliases.find(order->expression.column);
         ordering=(!order->expression.distance&&alias!=aliases.end())?alias->second:compile_expression(selected,order->expression);
-        if(!ordering->distance&&ordering->kind=="VECTOR") fail("ordering VECTOR unsupported");
+        if(!ordering->distance&&ordering->kind=="VECTOR") fail("ordering VECTOR unsupported","unsupported_sql");
         if(ordering->distance) for(auto& index:selected.indexes) {
             if(index.at("column").get<std::string>()==selected.columns[ordering->index].name) { descriptor=index; break; }
         }

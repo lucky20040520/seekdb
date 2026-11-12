@@ -28,7 +28,7 @@ public:
         while(i<sql.size()) {
             if(std::isspace(static_cast<unsigned char>(sql[i]))) { ++i; continue; }
             if(sql.compare(i,2,"--")==0) { auto end=sql.find('\n',i+2); i=end==std::string::npos?sql.size():end+1; continue; }
-            if(sql.compare(i,2,"/*")==0) { auto end=sql.find("*/",i+2); if(end==std::string::npos) fail("unterminated comment","SYNTAX"); i=end+2; continue; }
+            if(sql.compare(i,2,"/*")==0) { auto end=sql.find("*/",i+2); if(end==std::string::npos) fail("unterminated comment","syntax_error"); i=end+2; continue; }
             size_t start=i;
             if(sql[i]=='\''||sql[i]=='`') {
                 char quote=sql[i++]; bool closed=false;
@@ -37,7 +37,7 @@ public:
                     if(i<sql.size()&&sql[i]==quote) { ++i; continue; }
                     closed=true; break;
                 }
-                if(!closed) fail("unterminated quoted token","SYNTAX");
+                if(!closed) fail("unterminated quoted token","syntax_error");
             } else if(alpha(sql[i])) {
                 while(i<sql.size()&&(alpha(sql[i])||digit(sql[i]))) ++i;
             } else if(digit(sql[i])||(sql[i]=='.'&&i+1<sql.size()&&digit(sql[i+1]))) {
@@ -51,16 +51,16 @@ public:
                 }
             } else if(std::string("(),;*[]=<>+-").find(sql[i])!=std::string::npos) {
                 ++i; if(i<sql.size()&&(sql[start]=='<'||sql[start]=='>')&&sql[i]=='=') ++i;
-            } else fail("unrecognized SQL token","SYNTAX");
+            } else fail("unrecognized SQL token","syntax_error");
             tokens.push_back(sql.substr(start,i-start));
         }
         if(!tokens.empty()&&tokens.back()==";") tokens.pop_back();
     }
     std::string peek() const { return position<tokens.size()?tokens[position]:""; }
-    std::string take() { if(position>=tokens.size()) fail("unexpected end of statement","SYNTAX"); return tokens[position++]; }
+    std::string take() { if(position>=tokens.size()) fail("unexpected end of statement","syntax_error"); return tokens[position++]; }
     bool eat(const std::string& token) { if(upper(peek())!=token) return false; ++position; return true; }
-    void expect(const std::string& token) { if(!eat(token)) fail("expected "+token,"SYNTAX"); }
-    void finish() { if(position<tokens.size()) fail("unsupported or trailing SQL: "+peek(),"SYNTAX"); }
+    void expect(const std::string& token) { if(!eat(token)) fail("expected "+token,"syntax_error"); }
+    void finish() { if(position<tokens.size()) fail("unsupported or trailing SQL: "+peek(),"syntax_error"); }
     std::string identifier() {
         auto token=take();
         if(token[0]=='`') {
@@ -68,11 +68,11 @@ public:
             for(size_t i=1;i+1<token.size();++i) { value+=token[i]; if(token[i]=='`'&&i+2<token.size()&&token[i+1]=='`') ++i; }
             return lower(value);
         }
-        if(!alpha(token[0])||!std::all_of(token.begin(),token.end(),[](char c){return alpha(c)||digit(c);})) fail("expected identifier","SYNTAX");
+        if(!alpha(token[0])||!std::all_of(token.begin(),token.end(),[](char c){return alpha(c)||digit(c);})) fail("expected identifier","syntax_error");
         return lower(token);
     }
     Json value(unsigned depth=0) {
-        if(depth>256) fail("literal nesting too deep","SYNTAX");
+        if(depth>256) fail("literal nesting too deep","syntax_error");
         if(eat("[")) {
             Json values=Json::array();
             if(!eat("]")) while(true) { values.push_back(value(depth+1)); if(eat("]")) break; expect(","); }
@@ -81,7 +81,7 @@ public:
         bool negative=eat("-"); bool positive=negative?false:eat("+");
         std::string token=take();
         if(token[0]=='\'') {
-            if(negative||positive) fail("invalid string sign","SYNTAX");
+            if(negative||positive) fail("invalid string sign","syntax_error");
             std::string result;
             for(size_t i=1;i+1<token.size();++i) { result+=token[i]; if(token[i]=='\''&&i+2<token.size()&&token[i+1]=='\'') ++i; }
             return result;
@@ -89,7 +89,7 @@ public:
         auto keyword=upper(token);
         if(keyword=="NAN") return Json(std::numeric_limits<double>::quiet_NaN());
         if(keyword=="INFINITY"||keyword=="INF") return Json(negative?-std::numeric_limits<double>::infinity():std::numeric_limits<double>::infinity());
-        if(!digit(token[0])&&token[0]!='.') fail("expected literal","SYNTAX");
+        if(!digit(token[0])&&token[0]!='.') fail("expected literal","syntax_error");
         if(negative) token="-"+token;
         if(token.find_first_of(".eE")==std::string::npos) {
             int64_t signed_value=0;
@@ -104,7 +104,7 @@ public:
             // A floating JSON value is rejected by the BIGINT/LIMIT validators.
         }
         char* end=nullptr; double number=std::strtod(token.c_str(),&end);
-        if(end!=token.c_str()+token.size()) fail("expected literal","SYNTAX");
+        if(end!=token.c_str()+token.size()) fail("expected literal","syntax_error");
         return Json(number);
     }
     Json limit_value() {
@@ -130,7 +130,7 @@ public:
         std::vector<Condition> conditions;
         if(eat("WHERE")) while(true) {
             auto column=identifier(),op=take();
-            if(op!="="&&op!="<"&&op!="<="&&op!=">"&&op!=">=") fail("unsupported comparison","SYNTAX");
+            if(op!="="&&op!="<"&&op!="<="&&op!=">"&&op!=">=") fail("unsupported comparison","syntax_error");
             conditions.push_back({column,op,value()}); if(!eat("AND")) break;
         }
         return conditions;
@@ -142,14 +142,15 @@ public:
             if(eat("VECTOR")) {
                 expect("INDEX"); auto index=identifier(); expect("ON"); auto table=identifier(); expect("("); auto column=identifier(); expect(")"); finish(); parse_time.stop(); db.create_index(index,table,column); return {};
             }
-            expect("TABLE"); auto table=identifier(); expect("("); std::vector<Column> columns; std::optional<std::string> primary;
+            if(!eat("TABLE")) fail("unsupported statement","unsupported_sql");
+            auto table=identifier(); expect("("); std::vector<Column> columns; std::optional<std::string> primary;
             while(true) {
-                if(eat("PRIMARY")) { expect("KEY"); expect("("); if(primary) fail("multiple primary key declarations","SCHEMA"); primary=identifier(); expect(")"); }
+                if(eat("PRIMARY")) { expect("KEY"); expect("("); if(primary) fail("multiple primary key declarations","invalid_schema"); primary=identifier(); expect(")"); }
                 else {
                     Column column; column.name=identifier(); column.kind=upper(take());
                     if(column.kind=="VARCHAR"||column.kind=="VECTOR") {
                         expect("("); auto size=value();
-                        if(!size.is_number_integer()||(size.is_number_unsigned()&&size.get<uint64_t>()>uint64_t(INT64_MAX))) fail("integer type size required","SYNTAX");
+                        if(!size.is_number_integer()||(size.is_number_unsigned()&&size.get<uint64_t>()>uint64_t(INT64_MAX))) fail("integer type size required","syntax_error");
                         column.size=size.get<int64_t>(); expect(")");
                     }
                     column.primary=eat("PRIMARY"); if(column.primary) expect("KEY"); columns.push_back(std::move(column));
@@ -157,8 +158,8 @@ public:
                 if(eat(")")) break; expect(",");
             }
             if(primary) {
-                bool exists=false; for(auto& column:columns) { if(column.primary) fail("invalid primary key declaration","SCHEMA"); if(column.name==*primary) {column.primary=true;exists=true;} }
-                if(!exists) fail("invalid primary key declaration","SCHEMA");
+                bool exists=false; for(auto& column:columns) { if(column.primary) fail("invalid primary key declaration","invalid_schema"); if(column.name==*primary) {column.primary=true;exists=true;} }
+                if(!exists) fail("invalid primary key declaration","invalid_schema");
             }
             finish(); parse_time.stop(); db.create(table,columns); return {};
         }
@@ -183,7 +184,7 @@ public:
             auto conditions=where(); finish(); parse_time.stop(); Result result; result.affected=db.modify(table,conditions,assignments); return result;
         }
         if(verb=="DELETE") { expect("FROM"); auto table=identifier(); auto conditions=where(); finish(); parse_time.stop(); Result result; result.affected=db.modify(table,conditions,std::nullopt); return result; }
-        fail("unsupported statement","SYNTAX");
+        fail("unsupported statement","unsupported_sql");
     }
 };
 }
