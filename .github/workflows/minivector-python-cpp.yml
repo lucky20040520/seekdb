@@ -1,0 +1,58 @@
+name: MiniVectorDB Python and C++ head-to-head
+on:
+  push:
+    branches: [codex/minivectordb-python-cpp-comparison]
+permissions:
+  contents: read
+jobs:
+  compare:
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [standard, wide-sort]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build exact Python and C++ Linux images
+        run: |
+          python_sha=a211058d9924d455889de2bddf1b7cbed9426757
+          cpp_sha=017de6af62aa5c12335e024d712923db76cb7578
+          git fetch --depth=1 origin "$python_sha" "$cpp_sha"
+          python_root=$(mktemp -d)
+          cpp_root=$(mktemp -d)
+          git archive "$python_sha" Dockerfile requirements.txt minivector | tar -x -C "$python_root"
+          git archive "$cpp_sha" Dockerfile cpp | tar -x -C "$cpp_root"
+          docker build --platform linux/amd64 -t compare-python "$python_root"
+          docker build --platform linux/amd64 -t compare-cpp "$cpp_root"
+          git show "$cpp_sha:tools/check_cpp_large.py" > tools/check_cpp_large.py
+      - name: Verify official public cases on both images
+        if: matrix.suite == 'standard'
+        run: |
+          for version in python cpp; do
+            python3 protocol_check/run.py --image "compare-$version" --output "results/public-$version"
+          done
+      - name: Alternate three standard rounds per image
+        if: matrix.suite == 'standard'
+        run: |
+          for entry in python:1 cpp:1 cpp:2 python:2 python:3 cpp:3; do
+            version=${entry%:*}
+            round=${entry#*:}
+            python3 tools/benchmark_jsonl.py --image "compare-$version" \
+              --rows 10000 --dimensions 128 --queries 1000 --rounds 1 \
+              --output "results/$version-$round/result.json"
+          done
+      - name: Run the same over-memory wide sort on each image
+        if: matrix.suite == 'wide-sort'
+        run: |
+          status=0
+          for version in python cpp; do
+            python3 tools/check_cpp_large.py --image "compare-$version" \
+              --sort-only --payload-bytes 4096 --output "results/$version/result.json" || status=1
+          done
+          exit "$status"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: python-cpp-${{ matrix.suite }}
+          path: results/
