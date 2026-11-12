@@ -14,6 +14,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--image", required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--payload-bytes", type=int, default=1024)
+    parser.add_argument("--sort-only", action="store_true")
     args = parser.parse_args()
     args.output.parent.mkdir(parents=True, exist_ok=True)
     config = json.loads((ROOT / "protocol_check/config.json").read_text(encoding="utf-8"))
@@ -34,22 +36,27 @@ def main():
 
     count = 150000
     vector = "'[0,0,0,0,0,0,0,0]'"
-    text = "'" + "x" * 1024 + "'"
+    text = "'" + "x" * args.payload_bytes + "'"
     order = f"ORDER BY L2_DISTANCE(v,{vector}) LIMIT 10;"
     query = "SELECT id FROM t " + order
     passed = False
     try:
         session.start()
-        request("schema", "CREATE TABLE t(id BIGINT PRIMARY KEY,payload VARCHAR(1024),v VECTOR(8));")
+        request("schema", f"CREATE TABLE t(id BIGINT PRIMARY KEY,payload VARCHAR({args.payload_bytes}),v VECTOR(8));")
         for start in range(0, count, 100):
             values = ",".join(f"({key},{text},{vector})" for key in range(start, start + 100))
             assert request("insert", "INSERT INTO t VALUES " + values + ";")["affected_rows"] == 100
             if (start + 100) % 25000 == 0:
                 print(f"Inserted {start + 100} rows", flush=True)
-        assert count * 1024 > 128 * 1024 * 1024
-        request("build_index", "CREATE VECTOR INDEX idx ON t(v);")
+        assert count * args.payload_bytes > 128 * 1024 * 1024
+        if not args.sort_only:
+            request("build_index", "CREATE VECTOR INDEX idx ON t(v);")
         assert request("sort", "SELECT id FROM t ORDER BY id DESC;")["rows"] == [
             [key] for key in range(count - 1, -1, -1)]
+        if args.sort_only:
+            session.shutdown()
+            passed = True
+            return
         for mode in ("exact", "ann"):
             assert request("topk", query, mode)["rows"] == [[key] for key in range(10)]
         request("transaction", "BEGIN;")
@@ -70,7 +77,8 @@ def main():
         passed = True
     finally:
         session.close()
-        result = {"image": args.image, "passed": passed, "rows": count, "payload_bytes": count * 1024,
+        result = {"image": args.image, "passed": passed, "rows": count,
+                  "payload_bytes": count * args.payload_bytes,
                   "container_memory": config["memory"], "config": config,
                   "phases": {phase: {"requests": len(samples), "total_seconds": sum(samples),
                                     "max_seconds": max(samples)}

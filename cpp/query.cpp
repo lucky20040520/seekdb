@@ -92,7 +92,14 @@ Row decode_row(const Table& table,const Json& value) {
     for(size_t i=0;i<value.size();++i) row.push_back(validate(table.columns[i],value[i]));
     return row;
 }
-struct Candidate { Key key; int64_t primary=0; Row row; std::string file; uint64_t offset=0; };
+struct Candidate {
+    Key key;
+    int64_t primary=0;
+    Row row;
+    std::string file;
+    uint64_t offset=0;
+    std::string projected;
+};
 struct Less {
     bool descending=false;
     bool operator()(const Candidate& a,const Candidate& b) const {
@@ -107,7 +114,8 @@ struct Less {
 };
 Json candidate_json(const Candidate& value) {
     Json key=std::visit([](const auto& x)->Json{return x;},value.key);
-    return Json::array({key,value.primary,row_json(value.row),value.file,value.offset});
+    Json payload=value.projected.empty() ? row_json(value.row) : Json(value.projected);
+    return Json::array({key,value.primary,std::move(payload),value.file,value.offset});
 }
 Candidate decode_candidate(const Json& value,const Table& table,const Compiled& order) {
     Candidate result;
@@ -115,11 +123,12 @@ Candidate decode_candidate(const Json& value,const Table& table,const Compiled& 
     else if(order.kind=="BIGINT") result.key=value[0].get<int64_t>();
     else result.key=value[0].get<std::string>();
     result.primary=value[1].get<int64_t>(); result.file=value[3].get<std::string>(); result.offset=value[4].get<uint64_t>();
-    if(result.file.empty()) result.row=decode_row(table,value[2]);
+    if(value[2].is_string()) result.projected=value[2].get<std::string>();
+    else if(result.file.empty()) result.row=decode_row(table,value[2]);
     return result;
 }
 size_t memory_size(const Candidate& value) {
-    size_t bytes=sizeof(Candidate)+value.file.capacity()+value.row.capacity()*sizeof(Cell);
+    size_t bytes=sizeof(Candidate)+value.file.capacity()+value.projected.capacity()+value.row.capacity()*sizeof(Cell);
     if(auto text=std::get_if<std::string>(&value.key)) bytes+=text->capacity();
     for(auto& cell:value.row) {
         if(auto text=std::get_if<std::string>(&cell)) bytes+=text->capacity();
@@ -217,7 +226,7 @@ void indexed_candidates(Database& db,const Table& table,const Json& descriptor,c
                 if(!matches(decoded)) continue;
             }
             for(size_t i=0;i<dimension;++i) { uint32_t bits=read_u32(buffer.data()+16+4*i); std::memcpy(&vector[i],&bits,sizeof(float)); }
-            accept({l2_distance(vector,order.vector),primary,{},row_file,offset});
+            accept({l2_distance(vector,order.vector),primary,{},row_file,offset,{}});
         }
     }
 }
@@ -276,6 +285,12 @@ Result Database::select(const std::string& name,const std::optional<std::vector<
             for(auto& fn:functions) projected.push_back(fn.reuse_distance && key ? Json(std::get<double>(*key)) : fn.project(row));
             output(projected); ++emitted; return !limit||emitted<*limit;
         };
+        // A narrow integer projection needs only the sort key, PK and
+        // returned cells. Avoid writing unrelated wide payloads in each run.
+        const bool compact_sort=ordering && !ordering->distance && !descriptor && !use_heap &&
+            std::all_of(functions.begin(),functions.end(),[](const Compiled& fn) {
+                return !fn.distance && fn.kind=="BIGINT";
+            });
         if(!ordering) {
             try { scan(selected,[&](const Row& row){if(matches(row)&&!emit_row(row)) throw LimitReached{};}); } catch(const LimitReached&) {}
             return;
@@ -316,7 +331,12 @@ Result Database::select(const std::string& name,const std::optional<std::vector<
                     profile::Scope timer(profile::Phase::heap);
                     if(!less(value,heap.top())) return;
                 }
-                value.row=row; add(std::move(value));
+                if(compact_sort) {
+                    Json projected=Json::array();
+                    for(const auto& fn:functions) projected.push_back(fn.project(row));
+                    value.projected=projected.dump();
+                } else value.row=row;
+                add(std::move(value));
             };
             cached=(ordering->distance&&!descending&&use_heap)?cached_vectors(selected):nullptr;
             if(cached) {
@@ -341,6 +361,11 @@ Result Database::select(const std::string& name,const std::optional<std::vector<
             } else scan(selected,visit);
         }
         auto emit_candidate=[&](const Candidate& candidate) {
+            if(!candidate.projected.empty()) {
+                output(Json::parse(candidate.projected));
+                ++emitted;
+                return !limit||emitted<*limit;
+            }
             if(cached) {
                 Json projected=Json::array();
                 for(auto& fn:functions) projected.push_back(fn.reuse_distance ? Json(std::get<double>(candidate.key)) : fn.project(*cached,candidate.offset));
