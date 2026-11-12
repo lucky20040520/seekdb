@@ -1,4 +1,4 @@
-﻿#include "minivector.hpp"
+#include "minivector.hpp"
 #include "profile.hpp"
 
 #include <algorithm>
@@ -626,9 +626,23 @@ std::shared_ptr<PrimaryMap> Database::cached_primary(const Table& table) const {
     if (table.files.empty()) return {};
     if (primary_ && primary_signature_==table.files) return primary_;
     primary_.reset(); primary_signature_.clear();
-    // Keep the index small enough to stay far below the memory budget; above
-    // this the scan path is cheaper than the bookkeeping anyway.
-    constexpr uint64_t max_keys=4u*1024*1024;
+    // The index is a derived cache, so trading it away is always safe. Size it
+    // against the container limit instead of a flat count: an unordered_map entry
+    // costs roughly 48 bytes, and blowing the memory budget would turn a slow
+    // query into an out-of-memory kill.
+    constexpr uint64_t entry_bytes=48;
+    uint64_t budget=64u*1024*1024;
+    for (const char* name:{"/sys/fs/cgroup/memory.max","/sys/fs/cgroup/memory/memory.limit_in_bytes"}) {
+        std::ifstream input(name);
+        if (!input) continue;
+        std::string text; input>>text;
+        if (text.empty() || text=="max") continue;
+        const auto limit=std::strtoull(text.c_str(),nullptr,10);
+        if (limit==0 || limit>uint64_t(1)<<60) continue;
+        budget=std::min<uint64_t>(budget,std::max<uint64_t>(8u*1024*1024,limit/8));
+        break;
+    }
+    const uint64_t max_keys=budget/entry_bytes;
     uint64_t total=0;
     for (const auto& file:table.files) {
         std::error_code error;
