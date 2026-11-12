@@ -114,7 +114,7 @@ struct Less {
 };
 Json candidate_json(const Candidate& value) {
     Json key=std::visit([](const auto& x)->Json{return x;},value.key);
-    Json payload=value.projected.empty() ? row_json(value.row) : Json(value.projected);
+    Json payload=value.projected.empty() ? storage_row_json(value.row) : Json(value.projected);
     return Json::array({key,value.primary,std::move(payload),value.file,value.offset});
 }
 Candidate decode_candidate(const Json& value,const Table& table,const Compiled& order) {
@@ -135,6 +135,29 @@ size_t memory_size(const Candidate& value) {
         if(auto vector=std::get_if<std::vector<float>>(&cell)) bytes+=vector->capacity()*sizeof(float);
     }
     return bytes;
+}
+// Spilling is expensive: every spilled candidate is serialised to JSON and
+// parsed back during the merge, which dominated wide-row ORDER BY queries.
+// Keep as much as the container can afford in memory before spilling at all.
+size_t sort_budget() {
+    static const size_t value=[]()->size_t {
+        constexpr size_t minimum=8u*1024*1024, maximum=96u*1024*1024, fallback=96u*1024*1024;
+        if(const char* env=std::getenv("MINIVECTOR_SORT_BUDGET")) {
+            const auto parsed=std::strtoull(env,nullptr,10);
+            if(parsed>=minimum) return std::min<size_t>(parsed,maximum);
+        }
+        for(const char* name:{"/sys/fs/cgroup/memory.max","/sys/fs/cgroup/memory/memory.limit_in_bytes"}) {
+            std::ifstream input(name);
+            if(!input) continue;
+            std::string text; input>>text;
+            if(text.empty()||text=="max") continue;
+            const auto limit=std::strtoull(text.c_str(),nullptr,10);
+            if(limit==0||limit>uint64_t(1)<<60) continue;
+            return std::min(maximum,std::max(minimum,static_cast<size_t>(limit/8)));
+        }
+        return fallback;
+    }();
+    return value;
 }
 class ExternalSort {
     std::filesystem::path directory;
@@ -178,7 +201,7 @@ class ExternalSort {
 public:
     ExternalSort(const std::filesystem::path& path,const Table& t,const Compiled& o,Less l):directory(path),table(t),order(o),less(l) {}
     ~ExternalSort() { for(auto& path:cleanup) {std::error_code error; std::filesystem::remove(path,error);} }
-    void add(Candidate value) { bytes+=memory_size(value); batch.push_back(std::move(value)); if(bytes>=2*1024*1024) spill(); }
+    void add(Candidate value) { bytes+=memory_size(value); batch.push_back(std::move(value)); if(bytes>=sort_budget()) spill(); }
     void consume(const std::function<bool(const Candidate&)>& output) {
         if(paths.empty()) { std::sort(batch.begin(),batch.end(),less); for(auto& item:batch) if(!output(item)) break; return; }
         if(!batch.empty()) spill();

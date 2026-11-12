@@ -70,6 +70,9 @@ struct Result {
     std::function<void(const JsonVisitor&)> rows;
 };
 Json row_json(const Row& row);
+// On-disk encoding: vectors are packed as a base64 float32 blob so a stored row
+// can be decoded without building one json value per element.
+Json storage_row_json(const Row& row);
 Json cell_json(const Cell& cell);
 Cell validate(const Column& column,const Json& value,bool for_storage=true);
 Predicates compile_conditions(const Table&,const std::vector<Condition>&);

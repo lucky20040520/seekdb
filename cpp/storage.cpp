@@ -5,6 +5,7 @@
 #include <array>
 #include <atomic>
 #include <cerrno>
+#include <charconv>
 #include <chrono>
 #include <cmath>
 #include <cstdio>
@@ -223,8 +224,136 @@ void sync_directory(const std::filesystem::path& path) {
 #endif
 }
 
+namespace {
+// Parse the textual vector form "[a,b,...]" straight into float32.
+// Accepts the same numeric grammar JSON does (no NaN/Infinity, no leading '+'),
+// and reports the same error codes the previous nlohmann-based path produced.
+void parse_vector_literal(const std::string& text,std::vector<float>& out) {
+    const size_t size=text.size();
+    size_t position=0;
+    auto whitespace=[&] {
+        while (position<size) {
+            const char c=text[position];
+            if (c==' '||c=='\t'||c=='\n'||c=='\r') ++position; else break;
+        }
+    };
+    auto invalid=[&] { fail("invalid VECTOR array literal","invalid_vector"); };
+    auto digit=[&](size_t at) { return at<size && text[at]>='0' && text[at]<='9'; };
+    whitespace();
+    if (position>=size || text[position]!='[') invalid();
+    ++position; whitespace();
+    out.clear();
+    if (position<size && text[position]==']') ++position;
+    else {
+        for (;;) {
+            if (position>=size) invalid();
+            const char* begin=text.data()+position;
+            if (text[position]=='-') { ++position; if (!digit(position)) invalid(); }
+            else if (!digit(position)) invalid();
+            while (digit(position)) ++position;
+            if (position<size && text[position]=='.') {
+                ++position; if (!digit(position)) invalid();
+                while (digit(position)) ++position;
+            }
+            if (position<size && (text[position]=='e' || text[position]=='E')) {
+                ++position;
+                if (position<size && (text[position]=='+' || text[position]=='-')) ++position;
+                if (!digit(position)) invalid();
+                while (digit(position)) ++position;
+            }
+            double number=0;
+            const auto conversion=std::from_chars(begin,text.data()+position,number);
+            if (conversion.ec!=std::errc() || conversion.ptr!=text.data()+position) invalid();
+            const float stored=static_cast<float>(number);
+            if (!std::isfinite(number) || !std::isfinite(stored)) fail("VECTOR requires finite float32","invalid_vector");
+            out.push_back(stored);
+            whitespace();
+            if (position<size && text[position]==',') { ++position; whitespace(); continue; }
+            if (position<size && text[position]==']') { ++position; break; }
+            invalid();
+        }
+    }
+    whitespace();
+    if (position!=size) invalid();
+}
+}
+
+
 Json cell_json(const Cell& cell) {
     return std::visit([](const auto& value)->Json { return Json(value); },cell);
+}
+
+namespace {
+constexpr char kBase64Alphabet[] =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+// Marks a packed float32 blob inside a stored row. A plain vector literal always
+// starts with '[', so this prefix is unambiguous.
+constexpr char kVectorBlobPrefix = '~';
+
+std::string base64_encode(const void* data,size_t size) {
+    const auto* bytes=static_cast<const unsigned char*>(data);
+    std::string out;
+    out.reserve((size+2)/3*4);
+    size_t index=0;
+    for(;index+2<size;index+=3) {
+        const uint32_t value=(uint32_t(bytes[index])<<16)|(uint32_t(bytes[index+1])<<8)|bytes[index+2];
+        out.push_back(kBase64Alphabet[(value>>18)&63]);
+        out.push_back(kBase64Alphabet[(value>>12)&63]);
+        out.push_back(kBase64Alphabet[(value>>6)&63]);
+        out.push_back(kBase64Alphabet[value&63]);
+    }
+    if(index+1==size) {
+        const uint32_t value=uint32_t(bytes[index])<<16;
+        out.push_back(kBase64Alphabet[(value>>18)&63]);
+        out.push_back(kBase64Alphabet[(value>>12)&63]);
+        out.push_back('=');
+        out.push_back('=');
+    } else if(index+2==size) {
+        const uint32_t value=(uint32_t(bytes[index])<<16)|(uint32_t(bytes[index+1])<<8);
+        out.push_back(kBase64Alphabet[(value>>18)&63]);
+        out.push_back(kBase64Alphabet[(value>>12)&63]);
+        out.push_back(kBase64Alphabet[(value>>6)&63]);
+        out.push_back('=');
+    }
+    return out;
+}
+
+bool base64_decode(const std::string& text,std::vector<unsigned char>& out) {
+    static const std::array<int,256> table=[] {
+        std::array<int,256> values{};
+        values.fill(-1);
+        for(int i=0;i<64;++i) values[static_cast<unsigned char>(kBase64Alphabet[i])]=i;
+        return values;
+    }();
+    out.clear();
+    out.reserve(text.size()/4*3);
+    uint32_t buffer=0;
+    int bits=0;
+    for(char c:text) {
+        if(c=='=') break;
+        const int value=table[static_cast<unsigned char>(c)];
+        if(value<0) return false;
+        buffer=(buffer<<6)|uint32_t(value);
+        bits+=6;
+        if(bits>=8) { bits-=8; out.push_back(static_cast<unsigned char>((buffer>>bits)&0xff)); }
+    }
+    return true;
+}
+}
+
+Json storage_cell_json(const Cell& cell) {
+    if(const auto* vector=std::get_if<std::vector<float>>(&cell)) {
+        std::string blob(1,kVectorBlobPrefix);
+        blob+=base64_encode(vector->data(),vector->size()*sizeof(float));
+        return Json(std::move(blob));
+    }
+    return cell_json(cell);
+}
+
+Json storage_row_json(const Row& row) {
+    Json result=Json::array();
+    for (const auto& cell:row) result.push_back(storage_cell_json(cell));
+    return result;
 }
 
 Json row_json(const Row& row) {
@@ -246,20 +375,31 @@ Cell validate(const Column& column,const Json& value,bool for_storage) {
         return text;
     }
     if (column.kind!="VECTOR") fail("unsupported type","type_error");
-    Json decoded;
-    const Json* array=&value;
     if (value.is_string()) {
-        // String vectors found inside a stored row are already covered by the
-        // row-decode timer; avoid attributing the same interval twice.
+        const auto& text=value.get_ref<const std::string&>();
+        if (!text.empty() && text[0]==kVectorBlobPrefix) {
+            // Packed float32 written by storage_row_json: no number parsing.
+            std::vector<unsigned char> bytes;
+            if (!base64_decode(std::string(text.begin()+1,text.end()),bytes)) fail("invalid stored VECTOR blob","invalid_vector");
+            if (column.size<0 || bytes.size()!=uint64_t(column.size)*sizeof(float)) fail("VECTOR dimension mismatch","dimension_mismatch");
+            std::vector<float> packed(bytes.size()/sizeof(float));
+            std::memcpy(packed.data(),bytes.data(),bytes.size());
+            for (float number:packed) if (!std::isfinite(number)) fail("VECTOR requires finite float32","invalid_vector");
+            return packed;
+        }
+        // String vectors are re-parsed on every stored-row read. Going through
+        // nlohmann allocated one json value per element, which dominated the
+        // scan cost on wide vectors; parse the literal straight to float32.
         profile::Scope timer(profile::Phase::vector_literal_parse,profile::stored_decode_depth==0);
-        try { decoded=Json::parse(value.get_ref<const std::string&>()); }
-        catch (const Json::exception&) { fail("invalid VECTOR array literal","invalid_vector"); }
-        array=&decoded;
+        std::vector<float> parsed;
+        parse_vector_literal(text,parsed);
+        if (column.size<0 || parsed.size()!=uint64_t(column.size)) fail("VECTOR dimension mismatch","dimension_mismatch");
+        return parsed;
     }
-    if (!array->is_array() || column.size<0 || array->size()!=uint64_t(column.size)) fail("VECTOR dimension mismatch","dimension_mismatch");
+    if (!value.is_array() || column.size<0 || value.size()!=uint64_t(column.size)) fail("VECTOR dimension mismatch","dimension_mismatch");
     std::vector<float> result;
-    result.reserve(array->size());
-    for (const auto& element:*array) {
+    result.reserve(value.size());
+    for (const auto& element:value) {
         if (!element.is_number()) fail("VECTOR element must be numeric","invalid_vector");
         const double number=element.get<double>();
         const float stored=static_cast<float>(number);
@@ -541,7 +681,7 @@ void Database::rewrite(const std::string& name,const std::function<void(const Ro
         Output output(target), keys(key_target);
         std::optional<int64_t> low, high;
         producer([&](const Row& row) {
-            std::string encoded=row_json(row).dump();
+            std::string encoded=storage_row_json(row).dump();
             encoded.push_back('\n');
             output.write(encoded);
             const int64_t key=std::get<int64_t>(row[pk]);
