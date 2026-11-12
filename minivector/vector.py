@@ -56,32 +56,34 @@ class VectorCache:
 
     def topk(self, conditions, query, count):
         np = self.np
-        mask = np.ones(len(self.rows), dtype=bool)
+        mask = np.ones(len(self.rows), dtype=bool) if conditions else None
         functions = {'=': np.equal, '<': np.less, '<=': np.less_equal,
                      '>': np.greater, '>=': np.greater_equal}
         for name, operator, value in conditions:
             mask &= functions[operator](self.scalar[name], value)
-        indexes = np.flatnonzero(mask)
-        if not len(indexes) or count == 0:
+        indexes = np.flatnonzero(mask) if mask is not None else None
+        size = len(self.rows) if indexes is None else len(indexes)
+        if not size or count == 0:
             return []
-        distances = np.empty(len(indexes), dtype=np.float64)
+        distances = np.empty(size, dtype=np.float64)
         query = np.asarray(query, dtype=np.float64)
         # Float64 subtraction avoids float32 overflow and cancellation from
         # norm(x)^2 + norm(q)^2 - 2 dot(x,q). Bound temporary matrices to 512 rows.
-        for start in range(0, len(indexes), 512):
-            chosen = indexes[start:start+512]
-            delta = self.vectors[chosen].astype(np.float64) - query
-            distances[start:start+len(chosen)] = np.einsum('ij,ij->i', delta, delta)
+        for start in range(0, size, 512):
+            end = min(start + 512, size)
+            vectors = self.vectors[start:end] if indexes is None else self.vectors[indexes[start:end]]
+            delta = np.subtract(vectors, query, dtype=np.float64)
+            np.einsum('ij,ij->i', delta, delta, out=distances[start:end])
         # Include the entire boundary tie before primary-key ordering. Pure
         # argpartition[:K] would pick arbitrary IDs for equal-distance vectors.
-        if len(indexes) > count:
+        if size > count:
             boundary = np.partition(distances, count-1)[count-1]
             tolerance = abs(boundary) * np.finfo(np.float64).eps * max(1, len(query)) * 16
             candidates = np.flatnonzero(distances <= np.nextafter(boundary + tolerance, np.inf))
         else:
-            candidates = np.arange(len(indexes))
+            candidates = range(size)
         def exact_key(position):
-            index = int(indexes[position])
+            index = int(position if indexes is None else indexes[position])
             vector = self.vectors[index]
             distance = math.sqrt(math.fsum((float(a)-float(b))**2 for a,b in zip(vector,query)))
             return distance, int(self.keys[index])
@@ -90,7 +92,7 @@ class VectorCache:
         chosen_positions = heapq.nsmallest(count, candidates, key=exact_key)
         result = []
         for position in chosen_positions:
-            index = int(indexes[position])
+            index = int(position if indexes is None else indexes[position])
             row = list(self.rows[index])
             row[self.column] = self.vectors[index].tolist()
             result.append(row)

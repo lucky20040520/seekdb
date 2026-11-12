@@ -51,6 +51,31 @@ class OptimizedPaths(unittest.TestCase):
             self.assertEqual([[1]],list(execute(db,'SELECT id FROM t;')[1]))
             self.assertEqual(1,len(list(Path(root).glob('rows-*.keys'))))
 
+    def test_key_ranges_keep_duplicate_checks_for_legacy_and_overlapping_segments(self):
+        with tempfile.TemporaryDirectory() as root:
+            db = Database(root)
+            execute(db, "CREATE TABLE t(id BIGINT PRIMARY KEY);")
+            execute(db, "INSERT INTO t VALUES (-10), (10);")
+            legacy = db.files(db.table("t"))[0]
+            db.catalog["t"].pop("key_ranges")
+            db.publish(db.catalog)
+            (Path(root) / (legacy + ".keys")).unlink()
+
+            execute(db, "INSERT INTO t VALUES (30), (40);")
+            db = Database(root)
+            for key in (-10, 40):
+                with self.assertRaisesRegex(DBError, "duplicate primary key"):
+                    execute(db, f"INSERT INTO t VALUES ({key});")
+            execute(db, "INSERT INTO t VALUES (35);")
+            execute(db, "BEGIN;")
+            execute(db, "DELETE FROM t WHERE id=40;")
+            execute(db, "INSERT INTO t VALUES (40);")
+            execute(db, "ROLLBACK;")
+            with self.assertRaisesRegex(DBError, "duplicate primary key"):
+                execute(db, "INSERT INTO t VALUES (40);")
+            self.assertEqual([[-10], [10], [30], [35], [40]],
+                             list(execute(db, "SELECT id FROM t ORDER BY id;")[1]))
+
     def test_cached_scalar_differential_and_ties(self):
         with tempfile.TemporaryDirectory() as root:
             db=Database(root)

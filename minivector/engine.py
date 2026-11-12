@@ -160,9 +160,14 @@ class Database:
     def files(table):
         return table.get("files", [table["file"]] if table["file"] else [])
 
-    def primary_keys(self, table):
+    def primary_keys(self, table, minimum, maximum):
+        ranges = table.get("key_ranges", {})
         pk = next(i for i, c in enumerate(table["columns"]) if c["primary"])
         for file in self.files(table):
+            bounds = ranges.get(file)
+            # Segments predating the range metadata still require a full scan.
+            if bounds is not None and (maximum < bounds[0] or minimum > bounds[1]):
+                continue
             keys = self.path / (file + ".keys")
             if keys.exists():
                 with keys.open("rb") as source:
@@ -201,18 +206,16 @@ class Database:
                 fail("invalid VECTOR array literal", "TYPE")
         if not isinstance(value, list) or len(value) != column["size"]:
             fail("VECTOR dimension mismatch", "TYPE")
-        result = []
-        for number in value:
-            if type(number) not in (int, float):
-                fail("VECTOR element must be numeric", "TYPE")
-            try:
-                stored = struct.unpack("<f", struct.pack("<f", number))[0]
-            except (OverflowError, struct.error):
-                fail("VECTOR float32 overflow", "TYPE")
-            if not math.isfinite(stored):
-                fail("VECTOR requires finite float32", "TYPE")
-            result.append(stored)
-        return result
+        if any(type(number) not in (int, float) for number in value):
+            fail("VECTOR element must be numeric", "TYPE")
+        layout = f"<{len(value)}f"
+        try:
+            stored = struct.unpack(layout, struct.pack(layout, *value))
+        except (OverflowError, struct.error):
+            fail("VECTOR float32 overflow", "TYPE")
+        if not all(map(math.isfinite, stored)):
+            fail("VECTOR requires finite float32", "TYPE")
+        return list(stored)
 
     def rewrite(self, name, rows, append=False):
         catalog = copy.deepcopy(self.visible)
@@ -220,11 +223,17 @@ class Database:
         target = self.path / filename
         key_target = self.path / (filename + ".keys")
         pk = next(i for i, c in enumerate(catalog[name]["columns"]) if c["primary"])
+        minimum = maximum = None
         try:
             with target.open("w", encoding="utf-8", newline="\n") as output, key_target.open("wb") as keys:
                 for row in rows:
                     output.write(encode(row) + "\n")
-                    keys.write(struct.pack("<q", row[pk]))
+                    key = row[pk]
+                    keys.write(struct.pack("<q", key))
+                    if minimum is None or key < minimum:
+                        minimum = key
+                    if maximum is None or key > maximum:
+                        maximum = key
                 output.flush()
                 os.fsync(output.fileno())
                 keys.flush()
@@ -238,7 +247,10 @@ class Database:
             catalog[name]["file"] = None
         else:
             catalog[name].pop("files", None)
+            catalog[name].pop("key_ranges", None)
             catalog[name]["file"] = filename
+        if minimum is not None:
+            catalog[name].setdefault("key_ranges", {})[filename] = [minimum, maximum]
         try:
             self.prepare_indexes(catalog, only=name)
         except BaseException:
@@ -265,7 +277,9 @@ class Database:
                 fail("duplicate primary key", "DUPLICATE")
             keys.add(row[pk])
             new.append(row)
-        for key in self.primary_keys(table):
+        if not keys:
+            return 0
+        for key in self.primary_keys(table, min(keys), max(keys)):
             if key in keys:
                 fail("duplicate primary key", "DUPLICATE")
         self.rewrite(name, iter(new), append=True)

@@ -1,0 +1,41 @@
+name: MiniVectorDB Python optimization comparison
+on:
+  push:
+    branches: [codex/minivectordb-python-material]
+    paths: [minivector/**, tests/**, .github/workflows/minivector-python-comparison.yml]
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the qualified baseline and candidate
+        run: |
+          baseline=f1b9f4e204f08f5043b315ba1ebec500ad7af255
+          git fetch --depth=1 origin "$baseline"
+          source=$(mktemp -d)
+          git archive "$baseline" Dockerfile requirements.txt minivector | tar -x -C "$source"
+          docker build --platform linux/amd64 -t python-baseline "$source"
+          docker build --platform linux/amd64 -t python-candidate .
+      - name: Verify candidate against the published driver and run regression tests
+        run: |
+          python3 protocol_check/run.py --image python-candidate --output results/public
+          docker run --rm --network=none --entrypoint python \
+            --mount "type=bind,src=$PWD,dst=/workspace,readonly" -w /workspace \
+            python-candidate -m unittest discover -s tests -q
+      - name: Benchmark three rounds per image on the same runner
+        run: |
+          for entry in baseline:1 candidate:1 candidate:2 baseline:2 baseline:3 candidate:3; do
+            version=${entry%:*}
+            round=${entry#*:}
+            python3 tools/benchmark_jsonl.py --image "python-$version" \
+              --rows 10000 --dimensions 128 --queries 1000 --rounds 1 \
+              --output "results/$version-$round/result.json"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: python-performance-comparison
+          path: results/
