@@ -1,0 +1,37 @@
+name: MiniVectorDB submission response boundary
+on:
+  push:
+    branches: [codex/minivectordb-cpp-migration]
+    paths: [tools/check_large_response.py, .github/workflows/minivector-response-boundary.yml]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build exact platform and proposed submissions
+        run: |
+          python_sha=f1b9f4e204f08f5043b315ba1ebec500ad7af255
+          cpp_sha=28d7bf0418ee3f3a82dbb498522ba1905d66a3ef
+          git fetch --depth=1 origin "$python_sha" "$cpp_sha"
+          python_root=$(mktemp -d)
+          cpp_root=$(mktemp -d)
+          git archive "$python_sha" Dockerfile requirements.txt minivector | tar -x -C "$python_root"
+          git archive "$cpp_sha" Dockerfile cpp | tar -x -C "$cpp_root"
+          docker build --platform linux/amd64 -t response-python "$python_root"
+          docker build --platform linux/amd64 -t response-cpp "$cpp_root"
+      - name: Verify repeated near-limit JSON responses
+        run: |
+          python_status=0
+          cpp_status=0
+          python3 tools/check_large_response.py --image response-python --output response-results/python/result.json || python_status=$?
+          python3 tools/check_large_response.py --image response-cpp --output response-results/cpp/result.json || cpp_status=$?
+          echo "Python exit = $python_status, C++ exit = $cpp_status"
+          test "$python_status" -eq 0 && test "$cpp_status" -eq 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: minivector-response-boundary
+          path: response-results/
