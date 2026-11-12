@@ -8,6 +8,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 #include <variant>
 #include <vector>
 
@@ -63,6 +64,9 @@ struct Projection { Expr expression; std::string alias; };
 struct Order { Expr expression; bool descending=false; };
 using RowVisitor = std::function<void(const Row&)>;
 using JsonVisitor = std::function<void(const Json&)>;
+// Derived, in-memory only: primary key -> (segment file, byte offset).
+// Never persisted, so a stale entry can only cost a rebuild, never correctness.
+using PrimaryMap = std::unordered_map<int64_t,std::pair<std::string,uint64_t>>;
 struct Result {
     bool query=false;
     int64_t affected=0;
@@ -92,6 +96,9 @@ public:
     void scan(const Table&,const RowVisitor&) const;
     Row read_row(const Table&,const std::string& file,uint64_t offset) const;
     std::shared_ptr<VectorCache> cached_vectors(const Table&);
+    // Returns null when the table cannot be indexed (missing sidecars, too many
+    // keys); callers must then fall back to a scan.
+    std::shared_ptr<PrimaryMap> cached_primary(const Table&) const;
     void begin(); void commit(); void rollback(); void close();
     void create(const std::string&,const std::vector<Column>&);
     int64_t insert(const std::string&,const std::vector<Json>&,const std::optional<std::vector<std::string>>&);
@@ -105,6 +112,8 @@ private:
     std::optional<Json> transaction_;
     std::vector<std::string> cache_signature_;
     std::shared_ptr<VectorCache> cache_;
+    mutable std::vector<std::string> primary_signature_;
+    mutable std::shared_ptr<PrimaryMap> primary_;
     const Json& visible() const;
     void collect();
     void publish(const Json&);

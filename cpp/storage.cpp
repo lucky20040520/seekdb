@@ -1,4 +1,4 @@
-#include "minivector.hpp"
+﻿#include "minivector.hpp"
 #include "profile.hpp"
 
 #include <algorithm>
@@ -476,6 +476,7 @@ void Database::collect() {
     add(catalog_);
     if (transaction_) add(*transaction_);
     if (cache_ && std::any_of(cache_signature_.begin(),cache_signature_.end(),[&](const std::string& file) { return !live.count(file); })) { cache_.reset(); cache_signature_.clear(); }
+    if (primary_ && std::any_of(primary_signature_.begin(),primary_signature_.end(),[&](const std::string& file) { return !live.count(file); })) { primary_.reset(); primary_signature_.clear(); }
     for (const auto& entry:fs::directory_iterator(path)) {
         const auto filename=entry.path().filename().string();
         if (removable(filename) && !live.count(filename)) fs::remove(entry.path());
@@ -619,6 +620,59 @@ const std::vector<uint32_t>* VectorCache::matching_rows(const Predicates& condit
     posting_bytes+=posting.bytes; postings[empty]=std::move(posting);
     if (covered) *covered=build_test;
     return &postings[empty]->rows;
+}
+
+std::shared_ptr<PrimaryMap> Database::cached_primary(const Table& table) const {
+    if (table.files.empty()) return {};
+    if (primary_ && primary_signature_==table.files) return primary_;
+    primary_.reset(); primary_signature_.clear();
+    // Keep the index small enough to stay far below the memory budget; above
+    // this the scan path is cheaper than the bookkeeping anyway.
+    constexpr uint64_t max_keys=4u*1024*1024;
+    uint64_t total=0;
+    for (const auto& file:table.files) {
+        std::error_code error;
+        const auto bytes=fs::file_size(path/(file+".keys"),error);
+        if (error || bytes%8) return {};
+        total+=bytes/8;
+        if (total>max_keys) return {};
+    }
+    auto index=std::make_shared<PrimaryMap>();
+    index->reserve(static_cast<size_t>(total)*2);
+    std::vector<uint64_t> offsets;
+    for (const auto& file:table.files) {
+        // Line offsets come from a raw newline walk: no row is decoded here.
+        offsets.clear();
+        offsets.push_back(0);
+        {
+            std::ifstream rows(path/file,std::ios::binary);
+            if (!rows) return {};
+            char chunk[1<<16];
+            uint64_t offset=0;
+            while (rows) {
+                rows.read(chunk,sizeof(chunk));
+                const auto got=rows.gcount();
+                for (std::streamsize i=0;i<got;++i) if (chunk[i]=='\n') offsets.push_back(offset+static_cast<uint64_t>(i)+1);
+                offset+=static_cast<uint64_t>(got);
+            }
+            if (rows.bad()) return {};
+            if (!offsets.empty() && offsets.back()==offset) offsets.pop_back();
+        }
+        std::ifstream keys(path/(file+".keys"),std::ios::binary);
+        if (!keys) return {};
+        std::array<unsigned char,8> buffer{};
+        for (size_t i=0;i<offsets.size();++i) {
+            if (!keys.read(reinterpret_cast<char*>(buffer.data()),8)) return {};
+            int64_t key;
+            const uint64_t bits=get_le(buffer.data(),8);
+            std::memcpy(&key,&bits,sizeof(key));
+            index->emplace(key,std::make_pair(file,offsets[i]));
+        }
+        if (keys.peek()!=std::char_traits<char>::eof()) return {};  // counts disagree
+    }
+    primary_signature_=table.files;
+    primary_=std::move(index);
+    return primary_;
 }
 
 std::shared_ptr<VectorCache> Database::cached_vectors(const Table& table) {

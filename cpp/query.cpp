@@ -1,4 +1,4 @@
-#include "minivector.hpp"
+﻿#include "minivector.hpp"
 #include "profile.hpp"
 #include "distance_screen.hpp"
 #include <algorithm>
@@ -271,6 +271,13 @@ Result Database::select(const std::string& name,const std::optional<std::vector<
     if(mode!="exact"&&mode!="ann") fail("unknown search mode","invalid_search_mode");
     Table selected=table(name); size_t pk=primary_index(selected);
     auto matches=compile_conditions(selected,conditions);
+    // A primary-key equality can be served from the derived key index instead of
+    // scanning every segment. Anything else still takes the scan path.
+    std::optional<int64_t> point;
+    for (const auto& test:matches.tests) {
+        if (test.column!=pk || test.op!="=") continue;
+        if (const auto* value=std::get_if<int64_t>(&test.value)) point=*value;
+    }
     std::optional<uint64_t> limit;
     if(requested_limit) {
         const Json& value=*requested_limit;
@@ -300,7 +307,7 @@ Result Database::select(const std::string& name,const std::optional<std::vector<
     bool use_heap=ordering&&limit&&bounded_heap(selected,*limit);
     // A Flat index retains only locations in the heap, rather than full rows.
     if(descriptor&&limit&&*limit<=4096) use_heap=true;
-    result.rows=[this,selected=std::move(selected),pk,matches=std::move(matches),functions=std::move(functions),ordering,descending,descriptor,limit,use_heap,filtered=!conditions.empty()](const JsonVisitor& output) {
+    result.rows=[this,selected=std::move(selected),pk,matches=std::move(matches),functions=std::move(functions),ordering,descending,descriptor,limit,use_heap,point,filtered=!conditions.empty()](const JsonVisitor& output) {
         if(limit&&*limit==0) return;
         uint64_t emitted=0;
         auto emit_row=[&](const Row& row,const Key* key=nullptr) {
@@ -315,6 +322,16 @@ Result Database::select(const std::string& name,const std::optional<std::vector<
                 return !fn.distance && fn.kind=="BIGINT";
             });
         if(!ordering) {
+            if(point) {
+                if(auto index=cached_primary(selected)) {
+                    const auto found=index->find(*point);
+                    if(found!=index->end()) {
+                        const Row row=read_row(selected,found->second.first,found->second.second);
+                        if(matches(row)) emit_row(row);
+                    }
+                    return;
+                }
+            }
             try { scan(selected,[&](const Row& row){if(matches(row)&&!emit_row(row)) throw LimitReached{};}); } catch(const LimitReached&) {}
             return;
         }
@@ -381,6 +398,11 @@ Result Database::select(const std::string& name,const std::optional<std::vector<
                 };
                 if(rows) for(uint32_t row:*rows) visit_cached(row);
                 else for(size_t row=0;row<cached->size();++row) visit_cached(row);
+            } else if(point) {
+                if(auto index=cached_primary(selected)) {
+                    const auto found=index->find(*point);
+                    if(found!=index->end()) visit(read_row(selected,found->second.first,found->second.second));
+                } else scan(selected,visit);
             } else scan(selected,visit);
         }
         auto emit_candidate=[&](const Candidate& candidate) {
