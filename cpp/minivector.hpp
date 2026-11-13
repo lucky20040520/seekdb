@@ -40,7 +40,10 @@ struct Predicates {
     bool operator()(const Row&) const;
 };
 struct VectorCache {
-    static constexpr size_t budget=16*1024*1024, posting_budget=1024*1024;
+    // Derived from the container limit: a fixed 16 MiB could not hold a table
+    // with 100k 128-dim rows, so every query rescanned the whole table.
+    static size_t budget();
+    static size_t posting_budget();
     struct Posting { size_t column; Cell value; std::vector<uint32_t> rows; uint64_t used; size_t bytes; };
     size_t vector_column=0, columns=0, dimension=0, data_bytes=0, posting_bytes=0;
     uint64_t clock=0;

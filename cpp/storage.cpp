@@ -594,7 +594,7 @@ const std::vector<uint32_t>* VectorCache::matching_rows(const Predicates& condit
     if (!build) return nullptr;
     const auto* text=std::get_if<std::string>(&build->value);
     const size_t key_bytes=text ? text->capacity()+1 : 0;
-    const size_t available=std::min(posting_budget,budget-data_bytes);
+    const size_t available=std::min(posting_budget(),budget()-data_bytes);
     if (key_bytes>available) return nullptr;
     size_t count=0;
     for (size_t row=0;row<size();++row) if (cell(row,build->column)==build->value) {
@@ -689,22 +689,43 @@ std::shared_ptr<PrimaryMap> Database::cached_primary(const Table& table) const {
     return primary_;
 }
 
-std::shared_ptr<VectorCache> Database::cached_vectors(const Table& table) {
-    if (table.files.empty()) return {};
+size_t VectorCache::budget() {
+    static const size_t value=[]()->size_t {
+        constexpr size_t minimum=16u*1024*1024, maximum=256u*1024*1024;
+        for (const char* name:{"/sys/fs/cgroup/memory.max","/sys/fs/cgroup/memory/memory.limit_in_bytes"}) {
+            std::ifstream input(name);
+            if (!input) continue;
+            std::string text; input>>text;
+            if (text.empty()||text=="max") continue;
+            const auto limit=std::strtoull(text.c_str(),nullptr,10);
+            if (limit==0||limit>uint64_t(1)<<60) continue;
+            return std::min(maximum,std::max(minimum,static_cast<size_t>(limit/4)));
+        }
+        // An explicit "max" means no limit; take a middle ground, not the floor.
+        return std::min(maximum,size_t(128)*1024*1024);
+    }();
+    return value;
+}
+
+size_t VectorCache::posting_budget() {
+    return std::min<size_t>(16u*1024*1024,VectorCache::budget()/16);
+}
+
+std::shared_ptr<VectorCache> Database::cached_vectors(const Table& table) {    if (table.files.empty()) return {};
     if (cache_ && cache_signature_==table.files) return cache_;
     cache_.reset(); cache_signature_.clear();
     auto cache=std::make_shared<VectorCache>();
     cache->columns=table.columns.size();
     for (size_t i=0;i<table.columns.size();++i) if (table.columns[i].kind=="VECTOR") {
-        if (table.columns[i].size<=0 || uint64_t(table.columns[i].size)>VectorCache::budget/sizeof(float)) return {};
+        if (table.columns[i].size<=0 || uint64_t(table.columns[i].size)>VectorCache::budget()/sizeof(float)) return {};
         cache->vector_column=i; cache->dimension=static_cast<size_t>(table.columns[i].size);
     }
-    if (!cache->dimension || cache->columns>VectorCache::budget/sizeof(Cell)) return {};
+    if (!cache->dimension || cache->columns>VectorCache::budget()/sizeof(Cell)) return {};
     const size_t minimum=(cache->columns-1)*sizeof(Cell)+cache->dimension*sizeof(float);
     size_t overhead=sizeof(VectorCache)+256+table.files.size()*sizeof(std::string);
     for (const auto& file:table.files) overhead+=file.capacity()+1;
-    if (overhead>VectorCache::budget) return {};
-    const size_t max_rows=(VectorCache::budget-overhead)/minimum;
+    if (overhead>VectorCache::budget()) return {};
+    const size_t max_rows=(VectorCache::budget()-overhead)/minimum;
     // Row counts let both arrays allocate once. Legacy segments without a key
     // sidecar retain the streaming path, as do tables that exceed the budget.
     uint64_t count=0;
@@ -718,14 +739,14 @@ std::shared_ptr<VectorCache> Database::cached_vectors(const Table& table) {
     cache->vectors.reserve(static_cast<size_t>(count)*cache->dimension);
     cache->scalars.reserve(static_cast<size_t>(count)*(cache->columns-1));
     cache->data_bytes=overhead+cache->vectors.capacity()*sizeof(float)+cache->scalars.capacity()*sizeof(Cell);
-    if (cache->data_bytes>VectorCache::budget) return {};
+    if (cache->data_bytes>VectorCache::budget()) return {};
     struct TooLarge {};
     try {
         scan(table,[&](const Row& row) {
             if (cache->size()>=count) throw TooLarge{};
             for (size_t i=0;i<row.size();++i) if (i!=cache->vector_column) {
                 if (const auto* text=std::get_if<std::string>(&row[i])) {
-                    if (text->capacity()+1>VectorCache::budget-cache->data_bytes) throw TooLarge{};
+                    if (text->capacity()+1>VectorCache::budget()-cache->data_bytes) throw TooLarge{};
                     cache->data_bytes+=text->capacity()+1;
                 }
                 cache->scalars.push_back(row[i]);
