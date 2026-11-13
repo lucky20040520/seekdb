@@ -1,0 +1,71 @@
+{
+  "head": "8c2bbcac83953c360a0f55e601da8538e5b18326",
+  "tracked_diff": "",
+  "payload_verification": {
+    "python": {
+      "base": {
+        "image": "minivector-boundary:python-f1b9f4e",
+        "id": "sha256:9ba27b48bf5975472ae01691be21b88eda49588d8010e724b841896e722c98b0",
+        "entrypoint": [
+          "python",
+          "-m",
+          "minivector",
+          "--data-dir",
+          "/data"
+        ],
+        "database_sha256": "097905ff0517eece4724c867a93134389e672d1a5e1531dc58b45737a9dfce37"
+      },
+      "instrumented": {
+        "image": "minivector-boundary:python-killpoint",
+        "id": "sha256:932a1cb29877a4e6ade8f3fb00e351e5a05437cdcf9caab790a01335d8650362",
+        "entrypoint": [
+          "python",
+          "-m",
+          "minivector",
+          "--data-dir",
+          "/data"
+        ],
+        "database_sha256": "097905ff0517eece4724c867a93134389e672d1a5e1531dc58b45737a9dfce37"
+      }
+    },
+    "cpp": {
+      "base": {
+        "image": "minivector-boundary:cpp-8c2bbcac8",
+        "id": "sha256:e6afcd8ebd0bf07de08238cbbde747a903afd2e08a219b700fd9b9b9423ec988",
+        "entrypoint": [
+          "/usr/local/bin/minivector",
+          "--data-dir",
+          "/data"
+        ],
+        "database_sha256": "2bd26f91d890754449322ee8aed33c01fc6d0be1aa75c2b40069d2c085ee96da"
+      },
+      "instrumented": {
+        "image": "minivector-boundary:cpp-killpoint",
+        "id": "sha256:cff80f4853c98f1f2f0cb1627de3c7708d33b77c6ecbe669249dfe46c40bd23c",
+        "entrypoint": [
+          "/usr/local/bin/minivector",
+          "--data-dir",
+          "/data"
+        ],
+        "database_sha256": "2bd26f91d890754449322ee8aed33c01fc6d0be1aa75c2b40069d2c085ee96da"
+      }
+    }
+  },
+  "file_sha256": {
+    "round2.py": "007b5cc1f7e49ace34911b62a141688f4ae2049c401bb58fa99b3f50788e46a2",
+    "crash_points.py": "3c4e0d0c3649ac2bb05321a447bb490dd2bdb4fe4278357ea5f342ff71de3729",
+    "killpoint.c": "fec2d62c6806c2f743be63fa871f7a62eff0a3dc6ff25f398a6aa65bc5a9cdb7",
+    "Dockerfile.killpoint": "78561609b347cda20f3530b7620b2c23f1766e66c433b68b8945213af7576831",
+    "duplicate_alias_case.sql": "5b7feedc7ad3998010c3228884e0ffe48830b1b6cbc12bd8ee4df32eeda3957b",
+    "ROUND2_REPORT.txt": "cc6ccd34d7ff8f6a53edd9561a2f4aea6ac8d3828e42a97ac26c2f0e94f33033",
+    "results\\20261113-round2\\result.json": "266ac5077e5ae1f9329ea5ea3e473625189ea9f4eed74858ccc7baa634627167",
+    "results\\20261113-round2\\steps.json": "4be9701e1e80bbaf39964464d470eade62737832f14aef8d387751eb315a1abc",
+    "results\\20261113-killpoints\\result.json": "6c4a307c6d1842714fcdef07fb6e2954107b6269cdc6ebb22cd25dfdda6c0252"
+  },
+  "new_contract_steps_per_version": 903,
+  "compatibility_probes_per_version": 39,
+  "crash_scenarios_total": 12,
+  "crash_asserted_requests_total": 256,
+  "verified_sigkills_total": 14,
+  "test_containers_remaining": ""
+}

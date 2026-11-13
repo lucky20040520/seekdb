@@ -1,6 +1,7 @@
 #include "minivector.hpp"
 #include "profile.hpp"
 #include "distance_screen.hpp"
+#include "unicode.hpp"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -231,6 +232,69 @@ bool bounded_heap(const Table& table,uint64_t limit) {
     }
     return row_bytes*limit<=2*1024*1024;
 }
+bool reference_bounded_candidates(const Table& table,uint64_t limit) {
+    if(limit>4096) return false;
+    long double bytes=64+8*static_cast<long double>(table.columns.size());
+    for(const auto& column:table.columns) {
+        if(column.kind=="VARCHAR") bytes+=64+4*static_cast<long double>(column.size);
+        else if(column.kind=="VECTOR") bytes+=64+32*static_cast<long double>(column.size);
+        else bytes+=32;
+    }
+    return bytes*limit<=2*1024*1024;
+}
+size_t reference_scalar_bytes(const Cell& cell) {
+    // The submitted reference uses 64-bit CPython 3.12 sys.getsizeof(). These
+    // sizes affect which duplicate alias supplies the ordering expression.
+    if(const auto* integer=std::get_if<int64_t>(&cell)) {
+        uint64_t magnitude=*integer<0?uint64_t(-(*integer+1))+1:uint64_t(*integer);
+        return magnitude>=(uint64_t(1)<<60)?36:(magnitude>=(uint64_t(1)<<30)?32:28);
+    }
+    const auto& text=std::get<std::string>(cell);
+    size_t characters=0; uint32_t maximum=0;
+    for(size_t at=0;at<text.size();++characters) {
+        auto rune=unicode::decode(text,at); at+=rune.width;
+        maximum=std::max(maximum,rune.value);
+    }
+    if(maximum<128) return 41+characters;
+    size_t width=maximum<256?1:(maximum<65536?2:4);
+    // CPython's cached single Latin-1 characters also retain their UTF-8 form.
+    return 56+width*(characters+1)+(characters==1&&maximum<256?3:0);
+}
+bool reference_cache_fits(const Database& db,const Table& table,const Compiled& distance,
+                          const std::shared_ptr<VectorCache>& cached) {
+    if(table.files.empty()) return false;
+    constexpr uint64_t budget=16*1024*1024;
+    uint64_t count=0;
+    for(const auto& file:table.files) {
+        std::error_code error;
+        auto bytes=std::filesystem::file_size(db.path/(file+".keys"),error);
+        if(error||bytes/8>budget||count>budget-bytes/8) return false;
+        count+=bytes/8;
+    }
+    const long double dimension=distance.vector.size(),columns=table.columns.size();
+    if(count*(dimension*4+128)>budget) return false;
+    // Vector array, scalar arrays, tuple headers/slots, replaced-vector None,
+    // and per-row list overhead, followed by the actual scalar object sizes.
+    long double bytes=256+count*(dimension*4+8*(columns-1)+40+8*columns+16+16);
+    if(bytes>budget) return false;
+    auto account=[&](const auto& cell) {
+        for(size_t i=0;i<table.columns.size();++i)
+            if(i!=distance.index) bytes+=reference_scalar_bytes(cell(i));
+        return bytes<=budget;
+    };
+    if(cached) {
+        for(size_t row=0;row<cached->size();++row)
+            if(!account([&](size_t column)->const Cell&{return cached->cell(row,column);})) return false;
+    } else {
+        struct TooLarge {};
+        try {
+            db.scan(table,[&](const Row& row) {
+                if(!account([&](size_t column)->const Cell&{return row[column];})) throw TooLarge{};
+            });
+        } catch(const TooLarge&) {return false;}
+    }
+    return true;
+}
 struct LimitReached {};
 }
 Result Database::select(const std::string& name,const std::optional<std::vector<Projection>>& requested,
@@ -253,14 +317,32 @@ Result Database::select(const std::string& name,const std::optional<std::vector<
     for(auto& projection:projections) {auto fn=compile_expression(selected,projection.expression); functions.push_back(fn); result.columns.push_back(projection.alias); if(!projection.alias.empty()) aliases[projection.alias]=fn;}
     std::optional<Compiled> ordering;
     std::optional<Json> descriptor;
+    std::shared_ptr<VectorCache> prepared_cache;
     bool descending=false;
     if(order) {
         descending=order->descending;
         auto alias=aliases.find(order->expression.column);
         ordering=(!order->expression.distance&&alias!=aliases.end())?alias->second:compile_expression(selected,order->expression);
-        if(!ordering->distance&&ordering->kind=="VECTOR") fail("ordering VECTOR unsupported");
-        if(ordering->distance) for(auto& index:selected.indexes) {
-            if(index.at("column").get<std::string>()==selected.columns[ordering->index].name) { descriptor=index; break; }
+        Compiled first=*ordering;
+        if(!order->expression.distance&&alias!=aliases.end()) {
+            for(size_t i=0;i<projections.size();++i)
+                if(projections[i].alias==order->expression.column) {first=functions[i];break;}
+        }
+        // Match the Python reference: ordinary sorting resolves the last alias,
+        // but vector validation and index/cache candidates use the first one.
+        // A last-alias VECTOR is rejected lazily by key(), so LIMIT 0 and empty
+        // filtered inputs remain valid when the first alias is scalar.
+        if(!first.distance&&first.kind=="VECTOR") fail("ordering VECTOR unsupported");
+        if(first.distance) for(auto& index:selected.indexes) {
+            if(index.at("column").get<std::string>()==selected.columns[first.index].name) { descriptor=index; break; }
+        }
+        const bool split_alias=first.distance!=ordering->distance||first.index!=ordering->index||first.vector!=ordering->vector;
+        if(descriptor) ordering=first;
+        else if(split_alias&&first.distance&&!descending&&limit&&*limit&&reference_bounded_candidates(selected,*limit)) {
+            prepared_cache=cached_vectors(selected);
+            // C++'s compact cache has a different capacity. Preserve reference
+            // results even when only one implementation can cache this table.
+            if(reference_cache_fits(*this,selected,first,prepared_cache)) ordering=first;
         }
     }
     if(ordering && ordering->distance) for(auto& fn:functions)
@@ -268,7 +350,7 @@ Result Database::select(const std::string& name,const std::optional<std::vector<
     bool use_heap=ordering&&limit&&bounded_heap(selected,*limit);
     // A Flat index retains only locations in the heap, rather than full rows.
     if(descriptor&&limit&&*limit<=4096) use_heap=true;
-    result.rows=[this,selected=std::move(selected),pk,matches=std::move(matches),functions=std::move(functions),ordering,descending,descriptor,limit,use_heap,filtered=!conditions.empty()](const JsonVisitor& output) {
+    result.rows=[this,selected=std::move(selected),pk,matches=std::move(matches),functions=std::move(functions),ordering,descending,descriptor,limit,use_heap,prepared_cache,filtered=!conditions.empty()](const JsonVisitor& output) {
         if(limit&&*limit==0) return;
         uint64_t emitted=0;
         auto emit_row=[&](const Row& row,const Key* key=nullptr) {
@@ -318,7 +400,7 @@ Result Database::select(const std::string& name,const std::optional<std::vector<
                 }
                 value.row=row; add(std::move(value));
             };
-            cached=(ordering->distance&&!descending&&use_heap)?cached_vectors(selected):nullptr;
+            cached=(ordering->distance&&!descending&&use_heap)?(prepared_cache?prepared_cache:cached_vectors(selected)):nullptr;
             if(cached) {
                 size_t covered;
                 const auto* rows=cached->matching_rows(matches,&covered);

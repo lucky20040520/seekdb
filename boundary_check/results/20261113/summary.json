@@ -1,0 +1,169 @@
+{
+  "date": "2026-11-13",
+  "timezone": "Asia/Shanghai",
+  "generated_utc": "2026-11-13T11:23:50.746529+00:00",
+  "scope": "Pinned-revision local comparison, not an official submission or hidden-case reproduction",
+  "revisions": {
+    "python": "f1b9f4e204f08f5043b315ba1ebec500ad7af255",
+    "cpp": "8c2bbcac83953c360a0f55e601da8538e5b18326"
+  },
+  "remote_head_at_fetch": "e8aff711c0869b470c7be09e237a969af361f922",
+  "images": {
+    "python": "sha256:9ba27b48bf5975472ae01691be21b88eda49588d8010e724b841896e722c98b0",
+    "cpp": "sha256:e6afcd8ebd0bf07de08238cbbde747a903afd2e08a219b700fd9b9b9423ec988"
+  },
+  "matrix": [
+    {
+      "group": "numeric",
+      "steps": 84,
+      "asserted_steps": 84,
+      "compatibility_probes": 0,
+      "differing_steps": 0,
+      "python_passed_assertions": 84,
+      "cpp_passed_assertions": 84
+    },
+    {
+      "group": "strings",
+      "steps": 30,
+      "asserted_steps": 30,
+      "compatibility_probes": 0,
+      "differing_steps": 0,
+      "python_passed_assertions": 30,
+      "cpp_passed_assertions": 30
+    },
+    {
+      "group": "sql",
+      "steps": 47,
+      "asserted_steps": 32,
+      "compatibility_probes": 15,
+      "differing_steps": 4,
+      "python_passed_assertions": 32,
+      "cpp_passed_assertions": 32
+    },
+    {
+      "group": "vector",
+      "steps": 213,
+      "asserted_steps": 213,
+      "compatibility_probes": 0,
+      "differing_steps": 0,
+      "python_passed_assertions": 213,
+      "cpp_passed_assertions": 213
+    },
+    {
+      "group": "random_state",
+      "steps": 307,
+      "asserted_steps": 307,
+      "compatibility_probes": 0,
+      "differing_steps": 0,
+      "python_passed_assertions": 307,
+      "cpp_passed_assertions": 307
+    },
+    {
+      "group": "wide",
+      "steps": 24,
+      "asserted_steps": 24,
+      "compatibility_probes": 0,
+      "differing_steps": 0,
+      "python_passed_assertions": 24,
+      "cpp_passed_assertions": 24
+    },
+    {
+      "group": "protocol",
+      "steps": 35,
+      "asserted_steps": 35,
+      "compatibility_probes": 0,
+      "differing_steps": 1,
+      "python_passed_assertions": 34,
+      "cpp_passed_assertions": 35
+    },
+    {
+      "group": "unicode_identifiers",
+      "steps": 8,
+      "asserted_steps": 2,
+      "compatibility_probes": 6,
+      "differing_steps": 6,
+      "python_passed_assertions": 2,
+      "cpp_passed_assertions": 2
+    }
+  ],
+  "total_steps": 748,
+  "scope_counts": {
+    "contract": 727,
+    "compatibility": 21
+  },
+  "public": {
+    "python": {
+      "passed": true,
+      "cases": 20
+    },
+    "cpp": {
+      "passed": true,
+      "cases": 20
+    }
+  },
+  "existing_cpp_regression": {
+    "cases": 16,
+    "passed_cases": 16,
+    "requests": 729
+  },
+  "over_memory": {
+    "python": {
+      "passed": true,
+      "rows": 20000,
+      "payload_bytes": 163840000,
+      "memory_limit_bytes": 134217728,
+      "memory_peak_before_kill": 134217728,
+      "max_request_seconds": 4.858437416000015,
+      "steps": 222,
+      "oom_killed": false,
+      "timings_are_single_run_diagnostics": true
+    },
+    "cpp": {
+      "passed": true,
+      "rows": 20000,
+      "payload_bytes": 163840000,
+      "memory_limit_bytes": 134217728,
+      "memory_peak_before_kill": 134217728,
+      "max_request_seconds": 6.156876982999961,
+      "steps": 222,
+      "oom_killed": false,
+      "timings_are_single_run_diagnostics": true
+    }
+  },
+  "conclusions": [
+    "No C++ failure in 727 explicitly asserted local steps; Python fails the 5000-digit request-ID assertion and remains alive.",
+    "21 additional compatibility probes produce 10 differing responses. They expose Unicode identifier folding, non-ASCII whitespace and non-ASCII digits; one table-query difference is downstream of a rejected insert.",
+    "The official package does not publicly define all these lexical/identifier details, so the differences are not identified as confirmed formal-test causes.",
+    "Both pinned images pass the 20 public cases and the reduced-memory workload. C++ also passes 16 existing supplementary groups.",
+    "The official hidden inputs, full-scale 2 GiB workload and interruption-during-recovery windows were not reproduced. The platform failure cause remains unconfirmed."
+  ],
+  "sources": [
+    "https://raw.githubusercontent.com/oceanbase/seekdb/2026-competition-round2/mysqltest/README.md",
+    "https://raw.githubusercontent.com/oceanbase/seekdb/2026-competition-round2/protocol_check/config.json",
+    "https://dev.mysql.com/doc/refman/8.4/en/type-conversion.html",
+    "https://dev.mysql.com/doc/refman/8.4/en/out-of-range-and-overflow.html",
+    "https://dev.mysql.com/doc/refman/8.4/en/string-literals.html",
+    "https://dev.mysql.com/doc/refman/8.4/en/storage-requirements.html",
+    "https://dev.mysql.com/doc/refman/8.4/en/identifier-case-sensitivity.html",
+    "https://dev.mysql.com/doc/refman/8.4/en/limit-optimization.html"
+  ],
+  "artifact_sha256": {
+    "boundary-result.json": "d89e0c9c4e74ed65b16ca776fec1281a034f05c49183e659df89ba6c80c1f1f1",
+    "boundary-steps.json": "e4c12a9b9cf8d3c364250c8e199fc8e5838d3b1f944a8f46f7ed3834d5796e04",
+    "unicode-result.json": "d65f6c82212738a8784c836ea9ceb9efd812de9b4d8eea65a2ebce56ff07401d",
+    "unicode-steps.json": "999696308838632cd7988e377d27ff44ddd18a4c9117bfb15ab2980fda801129",
+    "public-python.json": "0d136bf4aa9f263ee3b00a97717ae371d0bc725c86bc3cef642fd204f2cd7710",
+    "public-cpp.json": "e45b150ee28184cfcf0397c8ab70c8ad27966951a988478c0bf4c92a97753158",
+    "regression-cpp.json": "3d20f393ed7376d82c4532c1188b1ec147892ca7a2934f42954fa7a887883eb4",
+    "memory-python.json": "ad83b382dfd6d8704b42c30917c0792d3b3425d816b05781903ca7aa0a158857",
+    "memory-cpp.json": "354ce95242e80f08a085d4a001421992d39d3de5c58899d034d4612a118c0fe9",
+    "source-manifest.json": "28e7eb52acea4314843c878c8861ac815dfee15f543d18fc0fb05e558bdd81b0"
+  },
+  "tool_sha256": {
+    "over_memory.py": "742dd2089496451daf2a672f7174820b6ecad030bf6a182bc7c654a3e5a6b42b",
+    "prepare.py": "0e91c0fee603b6ad6fe945bcbd0294ae4c28fc983f2346ffbd507f116bb9f881",
+    "public.py": "8ed38172442e1bba6e6b5a99d43d9ee3d6e0c70402179753a8309bf2d0176b7b",
+    "run.py": "47a605c358cb17ad87b23338290b6bf3cfd122698634719dba55d952094ed305",
+    "summarize.py": "3423d194d87cc1f3ff68477d1c863ab42310265a5e551aaabdd490e0aef613a0"
+  }
+}

@@ -1,0 +1,73 @@
+Unicode 兼容修复验证（2026-11-13）
+
+修复对象：本地 C++ 版本，基于 8c2bbcac83953c360a0f55e601da8538e5b18326。
+语义基准：Python f1b9f4e204f08f5043b315ba1ebec500ad7af255，Python 3.12.8 / Unicode 15.0.0。
+修复镜像：minivector-cpp:unicode-20261113。
+
+完成内容
+
+1. 反引号标识符使用完整 Unicode 小写转换，统一表名、列名、索引名和别名。
+   除 Ä/ä 等单字符映射外，也覆盖 İ -> i + U+0307 和希腊 Σ 的 Final_Sigma
+   上下文规则。与 Python lower() 一致，不使用 casefold 或 NFC/NFKC；ß/ss、
+   é/e + U+0301 等不同名字仍然可以共存。Unicode 标识符继续使用反引号语法。
+
+2. SQL 空白与 Python str.isspace() 一致，共 29 个字符；SQL 数字与 Python
+   re 的 Unicode Nd 范围一致，共 680 个十进制数字。只在数字 token 内转换
+   为 ASCII，支持整数、小数、指数、类型长度和 LIMIT。上标、圈号、罗马数字
+   及零宽空格等不会被意外接受。符号、标点和未加引号的标识符语法不扩展。
+
+3. SQL 字符串、反引号内数字和字符串形式的向量 JSON 不做空白/数字替换。
+   VARCHAR 内容原样保留；例如引号内 JSON '[١,٢]' 仍按 JSON 规则拒绝。
+
+实现位置
+
+cpp/sql.cpp：Unicode 空白识别、数字 token 转换、标识符小写调用。
+cpp/unicode.hpp：UTF-8 解码、属性查询及带上下文的小写转换，保留 ASCII 快速路径。
+cpp/unicode_data.hpp：生成并检入的 Unicode 15.0 表，约 53 KB；构建和运行无需
+联网或调用 Python。更新表时才使用 tools/generate_unicode_tables.py。
+上游 DerivedCoreProperties.txt 固定版本及 SHA256 均写入生成器和生成文件。
+Docker 与 CMake 安装同时包含 Unicode 数据许可证。
+
+验证结果
+
+检查                                  结果
+旧 C++ 上的两组新增回归                0/2，分别复现标识符及非 ASCII 数字问题
+Python 参考版上的两组新增回归           2/2，209 次 JSONL 请求
+修复版完整 C++ 回归                    18/18，938 次 JSONL 请求
+官方公开驱动（默认 Docker 入口）        20/20
+与参考版 SQL/Unicode/字符串/数字差分     169 对请求，预期失败 0，响应差异 0
+Unicode 标量穷举                       1,112,064 个字符全部匹配 Python
+非恒等小写映射                         1,433 个全部匹配
+空白 / 十进制数字                      29 / 680 个全部匹配
+大小写上下文与随机组合                 32,866 个字符串全部匹配
+非法 UTF-8                            5 类均被拒绝
+
+新增 SQL 测试涵盖列名/别名/表名/索引名、重复名字检测、UPDATE/DELETE/WHERE/
+ORDER BY、向量索引和距离别名、提交/回滚/强制终止/重启，以及整数溢出边界。
+Unicode 上下文测试包含 100,000 个组合字符的长串，验证上下文匹配和线性处理。
+
+原始报告（工作区根目录下）
+
+protocol-results/unicode-fix-old-cpp.json
+protocol-results/unicode-fix-python.json
+protocol-results/unicode-fix-cpp-regression.json
+protocol-results/unicode-fix-public/cpp/result.json
+protocol-results/unicode-fix-differential/result.json
+protocol-results/unicode-fix-differential/steps.json
+protocol-results/unicode-fix-tables.json
+
+主要复现命令（PowerShell，从仓库根目录运行）
+
+docker build --pull=false -t minivector-cpp:unicode-20261113 .
+python tools/test_cpp.py --docker-image minivector-cpp:unicode-20261113 --output protocol-results/unicode-new.json
+python boundary_check/run.py --cpp-image minivector-cpp:unicode-20261113 --group sql --group unicode_identifiers --group strings --group numeric --output protocol-results/unicode-diff-new
+
+tools/test_unicode.cpp 通过 -Icpp 编译后，可在 Python 3.12 环境运行：
+python tools/test_unicode.py --binary <编译后的测试程序> --output <新报告路径>
+
+表生成器需要 Python 3.12 / UCD 15.0.0 以及固定 SHA256 的属性文件：
+https://www.unicode.org/Public/15.0.0/ucd/DerivedCoreProperties.txt
+python tools/generate_unicode_tables.py --properties <属性文件> --output cpp/unicode_data.hpp
+
+这些结果证明本次两项兼容问题已修复及上述回归通过，不能替代未公开的正式
+评测。重复别名歧义等前轮记录的问题不属于本次修改。

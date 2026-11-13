@@ -28,6 +28,10 @@ import traceback
 import uuid
 
 
+if hasattr(sys.stdout, "reconfigure"):
+    # Preserve a failed Unicode SQL probe even on Windows GBK consoles.
+    sys.stdout.reconfigure(errors="backslashreplace")
+
 if hasattr(sys, "set_int_max_str_digits"):
     sys.set_int_max_str_digits(0)  # The harness must itself accept the giant-ID test.
 
@@ -614,6 +618,159 @@ def distance_reuse_and_residuals(target):
     s.stop()
 
 
+def duplicate_alias_ordering(target):
+    """Pin the submitted Python version's first/last duplicate-alias behavior."""
+    s = target.start()
+    s.sql("CREATE TABLE t(id BIGINT PRIMARY KEY,n BIGINT,v VECTOR(2))")
+    s.sql("INSERT INTO t VALUES(1,30,[0,0]),(2,10,[10,0]),(3,20,[5,0])", affected=3)
+    distance_rows = {1: [1, 0.0, 10.0], 2: [2, 10.0, 0.0], 3: [3, 5.0, 5.0]}
+    scalar_rows = {1: [1, 0.0, 30], 2: [2, 10.0, 10], 3: [3, 5.0, 20]}
+    # Expected IDs observed in f1b9f4e, respectively without and with an index.
+    order_cases = [
+        (" LIMIT 0", [], []),
+        (" LIMIT 1", [1], [1]),
+        (" LIMIT 2", [1, 3], [1, 3]),
+        (" DESC LIMIT 1", [1], [2]),
+        (" DESC LIMIT 2", [1, 3], [2, 3]),
+        (" LIMIT 4097", [2, 3, 1], [1, 3, 2]),
+        ("", [2, 3, 1], [1, 3, 2]),
+    ]
+
+    def check(indexed):
+        for mode in ("exact", "ann"):
+            for suffix, without_index, with_index in order_cases:
+                ids = with_index if indexed else without_index
+                for last, rows in [("L2_DISTANCE(v,[10,0])", distance_rows), ("n", scalar_rows)]:
+                    s.sql("SELECT id,L2_DISTANCE(v,[0,0]) AS x," + last + " AS x FROM t ORDER BY x" + suffix,
+                          columns=["id", "x", "x"], rows=[rows[i] for i in ids], mode=mode)
+            s.sql("SELECT id,L2_DISTANCE(v,[0,0]) AS x,L2_DISTANCE(v,[10,0]) AS x FROM t WHERE id>=2 ORDER BY x LIMIT 1",
+                  rows=[[3, 5.0, 5.0]], mode=mode)
+            s.sql("SELECT id,n AS x,L2_DISTANCE(v,[10,0]) AS x FROM t ORDER BY x LIMIT 1",
+                  rows=[[2, 10, 0.0]], mode=mode)
+            s.sql("SELECT id,L2_DISTANCE(v,[0,0]),L2_DISTANCE(v,[10,0]) FROM t ORDER BY `l2_distance` LIMIT 1",
+                  columns=["id", "l2_distance", "l2_distance"], rows=[[1, 0.0, 10.0]], mode=mode)
+            s.sql("SELECT id,L2_DISTANCE(v,[0,0]) AS `Ä`,L2_DISTANCE(v,[10,0]) AS `ä` FROM t ORDER BY `Ä` LIMIT 1",
+                  columns=["id", "ä", "ä"], rows=[[1, 0.0, 10.0]], mode=mode)
+            s.sql("SELECT id,L2_DISTANCE(v,[0,0]) AS x,v AS x FROM t ORDER BY x LIMIT 1",
+                  rows=[[1, 0.0, [0.0, 0.0]]], mode=mode)
+            s.sql("SELECT v AS x,n AS x FROM t ORDER BY x LIMIT 0", fail=True, mode=mode)
+            s.sql("SELECT n AS x,v AS x FROM t ORDER BY x LIMIT 0", columns=["x", "x"], rows=[], mode=mode)
+            s.sql("SELECT n AS x,v AS x FROM t WHERE id=-1 ORDER BY x", rows=[], mode=mode)
+            s.sql("SELECT n AS x,v AS x FROM t ORDER BY x LIMIT 1", fail=True, mode=mode)
+            s.sql("SELECT id,L2_DISTANCE(v,[0,0]) AS x,v AS x FROM t ORDER BY x DESC LIMIT 1",
+                  rows=[[2, 10.0, [10.0, 0.0]]] if indexed else None, fail=not indexed, mode=mode)
+
+    check(False)
+    s.sql("CREATE VECTOR INDEX vi ON t(v)")
+    check(True)
+    s.stop()
+    s = target.start()
+    check(True)
+
+    # Python's full-row heap budget is different from the compact C++ cache.
+    # LIMIT 4 must take the ordinary (last-alias) path without an index here.
+    dimension = 16384
+    zero = "[" + ",".join(["0"] * dimension) + "]"
+    ten = "[10," + ",".join(["0"] * (dimension - 1)) + "]"
+    five = "[5," + ",".join(["0"] * (dimension - 1)) + "]"
+    s.sql(f"CREATE TABLE wide_alias(id BIGINT PRIMARY KEY,v VECTOR({dimension}))")
+    s.sql(f"INSERT INTO wide_alias VALUES(1,{zero}),(2,{ten}),(3,{five})", affected=3)
+    query = f"SELECT id,L2_DISTANCE(v,{zero}) AS x,L2_DISTANCE(v,{ten}) AS x FROM wide_alias ORDER BY x"
+    s.sql(query + " LIMIT 1", rows=[[1, 0.0, 10.0]])
+    s.sql(query + " LIMIT 4", rows=[distance_rows[i] for i in [2, 3, 1]])
+    s.sql("CREATE VECTOR INDEX wide_vi ON wide_alias(v)")
+    s.sql(query + " LIMIT 4", rows=[distance_rows[i] for i in [1, 3, 2]])
+    s.stop()
+
+
+def unicode_identifiers(target):
+    s = target.start()
+    def ident(text):
+        return "`" + text.replace("`", "``") + "`"
+    names = ["Ä", "İ", "ΟΣ", "ẞ", "АБВ", "ＡＢ", "𐐀", "Ა", "A\u0345Σ", "Ο`Σ"]
+    s.sql("CREATE TABLE `TÄ`(id BIGINT PRIMARY KEY," +
+          ",".join(ident(name) + " BIGINT" for name in names) + ",`ВЕКТОР` VECTOR(2),s VARCHAR(32))")
+    literal = "Ä İ ΟΣ\u00a0１２٣"
+    s.sql("INSERT INTO `tä`(id," + ",".join(ident(name.lower()) for name in names) + ",`вектор`,s) VALUES(1," +
+          ",".join(str(i) for i in range(len(names))) + ",[3,4],'" + literal + "')", affected=1)
+    expected = list(range(len(names)))
+    s.sql("SELECT " + ",".join(ident(name) for name in names) + " FROM `TÄ`",
+          columns=[name.lower() for name in names], rows=[expected])
+    s.sql("SELECT " + ",".join(ident(name.lower()) for name in names) + " FROM `tä`", rows=[expected])
+    for name in names:
+        s.sql("SELECT id AS " + ident(name) + " FROM `tä` ORDER BY " + ident(name.lower()),
+              columns=[name.lower()], rows=[[1]])
+    s.sql("SELECT s FROM `tä`", rows=[[literal]])
+    s.sql("SELECT id FROM `tä` WHERE `ä`=0 AND `ος`=2 ORDER BY `i̇`", rows=[[1]])
+    for indexed in (False, True):
+        if indexed:
+            s.sql("CREATE VECTOR INDEX `ÍΝDEX` ON `TÄ`(`ВЕКТОР`)")
+            s.sql("CREATE VECTOR INDEX `íνdex` ON `tä`(`вектор`)", fail=True)
+        s.sql("SELECT id,L2_DISTANCE(`ВЕКТОР`,[0,0]) AS `ÖΣ` FROM `tä` ORDER BY `öς` LIMIT 1",
+              columns=["id", "öς"], rows=[[1,5.0]], mode="ann")
+    for i, name in enumerate(["Ä", "İ", "ΟΣ", "𐐀"]):
+        s.sql(f"CREATE TABLE bad{i}(id BIGINT PRIMARY KEY,{ident(name)} BIGINT,{ident(name.lower())} BIGINT)", fail=True)
+    # Python lower() is neither casefold() nor Unicode normalization.
+    s.sql("CREATE TABLE distinct_names(id BIGINT PRIMARY KEY,`ß` BIGINT,ss BIGINT,`é` BIGINT,`é` BIGINT,`Ａ` BIGINT,a BIGINT)")
+    s.sql("INSERT INTO distinct_names VALUES(1,2,3,4,5,6,7)", affected=1)
+    s.sql("SELECT `ß`,ss,`é`,`é`,`ａ`,a FROM distinct_names", rows=[[2,3,4,5,6,7]])
+    s.sql("SELECT Ä FROM `tä`", fail=True)
+    s.sql("BEGIN")
+    s.sql("UPDATE `tä` SET `ä`=99,`вектор`=[0,0] WHERE id=1", affected=1)
+    s.sql("SELECT `Ä` FROM `tä`", rows=[[99]])
+    s.kill()
+    s = target.start()
+    s.sql("SELECT `Ä`,s FROM `tä`", columns=["ä","s"], rows=[[0,literal]])
+    s.sql("SELECT id FROM `tä` ORDER BY L2_DISTANCE(`вектор`,[0,0]) LIMIT 1", rows=[[1]])
+    s.sql("BEGIN")
+    s.sql("UPDATE `TÄ` SET `Ä`=99 WHERE id=1", affected=1)
+    s.sql("COMMIT")
+    s.stop()
+    s = target.start()
+    s.sql("SELECT `ä` FROM `tä`", rows=[[99]])
+    s.sql("DELETE FROM `TÄ` WHERE `Ä`=99", affected=1)
+    s.sql("SELECT `Ä` FROM `tä`", columns=["ä"], rows=[])
+    s.stop()
+
+
+def unicode_lexing(target):
+    s = target.start()
+    s.sql("CREATE TABLE t(id BIGINT PRIMARY KEY,n BIGINT,s VARCHAR(١٦),v VECTOR(２))")
+    s.sql("INSERT INTO t VALUES(١,+１２,'１２٣\u00a0Ä',[١.٥e+١,.٥])", affected=1)
+    s.sql("SELECT * FROM t", rows=[[1,12,"１２٣\u00a0Ä",[15.0,0.5]]])
+    whitespace = list(range(9,14)) + list(range(28,33)) + [0x85,0xa0,0x1680] + list(range(0x2000,0x200b)) + [0x2028,0x2029,0x202f,0x205f,0x3000]
+    assert len(whitespace) == 29
+    for cp in whitespace:
+        separator = chr(cp)
+        s.sql(separator.join(["SELECT","id","FROM","t","WHERE","n","=","+","１２","ORDER","BY","id","LIMIT","١"]), rows=[[1]])
+        s.sql("SELECT s FROM t WHERE s='１２٣\u00a0Ä'", rows=[["１２٣\u00a0Ä"]])
+    for cp in [0x180e,0x200b,0x200c,0x200d,0x2060,0xfeff]:
+        s.sql("SELECT"+chr(cp)+"id FROM t", fail=True)
+    for zero in [0x30,0x660,0x6f0,0x966,0x9e6,0xe50,0xff10,0x104a0,0x1d7d8,0x11f50,0x1e4f0]:
+        def digits(text):
+            return "".join(chr(zero+ord(c)-48) if "0"<=c<="9" else c for c in text)
+        s.sql("SELECT id FROM t WHERE n="+digits("12")+" LIMIT "+digits("1"), rows=[[1]])
+        s.sql("SELECT id FROM t ORDER BY L2_DISTANCE(v,["+digits("1.5e+1,.5")+"]) LIMIT "+digits("1"), rows=[[1]])
+        s.sql("SELECT id FROM t WHERE id>="+digits("-9223372036854775808")+" AND id<="+digits("9223372036854775807"), rows=[[1]])
+        s.sql("SELECT id FROM t LIMIT "+digits("18446744073709551616"), rows=[[1]])
+        s.sql("INSERT INTO t VALUES(2,"+digits("9223372036854775808")+",'x',[0,0])", fail=True)
+        s.sql("SELECT id FROM t LIMIT "+digits("-1"), fail=True)
+        s.sql("UPDATE t SET n="+digits("12")+" WHERE id="+digits("1"), affected=1)
+    s.sql("SELECT id FROM t WHERE n=1２ LIMIT ٠١", rows=[[1]])
+    for value in ["²","①","Ⅳ","四","½","1٫2","１．２","1Ｅ2","−1","＋1","١e+",".e١"]:
+        s.sql("UPDATE t SET n="+value+" WHERE id=1", fail=True)
+    for literal in ["'[١,٢]'", "'[0,\u00a00]'", "'[0,１２]'", "'[.5,0]'"]:
+        s.sql("UPDATE t SET v="+literal+" WHERE id=1", fail=True)
+    s.sql("SELECT id١ FROM t", fail=True)
+    s.sql("SELECT id FROM t -- comment\u2028DELETE FROM t", rows=[[1]])
+    s.sql("SELECT n,s,v FROM t", rows=[[12,"１２٣\u00a0Ä",[15.0,0.5]]])
+    s.stop()
+    s = target.start()
+    s.sql("SELECT id FROM t WHERE n=１２ LIMIT ١", rows=[[1]])
+    s.sql("DELETE FROM t WHERE id=١", affected=1)
+    s.stop()
+
+
 CASES = [("crud_and_int64", crud_and_int64), ("type_errors_atomicity", type_errors_atomicity),
          ("invalid_sql_and_schema", invalid_sql_and_schema), ("schema_permutations", schema_permutations),
          ("float32_and_sorting", float32_and_sorting), ("transaction_combinations", transaction_combinations),
@@ -624,7 +781,9 @@ CASES = [("crud_and_int64", crud_and_int64), ("type_errors_atomicity", type_erro
          ("long_input_recovery", long_input_recovery), ("randomized_index_truth", randomized_index_truth),
          ("wide_records_fallback", wide_records_fallback),
          ("contiguous_cache_and_filters", contiguous_cache_and_filters),
-         ("distance_reuse_and_residuals", distance_reuse_and_residuals)]
+         ("distance_reuse_and_residuals", distance_reuse_and_residuals),
+         ("duplicate_alias_ordering", duplicate_alias_ordering),
+         ("unicode_identifiers", unicode_identifiers), ("unicode_lexing", unicode_lexing)]
 
 
 def main():

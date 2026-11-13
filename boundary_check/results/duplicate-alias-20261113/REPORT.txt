@@ -1,0 +1,69 @@
+重复别名兼容修复及验证（2026-11-13）
+
+修改位置：E:\project\seekdb-query-optimization
+生产代码：cpp/query.cpp
+回归测试：tools/test_cpp.py 的 duplicate_alias_ordering
+缓存边界差分测试：boundary_check/duplicate_alias_budget.py
+
+原问题
+SELECT id,L2_DISTANCE(v,[0,0]) AS x,L2_DISTANCE(v,[10,0]) AS x
+FROM t ORDER BY x LIMIT 1;
+
+在原复现数据中，Python f1b9f4e 返回 id=1，修复前 C++ 返回 id=2。
+本次以用户指定的 Python 版本为标准修正 C++，不是把歧义别名定义为 MySQL 标准行为。
+
+修复后的实际响应
+无索引：两版均返回 columns=["id","x","x"]，rows=[[1,0.0,10.0]]。
+有索引：两版均返回 columns=["id","x","x"]，rows=[[1,0.0,10.0]]。
+之前 4 种 SQL 在有/无索引下的 8 处别名差异全部消失。
+
+修复规则
+Python 普通排序解析到最后一个同名别名；向量校验和索引/缓存候选路径取第一个。
+C++ 现在保留这两种行为，并按实际排序表达式复用距离值，避免投影中两个 x 的
+距离值也被错误复用。LIMIT 0、空结果、VECTOR 别名的校验时机同时对齐。
+当两版缓存容量不同，C++ 根据通过版 Python 3.12/NumPy 的预算规则选择表达式，
+不再因为 C++ 连续数组能缓存更多/更少记录而改变重复别名的查询结果。
+该预算兼容逻辑仅用于第一个与最后一个表达式不同的距离别名歧义；可能额外遍历
+缓存标量或数据行。普通无歧义查询不执行这项预算检查。本轮未进行性能评分。
+
+验证结果
+项目                                  结果
+修复前 C++ 负向复现                    成功重现 id=2；测试按预期失败
+Python 新增重复别名回归                155 条请求全部通过
+修复版 C++ 重复别名专项                155 条请求全部通过
+原有别名及提前校验差分                261 个成对请求，0 断言失败，0 返回差异
+两版缓存预算不同的专项                 59 个成对请求，0 断言失败，0 返回差异
+修复版 C++ 完整本地回归                19/19 组、1093 条请求全部通过
+
+覆盖内容
+有/无索引、重启后查询、exact/ann 模式、过滤、升序/降序、LIMIT 0/1/2/4097、
+无 LIMIT、两个距离别名、距离与标量混合别名、距离与 VECTOR 混合别名、
+默认距离别名、Unicode 大小写归一化后重复的别名，以及高维向量的候选预算。
+缓存专项包含：
+1. 从 90,000 行增至 100,000 行：Python 缓存由可用转为超预算，C++ 缓存仍可用。
+   两版都从第一个距离表达式的 id=1 切换为普通排序最后一个表达式的 id=2；
+   创建索引后，两版重新返回 id=1。
+2. 4,000 行、每行 3,000 个 Latin-1 字符：Python 紧凑字符串缓存可用，C++ 的
+   UTF-8 字符串缓存超预算。两版依旧返回相同 TopK，距离投影也一致。
+完整回归还覆盖原有 CRUD、向量、事务、崩溃恢复、距离复用和 Unicode 边界。
+
+原始记录
+before.json                        修复前 C++ 的失败复现
+python-verified.json               Python 核对后的新增专项回归结果
+cpp-focused.json                   修复版别名与 Unicode 专项结果
+cpp-regression.json                修复版完整 19 组回归结果
+alias-differential/result.json      原有 8 处差异清零的汇总
+alias-differential/steps.json       对应 SQL 和两版响应
+cache-budgets/result.json           缓存边界专项汇总
+cache-budgets/steps.json            缓存专项请求与两版响应
+source-manifest.json                工作区、镜像标识与源文件 SHA-256
+
+备注：python.json 保留了新增测试初稿的校对记录：未加反引号的 l2_distance
+被 Python 解析为函数名并要求左括号。测试已按基准语法改为 `l2_distance`；
+最终有效结果为 python-verified.json。这是测试编写阶段的问题，不是数据库回归。
+
+复现新增专项
+python tools/test_cpp.py --docker-image minivector-cpp:alias-20261113 --case duplicate_alias_ordering
+python boundary_check/duplicate_alias_budget.py --cpp-image minivector-cpp:alias-20261113 --output boundary_check/results/NEW-alias-budget
+
+本报告为本地验证结果，不是官方隐藏测试结果。

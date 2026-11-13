@@ -1,0 +1,7 @@
+ARG BASE
+FROM minivector-cpp:query-build-20261111 AS builder
+COPY killpoint.c /tmp/killpoint.c
+RUN gcc -std=c11 -Wall -Wextra -Werror -Wno-nonnull-compare -shared -fPIC -O2 /tmp/killpoint.c -ldl -o /tmp/killpoint.so
+FROM ${BASE}
+COPY --from=builder /tmp/killpoint.so /opt/killpoint.so
+ENV LD_PRELOAD=/opt/killpoint.so

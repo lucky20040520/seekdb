@@ -1,0 +1,18 @@
+{
+  "workspace": "E:\\project\\seekdb-query-optimization",
+  "python_reference_commit": "f1b9f4e204f08f5043b315ba1ebec500ad7af255",
+  "image_ids": {
+    "minivector-boundary:python-f1b9f4e": "sha256:9ba27b48bf5975472ae01691be21b88eda49588d8010e724b841896e722c98b0",
+    "minivector-cpp:unicode-20261113": "sha256:92eeb648fa081ff25db645418a60b9db00543709b64d95bbf127e12b753de811",
+    "minivector-cpp:alias-20261113": "sha256:4d08a0a3372ae0f7f9d1b68eb5fbbc0996cb75ea5aceadc76b629387325e86b0"
+  },
+  "source_sha256": {
+    "cpp/query.cpp": "cff00a63ffc362cc2f96d5d32d7c7cd3e2f02ab3f639180a84954878f18069bb",
+    "cpp/sql.cpp": "b7062c5dc9e1a220008f8c262ce33cb2e2aa6e7e5af6823a845e6317fd644f9d",
+    "cpp/unicode.hpp": "bf5003340ac642a4ad9d7129b96bf00a35bce46e1dfc192c86d4e47f671810bb",
+    "cpp/unicode_data.hpp": "00992d2842d775cbe987f6606eeaac0d226d2a21d65a765bd5fe248192079ea0",
+    "tools/test_cpp.py": "9cd6dc07372c72ab06762c0019fb5955dedabcffb6b541b9628b3f6627530626",
+    "boundary_check/duplicate_alias_budget.py": "6eaaec40bec9a44aa1db8a9c4f791a3658372b8a8962b4ebafff647726f41645",
+    "Dockerfile": "b702ba48cdbf0d1c776cf9b55b0a8cb108b81a1f8eae0c659f1b03e199d30a7c"
+  }
+}

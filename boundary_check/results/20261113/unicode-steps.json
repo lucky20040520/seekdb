@@ -1,0 +1,283 @@
+[
+  {
+    "group": "unicode_identifiers",
+    "name": "schema",
+    "scope": "contract",
+    "sql": "CREATE TABLE u(id BIGINT PRIMARY KEY,`Ä` BIGINT)",
+    "mode": "exact",
+    "expected": {
+      "ok": true
+    },
+    "responses": {
+      "python": {
+        "id": 1,
+        "ok": true,
+        "affected_rows": 0
+      },
+      "cpp": {
+        "id": 1,
+        "affected_rows": 0,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 24.626,
+      "cpp": 14.512
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_identifiers",
+    "name": "insert",
+    "scope": "contract",
+    "sql": "INSERT INTO u VALUES(1,7)",
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 1
+    },
+    "responses": {
+      "python": {
+        "id": 2,
+        "ok": true,
+        "affected_rows": 1
+      },
+      "cpp": {
+        "id": 2,
+        "affected_rows": 1,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 33.671,
+      "cpp": 36.284
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_identifiers",
+    "name": "unicode-column-or-alias",
+    "scope": "compatibility",
+    "sql": "SELECT `Ä` FROM u",
+    "mode": "exact",
+    "expected": null,
+    "responses": {
+      "python": {
+        "id": 3,
+        "ok": true,
+        "columns": [
+          "ä"
+        ],
+        "rows": [
+          [
+            7
+          ]
+        ]
+      },
+      "cpp": {
+        "id": 3,
+        "ok": true,
+        "columns": [
+          "Ä"
+        ],
+        "rows": [
+          [
+            7
+          ]
+        ]
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 4.304,
+      "cpp": 3.48
+    },
+    "equivalent": false
+  },
+  {
+    "group": "unicode_identifiers",
+    "name": "unicode-column-or-alias",
+    "scope": "compatibility",
+    "sql": "SELECT `ä` AS x FROM u",
+    "mode": "exact",
+    "expected": null,
+    "responses": {
+      "python": {
+        "id": 4,
+        "ok": true,
+        "columns": [
+          "x"
+        ],
+        "rows": [
+          [
+            7
+          ]
+        ]
+      },
+      "cpp": {
+        "id": 4,
+        "error": {
+          "code": "SCHEMA",
+          "message": "unknown column: ä"
+        },
+        "ok": false
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 4.215,
+      "cpp": 4.261
+    },
+    "equivalent": false
+  },
+  {
+    "group": "unicode_identifiers",
+    "name": "unicode-column-or-alias",
+    "scope": "compatibility",
+    "sql": "SELECT id FROM u WHERE `ä`=7",
+    "mode": "exact",
+    "expected": null,
+    "responses": {
+      "python": {
+        "id": 5,
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ]
+        ]
+      },
+      "cpp": {
+        "id": 5,
+        "error": {
+          "code": "SCHEMA",
+          "message": "unknown column: ä"
+        },
+        "ok": false
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 4.518,
+      "cpp": 3.574
+    },
+    "equivalent": false
+  },
+  {
+    "group": "unicode_identifiers",
+    "name": "unicode-column-or-alias",
+    "scope": "compatibility",
+    "sql": "SELECT id FROM u ORDER BY `ä`",
+    "mode": "exact",
+    "expected": null,
+    "responses": {
+      "python": {
+        "id": 6,
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ]
+        ]
+      },
+      "cpp": {
+        "id": 6,
+        "error": {
+          "code": "SCHEMA",
+          "message": "unknown column: ä"
+        },
+        "ok": false
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 4.515,
+      "cpp": 4.269
+    },
+    "equivalent": false
+  },
+  {
+    "group": "unicode_identifiers",
+    "name": "unicode-column-or-alias",
+    "scope": "compatibility",
+    "sql": "SELECT id AS `Ö` FROM u ORDER BY `ö`",
+    "mode": "exact",
+    "expected": null,
+    "responses": {
+      "python": {
+        "id": 7,
+        "ok": true,
+        "columns": [
+          "ö"
+        ],
+        "rows": [
+          [
+            1
+          ]
+        ]
+      },
+      "cpp": {
+        "id": 7,
+        "error": {
+          "code": "SCHEMA",
+          "message": "unknown column: ö"
+        },
+        "ok": false
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 4.079,
+      "cpp": 3.493
+    },
+    "equivalent": false
+  },
+  {
+    "group": "unicode_identifiers",
+    "name": "unicode-column-or-alias",
+    "scope": "compatibility",
+    "sql": "SELECT id AS `Ö` FROM u",
+    "mode": "exact",
+    "expected": null,
+    "responses": {
+      "python": {
+        "id": 8,
+        "ok": true,
+        "columns": [
+          "ö"
+        ],
+        "rows": [
+          [
+            1
+          ]
+        ]
+      },
+      "cpp": {
+        "id": 8,
+        "ok": true,
+        "columns": [
+          "Ö"
+        ],
+        "rows": [
+          [
+            1
+          ]
+        ]
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 3.376,
+      "cpp": 3.279
+    },
+    "equivalent": false
+  }
+]

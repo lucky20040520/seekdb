@@ -1,0 +1,2103 @@
+[
+  {
+    "group": "row_budget",
+    "name": "schema",
+    "scope": "contract",
+    "sql": "CREATE TABLE t(id BIGINT PRIMARY KEY,n BIGINT,v VECTOR(2))",
+    "mode": "exact",
+    "expected": {
+      "ok": true
+    },
+    "responses": {
+      "python": {
+        "id": 1,
+        "ok": true,
+        "affected_rows": 0
+      },
+      "cpp": {
+        "id": 1,
+        "affected_rows": 0,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 23.351,
+      "cpp": 12.409
+    },
+    "equivalent": true
+  },
+  {
+    "group": "row_budget",
+    "name": "insert-1",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(1,30,[0,0]),(2,30,[10,0]),(3,30,[5,0]),(4,30,[5,0]),(5,30,[5,0]),(6,30,[5,0]),(7,30,[5,0]),(8,30,[5,0]),(9,30,[5,0]),(10,30,[5,0]),(11,30,[5,0]),(12,30,[5,0]),(13,30,[5,0]),(14,30,[5,0]),(15,30,[5,0]),(16,30,[5,0]),(17,30,[5,0]),",
+      "characters": 158914,
+      "sha256": "a640c165015a8c3e3ffd01e2680b2d8d5abdd660d84cb645ef1912882f16cb8d"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 10000
+    },
+    "responses": {
+      "python": {
+        "id": 2,
+        "ok": true,
+        "affected_rows": 10000
+      },
+      "cpp": {
+        "id": 2,
+        "affected_rows": 10000,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 269.917,
+      "cpp": 49.908
+    },
+    "equivalent": true
+  },
+  {
+    "group": "row_budget",
+    "name": "insert-10001",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(10001,30,[5,0]),(10002,30,[5,0]),(10003,30,[5,0]),(10004,30,[5,0]),(10005,30,[5,0]),(10006,30,[5,0]),(10007,30,[5,0]),(10008,30,[5,0]),(10009,30,[5,0]),(10010,30,[5,0]),(10011,30,[5,0]),(10012,30,[5,0]),(10013,30,[5,0]),(10014,30",
+      "characters": 170019,
+      "sha256": "8a872c060e8374c5d982ce6365b7285ff54370d3558fa1fe79020d2666496583"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 10000
+    },
+    "responses": {
+      "python": {
+        "id": 3,
+        "ok": true,
+        "affected_rows": 10000
+      },
+      "cpp": {
+        "id": 3,
+        "affected_rows": 10000,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 250.903,
+      "cpp": 67.37
+    },
+    "equivalent": true
+  },
+  {
+    "group": "row_budget",
+    "name": "insert-20001",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(20001,30,[5,0]),(20002,30,[5,0]),(20003,30,[5,0]),(20004,30,[5,0]),(20005,30,[5,0]),(20006,30,[5,0]),(20007,30,[5,0]),(20008,30,[5,0]),(20009,30,[5,0]),(20010,30,[5,0]),(20011,30,[5,0]),(20012,30,[5,0]),(20013,30,[5,0]),(20014,30",
+      "characters": 170019,
+      "sha256": "44a916a878f316b7391665c95ad05ae62b3804fc671a9dcf00e475efea7ad622"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 10000
+    },
+    "responses": {
+      "python": {
+        "id": 4,
+        "ok": true,
+        "affected_rows": 10000
+      },
+      "cpp": {
+        "id": 4,
+        "affected_rows": 10000,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 255.837,
+      "cpp": 56.934
+    },
+    "equivalent": true
+  },
+  {
+    "group": "row_budget",
+    "name": "insert-30001",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(30001,30,[5,0]),(30002,30,[5,0]),(30003,30,[5,0]),(30004,30,[5,0]),(30005,30,[5,0]),(30006,30,[5,0]),(30007,30,[5,0]),(30008,30,[5,0]),(30009,30,[5,0]),(30010,30,[5,0]),(30011,30,[5,0]),(30012,30,[5,0]),(30013,30,[5,0]),(30014,30",
+      "characters": 170019,
+      "sha256": "ae6e86351e9f89d7381aac6addcb499f5e2866f7b6b408a3999c2abd1ebbc235"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 10000
+    },
+    "responses": {
+      "python": {
+        "id": 5,
+        "ok": true,
+        "affected_rows": 10000
+      },
+      "cpp": {
+        "id": 5,
+        "affected_rows": 10000,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 257.857,
+      "cpp": 59.784
+    },
+    "equivalent": true
+  },
+  {
+    "group": "row_budget",
+    "name": "insert-40001",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(40001,30,[5,0]),(40002,30,[5,0]),(40003,30,[5,0]),(40004,30,[5,0]),(40005,30,[5,0]),(40006,30,[5,0]),(40007,30,[5,0]),(40008,30,[5,0]),(40009,30,[5,0]),(40010,30,[5,0]),(40011,30,[5,0]),(40012,30,[5,0]),(40013,30,[5,0]),(40014,30",
+      "characters": 170019,
+      "sha256": "da4fdff9534c828602c0c242248be9ef01c0655c3e3acc5e7d022ecaa01a307d"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 10000
+    },
+    "responses": {
+      "python": {
+        "id": 6,
+        "ok": true,
+        "affected_rows": 10000
+      },
+      "cpp": {
+        "id": 6,
+        "affected_rows": 10000,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 265.49,
+      "cpp": 79.812
+    },
+    "equivalent": true
+  },
+  {
+    "group": "row_budget",
+    "name": "insert-50001",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(50001,30,[5,0]),(50002,30,[5,0]),(50003,30,[5,0]),(50004,30,[5,0]),(50005,30,[5,0]),(50006,30,[5,0]),(50007,30,[5,0]),(50008,30,[5,0]),(50009,30,[5,0]),(50010,30,[5,0]),(50011,30,[5,0]),(50012,30,[5,0]),(50013,30,[5,0]),(50014,30",
+      "characters": 170019,
+      "sha256": "54c76aec733339579b179b308a05b9b36db4af8c3a3dd9d422a8534996b6bc44"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 10000
+    },
+    "responses": {
+      "python": {
+        "id": 7,
+        "ok": true,
+        "affected_rows": 10000
+      },
+      "cpp": {
+        "id": 7,
+        "affected_rows": 10000,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 252.047,
+      "cpp": 43.686
+    },
+    "equivalent": true
+  },
+  {
+    "group": "row_budget",
+    "name": "insert-60001",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(60001,30,[5,0]),(60002,30,[5,0]),(60003,30,[5,0]),(60004,30,[5,0]),(60005,30,[5,0]),(60006,30,[5,0]),(60007,30,[5,0]),(60008,30,[5,0]),(60009,30,[5,0]),(60010,30,[5,0]),(60011,30,[5,0]),(60012,30,[5,0]),(60013,30,[5,0]),(60014,30",
+      "characters": 170019,
+      "sha256": "33a156ec73607a831db68283ed256de768b8acbce7c62a5afeabc8cca55b34ad"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 10000
+    },
+    "responses": {
+      "python": {
+        "id": 8,
+        "ok": true,
+        "affected_rows": 10000
+      },
+      "cpp": {
+        "id": 8,
+        "affected_rows": 10000,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 265.545,
+      "cpp": 75.106
+    },
+    "equivalent": true
+  },
+  {
+    "group": "row_budget",
+    "name": "insert-70001",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(70001,30,[5,0]),(70002,30,[5,0]),(70003,30,[5,0]),(70004,30,[5,0]),(70005,30,[5,0]),(70006,30,[5,0]),(70007,30,[5,0]),(70008,30,[5,0]),(70009,30,[5,0]),(70010,30,[5,0]),(70011,30,[5,0]),(70012,30,[5,0]),(70013,30,[5,0]),(70014,30",
+      "characters": 170019,
+      "sha256": "9f159683aff7d788131ed33747736329d694a7ae7145a92b241f9b655f95b23f"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 10000
+    },
+    "responses": {
+      "python": {
+        "id": 9,
+        "ok": true,
+        "affected_rows": 10000
+      },
+      "cpp": {
+        "id": 9,
+        "affected_rows": 10000,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 289.468,
+      "cpp": 84.109
+    },
+    "equivalent": true
+  },
+  {
+    "group": "row_budget",
+    "name": "insert-80001",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(80001,30,[5,0]),(80002,30,[5,0]),(80003,30,[5,0]),(80004,30,[5,0]),(80005,30,[5,0]),(80006,30,[5,0]),(80007,30,[5,0]),(80008,30,[5,0]),(80009,30,[5,0]),(80010,30,[5,0]),(80011,30,[5,0]),(80012,30,[5,0]),(80013,30,[5,0]),(80014,30",
+      "characters": 170019,
+      "sha256": "1b414d32bc0bba37e3fe227bd59f95ad1f3e7bf3f4c3bf8b68f4aafe41e87174"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 10000
+    },
+    "responses": {
+      "python": {
+        "id": 10,
+        "ok": true,
+        "affected_rows": 10000
+      },
+      "cpp": {
+        "id": 10,
+        "affected_rows": 10000,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 259.208,
+      "cpp": 61.033
+    },
+    "equivalent": true
+  },
+  {
+    "group": "row_budget",
+    "name": "reference-cache-fits",
+    "scope": "contract",
+    "sql": "SELECT id,L2_DISTANCE(v,[0,0]) AS x,L2_DISTANCE(v,[10,0]) AS x FROM t ORDER BY x LIMIT 1",
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "columns": [
+        "id",
+        "x",
+        "x"
+      ],
+      "rows": [
+        [
+          1,
+          0.0,
+          10.0
+        ]
+      ]
+    },
+    "responses": {
+      "python": {
+        "id": 11,
+        "ok": true,
+        "columns": [
+          "id",
+          "x",
+          "x"
+        ],
+        "rows": [
+          [
+            1,
+            0.0,
+            10.0
+          ]
+        ]
+      },
+      "cpp": {
+        "id": 11,
+        "ok": true,
+        "columns": [
+          "id",
+          "x",
+          "x"
+        ],
+        "rows": [
+          [
+            1,
+            0.0,
+            10.0
+          ]
+        ]
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 564.961,
+      "cpp": 73.367
+    },
+    "equivalent": true
+  },
+  {
+    "group": "row_budget",
+    "name": "insert-90001",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(90001,30,[5,0]),(90002,30,[5,0]),(90003,30,[5,0]),(90004,30,[5,0]),(90005,30,[5,0]),(90006,30,[5,0]),(90007,30,[5,0]),(90008,30,[5,0]),(90009,30,[5,0]),(90010,30,[5,0]),(90011,30,[5,0]),(90012,30,[5,0]),(90013,30,[5,0]),(90014,30",
+      "characters": 170020,
+      "sha256": "2acc9c2d9f31ab737b310056a151a5dbba52fc28dbd58953dcccd86adcd32255"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 10000
+    },
+    "responses": {
+      "python": {
+        "id": 12,
+        "ok": true,
+        "affected_rows": 10000
+      },
+      "cpp": {
+        "id": 12,
+        "affected_rows": 10000,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 306.783,
+      "cpp": 56.328
+    },
+    "equivalent": true
+  },
+  {
+    "group": "row_budget",
+    "name": "reference-cache-over-budget",
+    "scope": "contract",
+    "sql": "SELECT id,L2_DISTANCE(v,[0,0]) AS x,L2_DISTANCE(v,[10,0]) AS x FROM t ORDER BY x LIMIT 1",
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "rows": [
+        [
+          2,
+          10.0,
+          0.0
+        ]
+      ]
+    },
+    "responses": {
+      "python": {
+        "id": 13,
+        "ok": true,
+        "columns": [
+          "id",
+          "x",
+          "x"
+        ],
+        "rows": [
+          [
+            2,
+            10.0,
+            0.0
+          ]
+        ]
+      },
+      "cpp": {
+        "id": 13,
+        "ok": true,
+        "columns": [
+          "id",
+          "x",
+          "x"
+        ],
+        "rows": [
+          [
+            2,
+            10.0,
+            0.0
+          ]
+        ]
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 766.125,
+      "cpp": 91.163
+    },
+    "equivalent": true
+  },
+  {
+    "group": "row_budget",
+    "name": "index",
+    "scope": "contract",
+    "sql": "CREATE VECTOR INDEX vi ON t(v)",
+    "mode": "exact",
+    "expected": {
+      "ok": true
+    },
+    "responses": {
+      "python": {
+        "id": 14,
+        "ok": true,
+        "affected_rows": 0
+      },
+      "cpp": {
+        "id": 14,
+        "affected_rows": 0,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 464.92,
+      "cpp": 168.965
+    },
+    "equivalent": true
+  },
+  {
+    "group": "row_budget",
+    "name": "index-after-budget-fallback",
+    "scope": "contract",
+    "sql": "SELECT id,L2_DISTANCE(v,[0,0]) AS x,L2_DISTANCE(v,[10,0]) AS x FROM t ORDER BY x LIMIT 1",
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "rows": [
+        [
+          1,
+          0.0,
+          10.0
+        ]
+      ]
+    },
+    "responses": {
+      "python": {
+        "id": 15,
+        "ok": true,
+        "columns": [
+          "id",
+          "x",
+          "x"
+        ],
+        "rows": [
+          [
+            1,
+            0.0,
+            10.0
+          ]
+        ]
+      },
+      "cpp": {
+        "id": 15,
+        "ok": true,
+        "columns": [
+          "id",
+          "x",
+          "x"
+        ],
+        "rows": [
+          [
+            1,
+            0.0,
+            10.0
+          ]
+        ]
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 177.818,
+      "cpp": 7.62
+    },
+    "equivalent": true
+  },
+  {
+    "group": "row_budget",
+    "name": "index-after-restart",
+    "scope": "contract",
+    "sql": "SELECT id,L2_DISTANCE(v,[0,0]) AS x,L2_DISTANCE(v,[10,0]) AS x FROM t ORDER BY x LIMIT 1",
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "rows": [
+        [
+          1,
+          0.0,
+          10.0
+        ]
+      ]
+    },
+    "responses": {
+      "python": {
+        "id": 16,
+        "ok": true,
+        "columns": [
+          "id",
+          "x",
+          "x"
+        ],
+        "rows": [
+          [
+            1,
+            0.0,
+            10.0
+          ]
+        ]
+      },
+      "cpp": {
+        "id": 16,
+        "ok": true,
+        "columns": [
+          "id",
+          "x",
+          "x"
+        ],
+        "rows": [
+          [
+            1,
+            0.0,
+            10.0
+          ]
+        ]
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 186.88,
+      "cpp": 7.684
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "schema",
+    "scope": "contract",
+    "sql": "CREATE TABLE t(id BIGINT PRIMARY KEY,s VARCHAR(3000),v VECTOR(2))",
+    "mode": "exact",
+    "expected": {
+      "ok": true
+    },
+    "responses": {
+      "python": {
+        "id": 1,
+        "ok": true,
+        "affected_rows": 0
+      },
+      "cpp": {
+        "id": 1,
+        "affected_rows": 0,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 17.763,
+      "cpp": 12.656
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-1",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(1,'ääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301412,
+      "sha256": "c00881b969d343c225d2b2b7c242b1a32a41db01a95f8a0a3699783b5f597fcf"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 2,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 2,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 84.483,
+      "cpp": 61.533
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-101",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(101,'ääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301519,
+      "sha256": "6ef8d97a509510fb372d79d287a9b71c24c721f15de8863d2be72c1ccdf14b66"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 3,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 3,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 91.863,
+      "cpp": 53.619
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-201",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(201,'ääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301519,
+      "sha256": "6878b5bfa33de23d684673bd4499aef46eb6ad401bd497d20028993e08057778"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 4,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 4,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 76.861,
+      "cpp": 52.112
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-301",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(301,'ääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301519,
+      "sha256": "a99ea89e9716424234208b95b9fda653d2f0742c49ed0a9bc2daab13010ab066"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 5,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 5,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 84.08,
+      "cpp": 60.568
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-401",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(401,'ääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301519,
+      "sha256": "a2eef9d3b4dbae97a313a83840efbc43c3eb602cc46235b570341416e1b2532a"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 6,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 6,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 68.194,
+      "cpp": 71.063
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-501",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(501,'ääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301519,
+      "sha256": "40b467d37dcd53192a46ed2f52e650b262ef8f02767f34908a4dd95d927cef6f"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 7,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 7,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 76.17,
+      "cpp": 54.995
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-601",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(601,'ääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301519,
+      "sha256": "88170684fa78acaca6144d98230aacc7ac607024e47627d86a6d1915f504da37"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 8,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 8,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 76.415,
+      "cpp": 105.433
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-701",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(701,'ääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301519,
+      "sha256": "4c1445efc0c036da88f17809ad2cc025ede76855b9df66d319a12259e589223f"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 9,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 9,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 65.893,
+      "cpp": 57.953
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-801",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(801,'ääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301519,
+      "sha256": "7dc784a2231e010ad1df67e5de9a6dab55bce54e8c9606ec4aeaeec37af1b457"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 10,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 10,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 107.402,
+      "cpp": 56.864
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-901",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(901,'ääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301520,
+      "sha256": "489f5921876b43559d6935febe1ed4d1bf008bedace0b33ec35cfa13c5c1e78c"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 11,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 11,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 106.543,
+      "cpp": 56.467
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-1001",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(1001,'äääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301619,
+      "sha256": "e7efa49cdb17e41e4a8947daa28d52558b7ec1cac19ad6222dcb3878857d37a9"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 12,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 12,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 67.272,
+      "cpp": 82.201
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-1101",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(1101,'äääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301619,
+      "sha256": "5d4f65118a62e0033d0dd39f377f904122d7532e5e2b157f132e65c163d7618c"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 13,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 13,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 87.868,
+      "cpp": 55.032
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-1201",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(1201,'äääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301619,
+      "sha256": "c6961b0e2194ba53be537e4047c883b1a69921bef20915ea0fc2b05ada6b3954"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 14,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 14,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 73.81,
+      "cpp": 68.415
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-1301",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(1301,'äääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301619,
+      "sha256": "e7e8bafc54637849afec97974755dceb56579e56859da640929b5c24d94edcb8"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 15,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 15,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 69.503,
+      "cpp": 54.764
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-1401",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(1401,'äääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301619,
+      "sha256": "1976bf52327084097f8047585f39f6fd443af57d7c596bc1ce5a3487c9804a7e"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 16,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 16,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 95.432,
+      "cpp": 72.039
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-1501",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(1501,'äääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301619,
+      "sha256": "f8b6159a4bb409aab542b9a6c2a3e4a48688c6143da3509b2d95c1316a6099e8"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 17,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 17,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 120.705,
+      "cpp": 52.257
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-1601",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(1601,'äääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301619,
+      "sha256": "8e8d2277a8eea8c0e129812a1b6acd90d4281e052116826b939d5b2e91ba575e"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 18,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 18,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 79.458,
+      "cpp": 78.162
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-1701",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(1701,'äääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301619,
+      "sha256": "2a7d230574598d5adf08a551097234746f392d68f772376dc1f704a47145c774"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 19,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 19,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 89.048,
+      "cpp": 59.221
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-1801",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(1801,'äääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301619,
+      "sha256": "e589b217b8431c02739602680530f23fe88a327775b8a5b61054fd3958d76737"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 20,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 20,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 116.195,
+      "cpp": 95.884
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-1901",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(1901,'äääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301619,
+      "sha256": "fecc6bf5c4ac6f1898e1b1768732e0da017b23e2ae2e155ce7dbe97053e1e8d7"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 21,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 21,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 95.547,
+      "cpp": 51.468
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-2001",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(2001,'äääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301619,
+      "sha256": "1900bb22d1e6ced46860533f0dad3b90e307e0d0cfdd966052ee6bf0b0cc7530"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 22,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 22,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 80.321,
+      "cpp": 48.539
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-2101",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(2101,'äääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301619,
+      "sha256": "089c671f3e5f1c8a3bcc762ecc6a38afaa4de0f76d53507e7424e5472d67e3e1"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 23,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 23,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 82.601,
+      "cpp": 62.621
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-2201",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(2201,'äääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301619,
+      "sha256": "0e13729654e59a39c470d9da58b964cb6bf4e27c5ddc193c4596ced3bb6935cf"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 24,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 24,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 81.452,
+      "cpp": 51.757
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-2301",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(2301,'äääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301619,
+      "sha256": "5224bfe586e79dcb013a799285b3b9bc706ec2b408570ecd9d888e2872971d37"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 25,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 25,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 78.289,
+      "cpp": 56.564
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-2401",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(2401,'äääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301619,
+      "sha256": "4611015ba4f59e4d05236cd6ca909a0dff65a393d938dcc5fdaba97edcb1d226"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 26,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 26,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 64.312,
+      "cpp": 60.094
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-2501",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(2501,'äääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301619,
+      "sha256": "62ef87bb40946b24d8f1df9c05a72d7e50ffab1e07bc79b86dfe597044cc53e9"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 27,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 27,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 93.396,
+      "cpp": 62.157
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-2601",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(2601,'äääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301619,
+      "sha256": "cf98ee0aba6f5e4d8bb589ca8f244afe6912f80786a54a0fc109d9ac3d0b7299"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 28,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 28,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 91.627,
+      "cpp": 50.57
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-2701",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(2701,'äääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301619,
+      "sha256": "f98fe5cd61eeb1313007a1ce9ace5dc7d1097d8e4dd555800cdb8e8ffa3887de"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 29,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 29,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 80.639,
+      "cpp": 48.154
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-2801",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(2801,'äääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301619,
+      "sha256": "035b84217672c43c171c06f65e9920dbbbc9a5a8d92a961a77a2402c21217e1c"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 30,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 30,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 83.141,
+      "cpp": 57.617
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-2901",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(2901,'äääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301619,
+      "sha256": "416ef744d39f261cfa1b8045b4ba907a4ec94f7cfcf27864d07e1277818ab0a6"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 31,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 31,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 63.611,
+      "cpp": 74.246
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-3001",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(3001,'äääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301619,
+      "sha256": "bee208324dbf3ffa6f43e2e1936f2f9dcebc1aa70fe4e060c85770603b245b90"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 32,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 32,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 87.538,
+      "cpp": 47.658
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-3101",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(3101,'äääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301619,
+      "sha256": "c23cbf639fd66df666ad7fd4fa87fee9c5f1f023600d02292785d95d61d17e69"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 33,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 33,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 102.233,
+      "cpp": 60.436
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-3201",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(3201,'äääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301619,
+      "sha256": "c22de969942b59bc3625168ac47b4e67ce6ebbb5dd4bea97fa320511fd344772"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 34,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 34,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 105.281,
+      "cpp": 86.692
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-3301",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(3301,'äääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301619,
+      "sha256": "e412e736c3fba2361bda3f1312b682df358ab26e3e25cb6e806ee0dc3c6d14c3"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 35,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 35,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 70.1,
+      "cpp": 69.324
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-3401",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(3401,'äääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301619,
+      "sha256": "006455f6071054ec857d7bd10ab3f2aaf19b1c2f472ab1298080e22f08fde792"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 36,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 36,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 87.003,
+      "cpp": 76.359
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-3501",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(3501,'äääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301619,
+      "sha256": "5fa42d10b23a1325f3d0b6c557bb14bbf6ec8c9e7b139a16672d59c2b5a0f1ce"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 37,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 37,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 91.87,
+      "cpp": 54.078
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-3601",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(3601,'äääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301619,
+      "sha256": "11b61d6ca4550c22c3103f413731d93d3778aad808fd8d4681cf4e3c04fbe2b8"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 38,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 38,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 74.198,
+      "cpp": 66.847
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-3701",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(3701,'äääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301619,
+      "sha256": "b8c557e4e70d9e9aebaebbdad66b383c559f6037020903af1dfcaa57b50bb6ce"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 39,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 39,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 86.205,
+      "cpp": 75.344
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-3801",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(3801,'äääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301619,
+      "sha256": "303e88fe18e59de8bee245c6d8e69e602ac984872671adef90c16a5b8743acb2"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 40,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 40,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 77.048,
+      "cpp": 67.367
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "insert-3901",
+    "scope": "contract",
+    "sql": {
+      "prefix": "INSERT INTO t VALUES(3901,'äääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääää",
+      "characters": 301619,
+      "sha256": "880edcea9cdf5af46d60f70c21b33c19dd7f75b2eb2692f62134b88ae67ba42b"
+    },
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "affected_rows": 100
+    },
+    "responses": {
+      "python": {
+        "id": 41,
+        "ok": true,
+        "affected_rows": 100
+      },
+      "cpp": {
+        "id": 41,
+        "affected_rows": 100,
+        "ok": true
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 80.378,
+      "cpp": 63.246
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "only-reference-cache-fits",
+    "scope": "contract",
+    "sql": "SELECT id,L2_DISTANCE(v,[0,0]) AS x,L2_DISTANCE(v,[10,0]) AS x FROM t ORDER BY x LIMIT 1",
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "columns": [
+        "id",
+        "x",
+        "x"
+      ],
+      "rows": [
+        [
+          1,
+          0.0,
+          10.0
+        ]
+      ]
+    },
+    "responses": {
+      "python": {
+        "id": 42,
+        "ok": true,
+        "columns": [
+          "id",
+          "x",
+          "x"
+        ],
+        "rows": [
+          [
+            1,
+            0.0,
+            10.0
+          ]
+        ]
+      },
+      "cpp": {
+        "id": 42,
+        "ok": true,
+        "columns": [
+          "id",
+          "x",
+          "x"
+        ],
+        "rows": [
+          [
+            1,
+            0.0,
+            10.0
+          ]
+        ]
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 210.622,
+      "cpp": 624.153
+    },
+    "equivalent": true
+  },
+  {
+    "group": "unicode_budget",
+    "name": "fallback-distance-projection",
+    "scope": "contract",
+    "sql": "SELECT id,L2_DISTANCE(v,[0,0]) AS x,L2_DISTANCE(v,[10,0]) AS x FROM t ORDER BY x LIMIT 2",
+    "mode": "exact",
+    "expected": {
+      "ok": true,
+      "rows": [
+        [
+          1,
+          0.0,
+          10.0
+        ],
+        [
+          3,
+          5.0,
+          5.0
+        ]
+      ]
+    },
+    "responses": {
+      "python": {
+        "id": 43,
+        "ok": true,
+        "columns": [
+          "id",
+          "x",
+          "x"
+        ],
+        "rows": [
+          [
+            1,
+            0.0,
+            10.0
+          ],
+          [
+            3,
+            5.0,
+            5.0
+          ]
+        ]
+      },
+      "cpp": {
+        "id": 43,
+        "ok": true,
+        "columns": [
+          "id",
+          "x",
+          "x"
+        ],
+        "rows": [
+          [
+            1,
+            0.0,
+            10.0
+          ],
+          [
+            3,
+            5.0,
+            5.0
+          ]
+        ]
+      }
+    },
+    "failures": {},
+    "elapsed_ms": {
+      "python": 11.903,
+      "cpp": 448.204
+    },
+    "equivalent": true
+  }
+]

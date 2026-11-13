@@ -1,0 +1,109 @@
+{
+  "timestamp_utc": "2026-11-13T14:16:05.040552+00:00",
+  "scope": "Local rerun of existing boundary suites and official public tests after Unicode fixes; not an official hidden-test result or performance score.",
+  "suites": [
+    {
+      "name": "round1",
+      "paired_steps": 748,
+      "explicit_assertions": 727,
+      "cpp_passed": 727,
+      "python_passed": 726,
+      "compatibility_probes": 21,
+      "compatibility_response_differences": 0,
+      "requests_and_expected_unchanged_from_previous_run": true
+    },
+    {
+      "name": "round2",
+      "paired_steps": 942,
+      "explicit_assertions": 903,
+      "cpp_passed": 903,
+      "python_passed": 903,
+      "compatibility_probes": 39,
+      "compatibility_response_differences": 8,
+      "requests_and_expected_unchanged_from_previous_run": true
+    }
+  ],
+  "unicode_related_compatibility_differences": {
+    "before": 10,
+    "after": 0
+  },
+  "crash": {
+    "python": {
+      "scenarios": 6,
+      "passed": 6,
+      "asserted_sql_requests": 128,
+      "verified_kills": 7
+    },
+    "cpp": {
+      "scenarios": 6,
+      "passed": 6,
+      "asserted_sql_requests": 128,
+      "verified_kills": 7
+    }
+  },
+  "official_public": {
+    "passed": 20,
+    "total": 20
+  },
+  "image_ids": {
+    "python": "sha256:9ba27b48bf5975472ae01691be21b88eda49588d8010e724b841896e722c98b0",
+    "cpp": "sha256:92eeb648fa081ff25db645418a60b9db00543709b64d95bbf127e12b753de811"
+  },
+  "crash_image_ids": {
+    "python": "sha256:932a1cb29877a4e6ade8f3fb00e351e5a05437cdcf9caab790a01335d8650362",
+    "cpp": "sha256:a79ae3fbd99cf671a1cbaa0d9e3710ccf3a4b4b4dcb3e007dbdfad071eddfda7"
+  },
+  "binary_verification": [
+    {
+      "image": "minivector-cpp:unicode-20261113",
+      "binary_sha256": "9a0467178ea702f6d89e7e3244f6f8754942933d477656e86102a88dc278d34c"
+    },
+    {
+      "image": "minivector-cpp:unicode-killpoint-20261113",
+      "binary_sha256": "9a0467178ea702f6d89e7e3244f6f8754942933d477656e86102a88dc278d34c"
+    }
+  ],
+  "runtime_limits": [
+    "No official hidden inputs or formal platform logs available.",
+    "Error code text is recorded but not equated; the public mapping is empty.",
+    "Wide case exceeds cache/sort budgets, not the full 2 GiB process memory limit.",
+    "This suite measures correctness; per-request timings are diagnostics, not performance scores."
+  ],
+  "remaining_findings": {
+    "python_only_5000_digit_id_failure": true,
+    "duplicate_alias_differences": 8,
+    "unique_duplicate_alias_queries": 4,
+    "mysql_document_expectation_mismatches_both_versions": 22,
+    "mysql_expectations_verified_against_live_mysql": false
+  },
+  "timing_anomalies": {
+    "wide_first_seconds": 4386.692,
+    "wide_recheck_seconds": 8.402,
+    "wide_recheck_paired_requests": 24,
+    "cpp_crash_first_seconds": 4378.027,
+    "cpp_crash_recheck_seconds": 2.237,
+    "rechecks_passed": true,
+    "cause": "Not established; original timing records preserved. Do not use these runs for performance scoring."
+  },
+  "source_sha256": {
+    "Dockerfile": "b702ba48cdbf0d1c776cf9b55b0a8cb108b81a1f8eae0c659f1b03e199d30a7c",
+    "cpp/CMakeLists.txt": "590b3d61871cb4a11709149869f672a3ca67180faab71944e08a08f40a236db1",
+    "cpp/sql.cpp": "b7062c5dc9e1a220008f8c262ce33cb2e2aa6e7e5af6823a845e6317fd644f9d",
+    "cpp/unicode.hpp": "bf5003340ac642a4ad9d7129b96bf00a35bce46e1dfc192c86d4e47f671810bb",
+    "cpp/unicode_data.hpp": "00992d2842d775cbe987f6606eeaac0d226d2a21d65a765bd5fe248192079ea0",
+    "boundary_check/run.py": "47a605c358cb17ad87b23338290b6bf3cfd122698634719dba55d952094ed305",
+    "boundary_check/round2.py": "bfd0cc3c6baf667ee639984a2924180d998bb11cbbb8542f72c804dbc60c6dd3",
+    "boundary_check/crash_points.py": "345731de0431a91418fe5165487e1a6b28130d5d8ee0115e8e472eb533e43a1f",
+    "boundary_check/killpoint.c": "fec2d62c6806c2f743be63fa871f7a62eff0a3dc6ff25f398a6aa65bc5a9cdb7",
+    "boundary_check/Dockerfile.killpoint": "78561609b347cda20f3530b7620b2c23f1766e66c433b68b8945213af7576831",
+    "protocol_check/run.py": "fee9f469d59afb764b6ce31f73df8cdd6ffa2f51dba87e7e17c13fc9408deaf7"
+  },
+  "reports": {
+    "round1": "round1/result.json",
+    "round2": "round2/result.json",
+    "crash": "crash/result.json",
+    "public": "public/cpp/result.json",
+    "wide_recheck": "wide-recheck/result.json",
+    "crash_recheck": "crash-recheck.json"
+  }
+}

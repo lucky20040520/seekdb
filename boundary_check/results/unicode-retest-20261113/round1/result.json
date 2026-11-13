@@ -1,0 +1,192 @@
+{
+  "timestamp_utc": "2026-11-13T14:09:31.868085+00:00",
+  "scope": "Locally designed boundary tests, not official hidden cases or official pass evidence",
+  "images": {
+    "python": "sha256:9ba27b48bf5975472ae01691be21b88eda49588d8010e724b841896e722c98b0",
+    "cpp": "sha256:92eeb648fa081ff25db645418a60b9db00543709b64d95bbf127e12b753de811"
+  },
+  "groups": [
+    {
+      "name": "numeric",
+      "cleanup_errors": [],
+      "steps": 84,
+      "elapsed_seconds": 5.085
+    },
+    {
+      "name": "strings",
+      "cleanup_errors": [],
+      "steps": 30,
+      "elapsed_seconds": 3.638
+    },
+    {
+      "name": "sql",
+      "cleanup_errors": [],
+      "steps": 47,
+      "elapsed_seconds": 2.341
+    },
+    {
+      "name": "vector",
+      "cleanup_errors": [],
+      "steps": 213,
+      "elapsed_seconds": 4.233
+    },
+    {
+      "name": "random_state",
+      "cleanup_errors": [],
+      "steps": 307,
+      "elapsed_seconds": 32.134
+    },
+    {
+      "name": "wide",
+      "cleanup_errors": [],
+      "steps": 24,
+      "elapsed_seconds": 4386.692
+    },
+    {
+      "name": "protocol",
+      "cleanup_errors": [],
+      "steps": 35,
+      "elapsed_seconds": 2.062
+    },
+    {
+      "name": "unicode_identifiers",
+      "cleanup_errors": [],
+      "steps": 8,
+      "elapsed_seconds": 2.302
+    }
+  ],
+  "steps": 748,
+  "requests_excluding_lifecycle": 1496,
+  "expectation_failures": {
+    "python": 1,
+    "cpp": 0
+  },
+  "differential_count": 1,
+  "differential_by_scope": {
+    "contract": 1
+  },
+  "failures": [
+    {
+      "group": "protocol",
+      "name": "5000-digit-id",
+      "scope": "contract",
+      "sql": null,
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "id": {
+          "integer_decimal_digits": 5000,
+          "sha256": "c636cf9e9280d16194b476899bdd3580275d8763c28806c970e5345013d78ea7"
+        },
+        "columns": [
+          "id"
+        ],
+        "rows": []
+      },
+      "responses": {
+        "python": {
+          "id": null,
+          "ok": false,
+          "error": {
+            "code": "PROTOCOL",
+            "message": "Exceeds the limit (4300 digits) for integer string conversion: value has 5000 digits; use sys.set_int_max_str_digits() to increase the limit"
+          }
+        },
+        "cpp": {
+          "id": {
+            "integer_decimal_digits": 5000,
+            "sha256": "c636cf9e9280d16194b476899bdd3580275d8763c28806c970e5345013d78ea7"
+          },
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": []
+        }
+      },
+      "failures": {
+        "python": [
+          "expected ok",
+          "expected id",
+          "expected columns",
+          "expected rows"
+        ]
+      },
+      "raw": {
+        "prefix": "{\"id\":7777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777",
+        "characters": 5047,
+        "sha256": "295a30dafc2dc4d91aaac5b50a73eb9640638c434a75e08c20a3cea5acb502fb"
+      },
+      "elapsed_ms": {
+        "python": 1.745,
+        "cpp": 3.083
+      },
+      "equivalent": false
+    }
+  ],
+  "differences": [
+    {
+      "group": "protocol",
+      "name": "5000-digit-id",
+      "scope": "contract",
+      "sql": null,
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "id": {
+          "integer_decimal_digits": 5000,
+          "sha256": "c636cf9e9280d16194b476899bdd3580275d8763c28806c970e5345013d78ea7"
+        },
+        "columns": [
+          "id"
+        ],
+        "rows": []
+      },
+      "responses": {
+        "python": {
+          "id": null,
+          "ok": false,
+          "error": {
+            "code": "PROTOCOL",
+            "message": "Exceeds the limit (4300 digits) for integer string conversion: value has 5000 digits; use sys.set_int_max_str_digits() to increase the limit"
+          }
+        },
+        "cpp": {
+          "id": {
+            "integer_decimal_digits": 5000,
+            "sha256": "c636cf9e9280d16194b476899bdd3580275d8763c28806c970e5345013d78ea7"
+          },
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": []
+        }
+      },
+      "failures": {
+        "python": [
+          "expected ok",
+          "expected id",
+          "expected columns",
+          "expected rows"
+        ]
+      },
+      "raw": {
+        "prefix": "{\"id\":7777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777",
+        "characters": 5047,
+        "sha256": "295a30dafc2dc4d91aaac5b50a73eb9640638c434a75e08c20a3cea5acb502fb"
+      },
+      "elapsed_ms": {
+        "python": 1.745,
+        "cpp": 3.083
+      },
+      "equivalent": false
+    }
+  ],
+  "limits": [
+    "No official hidden inputs or formal platform logs available.",
+    "Error code text is recorded but not equated; the public mapping is empty.",
+    "Wide case exceeds cache/sort budgets, not the full 2 GiB process memory limit.",
+    "This suite measures correctness; per-request timings are diagnostics, not performance scores."
+  ]
+}

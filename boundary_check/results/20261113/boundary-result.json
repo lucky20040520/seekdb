@@ -1,0 +1,330 @@
+{
+  "timestamp_utc": "2026-11-13T11:14:32.558640+00:00",
+  "scope": "Locally designed boundary tests, not official hidden cases or official pass evidence",
+  "images": {
+    "python": "sha256:9ba27b48bf5975472ae01691be21b88eda49588d8010e724b841896e722c98b0",
+    "cpp": "sha256:e6afcd8ebd0bf07de08238cbbde747a903afd2e08a219b700fd9b9b9423ec988"
+  },
+  "groups": [
+    {
+      "name": "numeric",
+      "cleanup_errors": [],
+      "steps": 84,
+      "elapsed_seconds": 3.513
+    },
+    {
+      "name": "strings",
+      "cleanup_errors": [],
+      "steps": 30,
+      "elapsed_seconds": 3.185
+    },
+    {
+      "name": "sql",
+      "cleanup_errors": [],
+      "steps": 47,
+      "elapsed_seconds": 2.053
+    },
+    {
+      "name": "vector",
+      "cleanup_errors": [],
+      "steps": 213,
+      "elapsed_seconds": 4.058
+    },
+    {
+      "name": "random_state",
+      "cleanup_errors": [],
+      "steps": 307,
+      "elapsed_seconds": 31.852
+    },
+    {
+      "name": "wide",
+      "cleanup_errors": [],
+      "steps": 24,
+      "elapsed_seconds": 13.947
+    },
+    {
+      "name": "protocol",
+      "cleanup_errors": [],
+      "steps": 35,
+      "elapsed_seconds": 1.821
+    }
+  ],
+  "steps": 740,
+  "requests_excluding_lifecycle": 1480,
+  "expectation_failures": {
+    "python": 1,
+    "cpp": 0
+  },
+  "differential_count": 5,
+  "differential_by_scope": {
+    "compatibility": 4,
+    "contract": 1
+  },
+  "failures": [
+    {
+      "group": "protocol",
+      "name": "5000-digit-id",
+      "scope": "contract",
+      "sql": null,
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "id": {
+          "integer_decimal_digits": 5000,
+          "sha256": "c636cf9e9280d16194b476899bdd3580275d8763c28806c970e5345013d78ea7"
+        },
+        "columns": [
+          "id"
+        ],
+        "rows": []
+      },
+      "responses": {
+        "python": {
+          "id": null,
+          "ok": false,
+          "error": {
+            "code": "PROTOCOL",
+            "message": "Exceeds the limit (4300 digits) for integer string conversion: value has 5000 digits; use sys.set_int_max_str_digits() to increase the limit"
+          }
+        },
+        "cpp": {
+          "id": {
+            "integer_decimal_digits": 5000,
+            "sha256": "c636cf9e9280d16194b476899bdd3580275d8763c28806c970e5345013d78ea7"
+          },
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": []
+        }
+      },
+      "failures": {
+        "python": [
+          "expected ok",
+          "expected id",
+          "expected columns",
+          "expected rows"
+        ]
+      },
+      "raw": {
+        "prefix": "{\"id\":7777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777",
+        "characters": 5047,
+        "sha256": "295a30dafc2dc4d91aaac5b50a73eb9640638c434a75e08c20a3cea5acb502fb"
+      },
+      "elapsed_ms": {
+        "python": 1.373,
+        "cpp": 2.331
+      },
+      "equivalent": false
+    }
+  ],
+  "differences": [
+    {
+      "group": "sql",
+      "name": "mysql-or-python-compatibility",
+      "scope": "compatibility",
+      "sql": "SELECT id FROM t ORDER BY id",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 43,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ],
+            [
+              3
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 43,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 4.067,
+        "cpp": 1.765
+      },
+      "equivalent": false
+    },
+    {
+      "group": "sql",
+      "name": "mysql-or-python-compatibility",
+      "scope": "compatibility",
+      "sql": "SELECT id FROM t WHERE id=١",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 44,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 44,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.884,
+        "cpp": 1.419
+      },
+      "equivalent": false
+    },
+    {
+      "group": "sql",
+      "name": "mysql-or-python-compatibility",
+      "scope": "compatibility",
+      "sql": "INSERT INTO `ä` VALUES(1)",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 46,
+          "ok": true,
+          "affected_rows": 1
+        },
+        "cpp": {
+          "id": 46,
+          "error": {
+            "code": "SCHEMA",
+            "message": "unknown table: ä"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 28.523,
+        "cpp": 1.911
+      },
+      "equivalent": false
+    },
+    {
+      "group": "sql",
+      "name": "mysql-or-python-compatibility",
+      "scope": "compatibility",
+      "sql": "SELECT `id` FROM `Ä`",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 47,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 47,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": []
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 2.481,
+        "cpp": 1.438
+      },
+      "equivalent": false
+    },
+    {
+      "group": "protocol",
+      "name": "5000-digit-id",
+      "scope": "contract",
+      "sql": null,
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "id": {
+          "integer_decimal_digits": 5000,
+          "sha256": "c636cf9e9280d16194b476899bdd3580275d8763c28806c970e5345013d78ea7"
+        },
+        "columns": [
+          "id"
+        ],
+        "rows": []
+      },
+      "responses": {
+        "python": {
+          "id": null,
+          "ok": false,
+          "error": {
+            "code": "PROTOCOL",
+            "message": "Exceeds the limit (4300 digits) for integer string conversion: value has 5000 digits; use sys.set_int_max_str_digits() to increase the limit"
+          }
+        },
+        "cpp": {
+          "id": {
+            "integer_decimal_digits": 5000,
+            "sha256": "c636cf9e9280d16194b476899bdd3580275d8763c28806c970e5345013d78ea7"
+          },
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": []
+        }
+      },
+      "failures": {
+        "python": [
+          "expected ok",
+          "expected id",
+          "expected columns",
+          "expected rows"
+        ]
+      },
+      "raw": {
+        "prefix": "{\"id\":7777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777",
+        "characters": 5047,
+        "sha256": "295a30dafc2dc4d91aaac5b50a73eb9640638c434a75e08c20a3cea5acb502fb"
+      },
+      "elapsed_ms": {
+        "python": 1.373,
+        "cpp": 2.331
+      },
+      "equivalent": false
+    }
+  ],
+  "limits": [
+    "No official hidden inputs or formal platform logs available.",
+    "Error code text is recorded but not equated; the public mapping is empty.",
+    "Wide case exceeds cache/sort budgets, not the full 2 GiB process memory limit.",
+    "This suite measures correctness; per-request timings are diagnostics, not performance scores."
+  ]
+}

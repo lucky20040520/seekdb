@@ -1,0 +1,148 @@
+第二轮 MySQL 常见边界与组合测试（2026-11-13）
+
+结论：本轮两个指定版本各通过 903 条明确预期的 SQL 断言，以及 6 个经过
+到达点确认的进程崩溃场景。新增发现重复别名解析的迁移差异，但仍未复现
+官方正式测试失败的确定原因。没有修改数据库源码，也没有提交或推送。
+
+测试对象与方法
+
+Python: f1b9f4e204f08f5043b315ba1ebec500ad7af255
+C++:    8c2bbcac83953c360a0f55e601da8538e5b18326
+本地 HEAD 仍为指定的 C++ 提交；没有把远程后续优化混入结果。
+使用上一轮从两个提交构建的固定镜像、默认入口和全新 Docker 数据卷。
+SQL 测试容器限制：2 CPU、2 GiB、128 PID、无网络；本轮驱动没有启用只读根。
+逐条响应保存在 JSON 报告中，浮点比较沿用公开配置的 1e-5 绝对/相对误差，
+主键、字符串和行顺序精确比较。独立行模型计算过滤与 TopK 真值，不导入数据库。
+随机生成种子：2026111302、2026111303。查询耗时仅作诊断，不作为正式性能分。
+
+网上查阅了 MySQL 官方测试源码及手册，没有找到本届未公开正式用例的输入。
+下列用例是根据资料自行设计的探针，不是取得了组织方隐藏测试。
+MySQL 文档预期未通过真实 MySQL 服务运行核验；MySQL 扩展不强加为赛题要求。
+用户赛题说明第 3.2 节明确 MySQL case 是脚本组织方式，不能用 MySQL 行为
+直接替代本题语义；NULL、JOIN、聚合、子查询等本题未要求项不计作功能缺陷。
+
+本轮新测试结果（每个版本的断言数）
+
+类别                         明确断言  Python  C++    附加兼容性探针
+SQL 词法、注释、引号、尾部垃圾       54    54/54  54/54  27
+空表/过滤空集/LIMIT 0 提前校验     228  228/228 228/228   0
+别名优先级、未投影排序列             21    21/21  21/21  12
+float32 次正规数、舍入、混合量级     186  186/186 186/186   0
+等值列表、索引、事务与重启交叉       377  377/377 377/377   0
+多表失败语句、索引和 DDL 事务         37    37/37  37/37   0
+合计                              903  903/903 903/903  39
+
+总计 942 对 SQL 请求，即 1884 次执行（不含握手、关闭和重启操作）。
+兼容性探针不是明确断言，不计入 903 条通过数。
+两版本有 8 条响应不同，来自 4 条重复别名 SQL 在有/无向量索引两种路径重测。
+27 条 MySQL 文档对照探针中，22 条响应偏离默认 MySQL 行为，且两版本一致；
+其中一次后续空结果源于前一条 INSERT 被拒绝，不能算作另一个独立缺陷。
+
+覆盖重点
+
+* 错误投影、错误列、非法类型、错误维度、向量 ORDER BY，即使表为空、WHERE
+  无匹配或 LIMIT 0 也返回错误；失败语句不改变已有行。
+* 选择列表别名覆盖同名源列时的 ORDER BY；WHERE 仍使用源列；反引号转义；
+  相同列重复投影；距离别名覆盖标量列；标量别名覆盖向量列。
+* float32 最小次正规数、半 ULP、正负零、最大有限值与溢出临界点；17 维向量
+  内混合约 2^-149 至 2^127 的值；距离并列按主键升序；升/降序、K=0/1/10/
+  超过记录数/4097；有无过滤、有无索引和崩溃重启后均使用独立真值。
+* 超过 32 个等值条件键，触发行号列表淘汰；打乱 AND 条件顺序；重复和矛盾
+  条件；索引表与无索引表对照；主键与向量列位置反转；更新过滤列及向量、
+  失败批量插入、ROLLBACK/COMMIT、删除全表后主键重用与索引维护。
+
+新增差异 1：重复别名的解析路径不一致
+
+最小复现文件：duplicate_alias_case.sql。
+数据：id=1 的向量 [0,0]；id=2 的向量 [10,0]；id=3 的向量 [5,0]。
+
+SELECT id,L2_DISTANCE(v,[0,0]) AS x,L2_DISTANCE(v,[10,0]) AS x
+FROM t ORDER BY x LIMIT 1;
+
+Python: rows=[[1,0.0,10.0]]
+C++:    rows=[[2,10.0,0.0]]
+创建向量索引前后均可复现。
+
+原因：Python engine.py 的 aliases 字典保留最后一个同名别名，但 distance_expr
+通过 next(...) 找第一个同名投影，向量缓存/索引选候选时可能使用不同表达式。
+C++ query.cpp 的编译别名映射及排序统一使用最后一个同名表达式。
+另两条探针在 LIMIT 0 时，一方接受而另一方拒绝：
+  SELECT v AS x,n AS x FROM t ORDER BY x LIMIT 0;
+  SELECT n AS x,v AS x FROM t ORDER BY x LIMIT 0;
+这是实际迁移差异，但不能把旧版 Python 的结果自动当作正确答案。赛题未明确
+歧义别名规则，当前证据不足以确定应该返回哪个表达式或直接拒绝歧义引用。
+
+新增差异 2：两版本共有的 MySQL 兼容性差异
+
+场景                             两版本实测                    MySQL 默认行为
+SQL 字符串中的反斜杠 n/t/0         保留反斜杠及后续字符          解释为换行/制表/NUL
+反斜杠转义单引号                  INSERT 语法错误               可插入单引号
+# 行注释                         语法错误                      支持
+-- 后无空白，例如 id=1--x          作为注释忽略 x                不是注释
+版本条件注释 /*!80000 WHERE...*/   忽略其中 WHERE，返回更多记录   满足版本条件则执行内容
+双引号/相邻/N/字符集前缀字符串      语法错误                      默认模式支持
+省略 AS、单引号别名、ORDER BY 1     语法错误                      支持
+LIMIT 1 OFFSET 1 / LIMIT 1,1       语法错误                      支持
+!= / <>                           语法错误                      支持
+把 n=7 更新为 n=7                 affected_rows=1               通常返回实际改变的 0 行
+
+MySQL 转义依赖 NO_BACKSLASH_ESCAPES，双引号依赖 ANSI_QUOTES；UPDATE 行数还可能
+受客户端 CLIENT_FOUND_ROWS 影响。此表按默认 SQL 模式及实际改变行数口径比较。
+这些差异在曾通过正式测试的 Python 版本同样存在，不能单独解释 C++ 版本失分。
+赛题要求的 Unicode 码点比较优先于 MySQL 默认排序规则，不应盲目补齐完整 MySQL。
+
+确定性崩溃测试
+
+使用 test-only LD_PRELOAD 小库，仅在目标调用前后写入一个测试标记并暂停。
+控制程序确认标记、确认没有 SQL 成功响应，再 docker kill --signal KILL。
+没有人工修改数据库文件，没有注入磁盘错误，没有模拟断电。
+专用派生镜像只用于测试，保留原始数据库入口/程序；不要将此镜像提交比赛。
+
+切点                       重启后的明确预期                Python  C++
+行数据 fsync 前             旧数据完整保留                  通过    通过
+向量索引 fsync 前           旧数据及索引结果保留            通过    通过
+临时 catalog fsync 前       两张表均回到事务前              通过    通过
+catalog 原子 rename 前      两张表均回到事务前              通过    通过
+catalog 原子 rename 后      两张表均完整提交                通过    通过
+提交后的旧文件回收前         两张表均完整提交                通过    通过
+
+每个版本 6/6 场景、128 条有预期的 SQL 请求通过。合计 12/12、256 条。
+在 rename 后的场景中，每个版本又在重启回收阶段、READY 发出前再次 SIGKILL；
+再次启动后仍正确。因此总共观察并验证了 14 次强制终止（不是只有 12 次）。
+检查内容含两个表的完整记录、精确 TopK、带过滤 ANN、主键冲突及后续事务可用性。
+rename 后未收到成功响应的完整生效符合赛题对“提交结果未知”的允许行为。
+
+证据与复现
+
+round2.py --output <一个新目录>
+  执行第二轮所有 SQL 测试。通过数以明确预期为准，兼容性差异另列。
+
+docker build --pull=false --build-arg BASE=minivector-boundary:python-f1b9f4e -f boundary_check/Dockerfile.killpoint -t minivector-boundary:python-killpoint boundary_check
+docker build --pull=false --build-arg BASE=minivector-boundary:cpp-8c2bbcac8 -f boundary_check/Dockerfile.killpoint -t minivector-boundary:cpp-killpoint boundary_check
+python boundary_check/crash_points.py --output <一个新目录>
+
+报告：results/20261113-round2/result.json、steps.json
+崩溃报告：results/20261113-killpoints/result.json
+文件保留具体 SQL、预期、两端响应、失败情况、镜像 ID、脚本 SHA256 和到达切点证据。
+没有改写上一轮 results/20261113 的结果。测试卷和测试容器均已清理。
+
+来源
+
+https://github.com/mysql/mysql-server/blob/8.4/mysql-test/t/comments.test
+https://github.com/mysql/mysql-server/blob/8.4/mysql-test/t/limit.test
+https://github.com/mysql/mysql-server/blob/8.4/mysql-test/t/alias.test
+https://dev.mysql.com/doc/refman/8.4/en/string-literals.html
+https://dev.mysql.com/doc/refman/8.4/en/comments.html
+https://dev.mysql.com/doc/refman/8.4/en/select.html
+https://dev.mysql.com/doc/refman/8.4/en/problems-with-alias.html
+https://dev.mysql.com/doc/refman/8.4/en/update.html
+https://dev.mysql.com/doc/refman/8.4/en/innodb-error-handling.html
+
+仍未覆盖与不能推断的内容
+
+没有组织方隐藏 SQL、未公开随机种子或正式失败日志，不能证明正式准入通过。
+这轮不是大于 2 GiB 的正式规模测试，也不是稳定性能基准；没有覆盖全部写入
+字节位置和系统调用边界。第二次恢复崩溃已覆盖文件清理，未覆盖索引重建中途。
+前一轮的 Unicode 标识符大小写差异仍保留，未在本轮修复。
+最应优先核实的是歧义别名/标识符规则与正式资源、超时数据；不要把共有的
+MySQL 扩展缺失直接认定为 C++ 新引入的故障。

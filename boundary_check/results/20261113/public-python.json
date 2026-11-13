@@ -1,0 +1,127 @@
+{
+  "scope": "public-protocol-check",
+  "passed": true,
+  "cases": [
+    {
+      "id": "sql_crud",
+      "status": "PASS",
+      "message": "",
+      "duration_ms": 996
+    },
+    {
+      "id": "sql_comparisons",
+      "status": "PASS",
+      "message": "",
+      "duration_ms": 935
+    },
+    {
+      "id": "sql_ordering",
+      "status": "PASS",
+      "message": "",
+      "duration_ms": 943
+    },
+    {
+      "id": "sql_empty",
+      "status": "PASS",
+      "message": "",
+      "duration_ms": 898
+    },
+    {
+      "id": "sql_primary_key",
+      "status": "PASS",
+      "message": "",
+      "duration_ms": 888
+    },
+    {
+      "id": "sql_unicode",
+      "status": "PASS",
+      "message": "",
+      "duration_ms": 920
+    },
+    {
+      "id": "sql_bigint",
+      "status": "PASS",
+      "message": "",
+      "duration_ms": 987
+    },
+    {
+      "id": "sql_unsupported",
+      "status": "PASS",
+      "message": "",
+      "duration_ms": 807
+    },
+    {
+      "id": "storage_restart",
+      "status": "PASS",
+      "message": "",
+      "duration_ms": 1445
+    },
+    {
+      "id": "vector_euclidean",
+      "status": "PASS",
+      "message": "",
+      "duration_ms": 971
+    },
+    {
+      "id": "transaction_commit",
+      "status": "PASS",
+      "message": "",
+      "duration_ms": 886
+    },
+    {
+      "id": "transaction_rollback",
+      "status": "PASS",
+      "message": "",
+      "duration_ms": 882
+    },
+    {
+      "id": "storage_mutations",
+      "status": "PASS",
+      "message": "",
+      "duration_ms": 1755
+    },
+    {
+      "id": "storage_multiple_tables",
+      "status": "PASS",
+      "message": "",
+      "duration_ms": 1588
+    },
+    {
+      "id": "vector_ties_and_filter",
+      "status": "PASS",
+      "message": "",
+      "duration_ms": 963
+    },
+    {
+      "id": "vector_float32",
+      "status": "PASS",
+      "message": "",
+      "duration_ms": 1020
+    },
+    {
+      "id": "vector_index_maintenance",
+      "status": "PASS",
+      "message": "",
+      "duration_ms": 1764
+    },
+    {
+      "id": "transaction_failed_insert",
+      "status": "PASS",
+      "message": "",
+      "duration_ms": 1680
+    },
+    {
+      "id": "transaction_autocommit_atomic",
+      "status": "PASS",
+      "message": "",
+      "duration_ms": 1425
+    },
+    {
+      "id": "transaction_shutdown_rollback",
+      "status": "PASS",
+      "message": "",
+      "duration_ms": 1468
+    }
+  ],
+  "note": "Local diagnostic only; no performance/Agent scores or platform callbacks."
+}

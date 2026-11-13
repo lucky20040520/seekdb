@@ -1,0 +1,18 @@
+{
+  "timestamp_utc": "2026-11-13T14:32:11.383993+00:00",
+  "scope": "Supplementary actual-process JSONL tests; no database Python imports; not official hidden tests or performance results",
+  "target": "minivector-boundary:python-f1b9f4e",
+  "profiling": false,
+  "screen_block": null,
+  "cases": 1,
+  "passed_cases": 1,
+  "requests": 155,
+  "results": [
+    {
+      "case": "duplicate_alias_ordering",
+      "passed": true,
+      "requests": 155,
+      "seconds": 2.5410512
+    }
+  ]
+}

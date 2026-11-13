@@ -1,0 +1,3252 @@
+{
+  "oracle": "minivector-boundary:python-f1b9f4e",
+  "cpp_image": "minivector-cpp:unicode-20261113",
+  "steps": 66,
+  "matching_outcomes_and_success_values": 66,
+  "mismatches": [],
+  "full_response_differences_including_error_text": [],
+  "cleanup_errors": [],
+  "records": [
+    {
+      "group": "unicode_python_oracle",
+      "name": "user-create",
+      "scope": "contract",
+      "sql": "CREATE TABLE u(id BIGINT PRIMARY KEY, `Ä` BIGINT);",
+      "mode": "exact",
+      "expected": {
+        "ok": true
+      },
+      "responses": {
+        "python": {
+          "id": 1,
+          "ok": true,
+          "affected_rows": 0
+        },
+        "cpp": {
+          "id": 1,
+          "affected_rows": 0,
+          "ok": true
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 28.092,
+        "cpp": 18.347
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "user-insert",
+      "scope": "contract",
+      "sql": "INSERT INTO u VALUES(1, 7);",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "affected_rows": 1
+      },
+      "responses": {
+        "python": {
+          "id": 2,
+          "ok": true,
+          "affected_rows": 1
+        },
+        "cpp": {
+          "id": 2,
+          "affected_rows": 1,
+          "ok": true
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 36.105,
+        "cpp": 33.252
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "user-select",
+      "scope": "contract",
+      "sql": "SELECT `ä` AS x FROM u;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "x"
+        ],
+        "rows": [
+          [
+            7
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 3,
+          "ok": true,
+          "columns": [
+            "x"
+          ],
+          "rows": [
+            [
+              7
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 3,
+          "ok": true,
+          "columns": [
+            "x"
+          ],
+          "rows": [
+            [
+              7
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 2.018,
+        "cpp": 2.903
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "uppercase-column",
+      "scope": "contract",
+      "sql": "SELECT `Ä` FROM u;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "ä"
+        ],
+        "rows": [
+          [
+            7
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 4,
+          "ok": true,
+          "columns": [
+            "ä"
+          ],
+          "rows": [
+            [
+              7
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 4,
+          "ok": true,
+          "columns": [
+            "ä"
+          ],
+          "rows": [
+            [
+              7
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 3.534,
+        "cpp": 2.106
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "unicode-alias",
+      "scope": "contract",
+      "sql": "SELECT `ä` AS `Ö` FROM u ORDER BY `ö`;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "ö"
+        ],
+        "rows": [
+          [
+            7
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 5,
+          "ok": true,
+          "columns": [
+            "ö"
+          ],
+          "rows": [
+            [
+              7
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 5,
+          "ok": true,
+          "columns": [
+            "ö"
+          ],
+          "rows": [
+            [
+              7
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.583,
+        "cpp": 1.329
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "ascii-alias",
+      "scope": "contract",
+      "sql": "SELECT `ä` AS X FROM u ORDER BY x;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "x"
+        ],
+        "rows": [
+          [
+            7
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 6,
+          "ok": true,
+          "columns": [
+            "x"
+          ],
+          "rows": [
+            [
+              7
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 6,
+          "ok": true,
+          "columns": [
+            "x"
+          ],
+          "rows": [
+            [
+              7
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 3.291,
+        "cpp": 2.719
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "select-nbsp-u00a0",
+      "scope": "contract",
+      "sql": "SELECT `ä` AS x FROM u;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "x"
+        ],
+        "rows": [
+          [
+            7
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 7,
+          "ok": true,
+          "columns": [
+            "x"
+          ],
+          "rows": [
+            [
+              7
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 7,
+          "ok": true,
+          "columns": [
+            "x"
+          ],
+          "rows": [
+            [
+              7
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 2.796,
+        "cpp": 1.484
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "unicode-insert-digits",
+      "scope": "contract",
+      "sql": "INSERT INTO u VALUES(٢, +１２);",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "affected_rows": 1
+      },
+      "responses": {
+        "python": {
+          "id": 8,
+          "ok": true,
+          "affected_rows": 1
+        },
+        "cpp": {
+          "id": 8,
+          "affected_rows": 1,
+          "ok": true
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 34.579,
+        "cpp": 30.789
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "unicode-where-and-limit",
+      "scope": "contract",
+      "sql": "SELECT `ä` AS x FROM u WHERE id=٢ LIMIT １;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "x"
+        ],
+        "rows": [
+          [
+            12
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 9,
+          "ok": true,
+          "columns": [
+            "x"
+          ],
+          "rows": [
+            [
+              12
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 9,
+          "ok": true,
+          "columns": [
+            "x"
+          ],
+          "rows": [
+            [
+              12
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.698,
+        "cpp": 1.524
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "unicode-mixed-digits",
+      "scope": "contract",
+      "sql": "SELECT id FROM u WHERE `ä`=1２ LIMIT ٠١;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 10,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 10,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.715,
+        "cpp": 1.501
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "select-space-U+0009",
+      "scope": "contract",
+      "sql": "SELECT\tid FROM u ORDER BY id;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 11,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 11,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.579,
+        "cpp": 1.327
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "select-space-U+000A",
+      "scope": "contract",
+      "sql": "SELECT\nid FROM u ORDER BY id;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 12,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 12,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.36,
+        "cpp": 1.147
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "select-space-U+000B",
+      "scope": "contract",
+      "sql": "SELECT\u000bid FROM u ORDER BY id;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 13,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 13,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.497,
+        "cpp": 1.136
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "select-space-U+000C",
+      "scope": "contract",
+      "sql": "SELECT\fid FROM u ORDER BY id;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 14,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 14,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.771,
+        "cpp": 1.147
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "select-space-U+000D",
+      "scope": "contract",
+      "sql": "SELECT\rid FROM u ORDER BY id;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 15,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 15,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.513,
+        "cpp": 1.206
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "select-space-U+001C",
+      "scope": "contract",
+      "sql": "SELECT\u001cid FROM u ORDER BY id;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 16,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 16,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.583,
+        "cpp": 1.283
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "select-space-U+001D",
+      "scope": "contract",
+      "sql": "SELECT\u001did FROM u ORDER BY id;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 17,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 17,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.444,
+        "cpp": 1.268
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "select-space-U+001E",
+      "scope": "contract",
+      "sql": "SELECT\u001eid FROM u ORDER BY id;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 18,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 18,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.341,
+        "cpp": 1.361
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "select-space-U+001F",
+      "scope": "contract",
+      "sql": "SELECT\u001fid FROM u ORDER BY id;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 19,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 19,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.502,
+        "cpp": 1.159
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "select-space-U+0020",
+      "scope": "contract",
+      "sql": "SELECT id FROM u ORDER BY id;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 20,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 20,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.424,
+        "cpp": 1.243
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "select-space-U+0085",
+      "scope": "contract",
+      "sql": "SELECTid FROM u ORDER BY id;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 21,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 21,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.479,
+        "cpp": 1.45
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "select-space-U+00A0",
+      "scope": "contract",
+      "sql": "SELECT id FROM u ORDER BY id;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 22,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 22,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.534,
+        "cpp": 1.135
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "select-space-U+1680",
+      "scope": "contract",
+      "sql": "SELECT id FROM u ORDER BY id;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 23,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 23,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.553,
+        "cpp": 1.428
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "select-space-U+2000",
+      "scope": "contract",
+      "sql": "SELECT id FROM u ORDER BY id;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 24,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 24,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.569,
+        "cpp": 1.073
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "select-space-U+2001",
+      "scope": "contract",
+      "sql": "SELECT id FROM u ORDER BY id;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 25,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 25,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.648,
+        "cpp": 1.215
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "select-space-U+2002",
+      "scope": "contract",
+      "sql": "SELECT id FROM u ORDER BY id;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 26,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 26,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.362,
+        "cpp": 1.066
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "select-space-U+2003",
+      "scope": "contract",
+      "sql": "SELECT id FROM u ORDER BY id;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 27,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 27,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.803,
+        "cpp": 1.198
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "select-space-U+2004",
+      "scope": "contract",
+      "sql": "SELECT id FROM u ORDER BY id;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 28,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 28,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.414,
+        "cpp": 1.102
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "select-space-U+2005",
+      "scope": "contract",
+      "sql": "SELECT id FROM u ORDER BY id;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 29,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 29,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.496,
+        "cpp": 1.396
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "select-space-U+2006",
+      "scope": "contract",
+      "sql": "SELECT id FROM u ORDER BY id;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 30,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 30,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.642,
+        "cpp": 1.195
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "select-space-U+2007",
+      "scope": "contract",
+      "sql": "SELECT id FROM u ORDER BY id;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 31,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 31,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.682,
+        "cpp": 1.017
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "select-space-U+2008",
+      "scope": "contract",
+      "sql": "SELECT id FROM u ORDER BY id;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 32,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 32,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 2.04,
+        "cpp": 1.297
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "select-space-U+2009",
+      "scope": "contract",
+      "sql": "SELECT id FROM u ORDER BY id;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 33,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 33,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.803,
+        "cpp": 1.127
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "select-space-U+200A",
+      "scope": "contract",
+      "sql": "SELECT id FROM u ORDER BY id;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 34,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 34,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.462,
+        "cpp": 1.096
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "select-space-U+2028",
+      "scope": "contract",
+      "sql": "SELECT id FROM u ORDER BY id;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 35,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 35,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.53,
+        "cpp": 1.026
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "select-space-U+2029",
+      "scope": "contract",
+      "sql": "SELECT id FROM u ORDER BY id;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 36,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 36,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.434,
+        "cpp": 1.106
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "select-space-U+202F",
+      "scope": "contract",
+      "sql": "SELECT id FROM u ORDER BY id;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 37,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 37,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.312,
+        "cpp": 1.168
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "select-space-U+205F",
+      "scope": "contract",
+      "sql": "SELECT id FROM u ORDER BY id;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 38,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 38,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.386,
+        "cpp": 1.182
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "select-space-U+3000",
+      "scope": "contract",
+      "sql": "SELECT　id FROM u ORDER BY id;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 39,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 39,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.568,
+        "cpp": 1.022
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "reject-not-space-U+180E",
+      "scope": "contract",
+      "sql": "SELECT᠎id FROM u;",
+      "mode": "exact",
+      "expected": {
+        "ok": false
+      },
+      "responses": {
+        "python": {
+          "id": 40,
+          "ok": false,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          }
+        },
+        "cpp": {
+          "id": 40,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.03,
+        "cpp": 1.062
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "reject-not-space-U+200B",
+      "scope": "contract",
+      "sql": "SELECT​id FROM u;",
+      "mode": "exact",
+      "expected": {
+        "ok": false
+      },
+      "responses": {
+        "python": {
+          "id": 41,
+          "ok": false,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          }
+        },
+        "cpp": {
+          "id": 41,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.096,
+        "cpp": 1.045
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "reject-not-space-U+200C",
+      "scope": "contract",
+      "sql": "SELECT‌id FROM u;",
+      "mode": "exact",
+      "expected": {
+        "ok": false
+      },
+      "responses": {
+        "python": {
+          "id": 42,
+          "ok": false,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          }
+        },
+        "cpp": {
+          "id": 42,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.055,
+        "cpp": 0.914
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "reject-not-space-U+200D",
+      "scope": "contract",
+      "sql": "SELECT‍id FROM u;",
+      "mode": "exact",
+      "expected": {
+        "ok": false
+      },
+      "responses": {
+        "python": {
+          "id": 43,
+          "ok": false,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          }
+        },
+        "cpp": {
+          "id": 43,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 0.938,
+        "cpp": 1.02
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "reject-not-space-U+2060",
+      "scope": "contract",
+      "sql": "SELECT⁠id FROM u;",
+      "mode": "exact",
+      "expected": {
+        "ok": false
+      },
+      "responses": {
+        "python": {
+          "id": 44,
+          "ok": false,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          }
+        },
+        "cpp": {
+          "id": 44,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.098,
+        "cpp": 1.181
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "reject-not-space-U+FEFF",
+      "scope": "contract",
+      "sql": "SELECT﻿id FROM u;",
+      "mode": "exact",
+      "expected": {
+        "ok": false
+      },
+      "responses": {
+        "python": {
+          "id": 45,
+          "ok": false,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          }
+        },
+        "cpp": {
+          "id": 45,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.014,
+        "cpp": 0.957
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "decimal-zero-U+0030",
+      "scope": "contract",
+      "sql": "SELECT id FROM u WHERE `ä`=12 LIMIT 1;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 46,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 46,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.364,
+        "cpp": 1.161
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "decimal-zero-U+0660",
+      "scope": "contract",
+      "sql": "SELECT id FROM u WHERE `ä`=١٢ LIMIT ١;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 47,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 47,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.342,
+        "cpp": 1.143
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "decimal-zero-U+06F0",
+      "scope": "contract",
+      "sql": "SELECT id FROM u WHERE `ä`=۱۲ LIMIT ۱;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 48,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 48,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.28,
+        "cpp": 1.128
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "decimal-zero-U+0966",
+      "scope": "contract",
+      "sql": "SELECT id FROM u WHERE `ä`=१२ LIMIT १;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 49,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 49,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.337,
+        "cpp": 1.099
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "decimal-zero-U+09E6",
+      "scope": "contract",
+      "sql": "SELECT id FROM u WHERE `ä`=১২ LIMIT ১;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 50,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 50,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.418,
+        "cpp": 1.158
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "decimal-zero-U+0E50",
+      "scope": "contract",
+      "sql": "SELECT id FROM u WHERE `ä`=๑๒ LIMIT ๑;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 51,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 51,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.476,
+        "cpp": 1.175
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "decimal-zero-U+FF10",
+      "scope": "contract",
+      "sql": "SELECT id FROM u WHERE `ä`=１２ LIMIT １;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 52,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 52,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.421,
+        "cpp": 1.037
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "decimal-zero-U+104A0",
+      "scope": "contract",
+      "sql": "SELECT id FROM u WHERE `ä`=𐒡𐒢 LIMIT 𐒡;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 53,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 53,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.334,
+        "cpp": 1.113
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "decimal-zero-U+1D7D8",
+      "scope": "contract",
+      "sql": "SELECT id FROM u WHERE `ä`=𝟙𝟚 LIMIT 𝟙;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 54,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 54,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.293,
+        "cpp": 1.043
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "decimal-zero-U+11F50",
+      "scope": "contract",
+      "sql": "SELECT id FROM u WHERE `ä`=𑽑𑽒 LIMIT 𑽑;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 55,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 55,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.362,
+        "cpp": 0.941
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "decimal-zero-U+1E4F0",
+      "scope": "contract",
+      "sql": "SELECT id FROM u WHERE `ä`=𞓱𞓲 LIMIT 𞓱;",
+      "mode": "exact",
+      "expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "responses": {
+        "python": {
+          "id": 56,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              2
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 56,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.317,
+        "cpp": 1.138
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "reject-not-decimal-\\xb2",
+      "scope": "contract",
+      "sql": "SELECT id FROM u WHERE `ä`=²;",
+      "mode": "exact",
+      "expected": {
+        "ok": false
+      },
+      "responses": {
+        "python": {
+          "id": 57,
+          "ok": false,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          }
+        },
+        "cpp": {
+          "id": 57,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.397,
+        "cpp": 1.067
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "reject-not-decimal-\\u2460",
+      "scope": "contract",
+      "sql": "SELECT id FROM u WHERE `ä`=①;",
+      "mode": "exact",
+      "expected": {
+        "ok": false
+      },
+      "responses": {
+        "python": {
+          "id": 58,
+          "ok": false,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          }
+        },
+        "cpp": {
+          "id": 58,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.077,
+        "cpp": 1.096
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "reject-not-decimal-\\u2163",
+      "scope": "contract",
+      "sql": "SELECT id FROM u WHERE `ä`=Ⅳ;",
+      "mode": "exact",
+      "expected": {
+        "ok": false
+      },
+      "responses": {
+        "python": {
+          "id": 59,
+          "ok": false,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          }
+        },
+        "cpp": {
+          "id": 59,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.08,
+        "cpp": 0.963
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "reject-not-decimal-\\u56db",
+      "scope": "contract",
+      "sql": "SELECT id FROM u WHERE `ä`=四;",
+      "mode": "exact",
+      "expected": {
+        "ok": false
+      },
+      "responses": {
+        "python": {
+          "id": 60,
+          "ok": false,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          }
+        },
+        "cpp": {
+          "id": 60,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.238,
+        "cpp": 0.97
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "reject-not-decimal-\\xbd",
+      "scope": "contract",
+      "sql": "SELECT id FROM u WHERE `ä`=½;",
+      "mode": "exact",
+      "expected": {
+        "ok": false
+      },
+      "responses": {
+        "python": {
+          "id": 61,
+          "ok": false,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          }
+        },
+        "cpp": {
+          "id": 61,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.017,
+        "cpp": 0.959
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "reject-not-decimal-1\\u066b2",
+      "scope": "contract",
+      "sql": "SELECT id FROM u WHERE `ä`=1٫2;",
+      "mode": "exact",
+      "expected": {
+        "ok": false
+      },
+      "responses": {
+        "python": {
+          "id": 62,
+          "ok": false,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          }
+        },
+        "cpp": {
+          "id": 62,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.091,
+        "cpp": 0.996
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "reject-not-decimal-\\uff11\\uff0e\\uff12",
+      "scope": "contract",
+      "sql": "SELECT id FROM u WHERE `ä`=１．２;",
+      "mode": "exact",
+      "expected": {
+        "ok": false
+      },
+      "responses": {
+        "python": {
+          "id": 63,
+          "ok": false,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          }
+        },
+        "cpp": {
+          "id": 63,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.261,
+        "cpp": 1.084
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "reject-not-decimal-1\\uff252",
+      "scope": "contract",
+      "sql": "SELECT id FROM u WHERE `ä`=1Ｅ2;",
+      "mode": "exact",
+      "expected": {
+        "ok": false
+      },
+      "responses": {
+        "python": {
+          "id": 64,
+          "ok": false,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          }
+        },
+        "cpp": {
+          "id": 64,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.069,
+        "cpp": 1.04
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "reject-not-decimal-\\u22121",
+      "scope": "contract",
+      "sql": "SELECT id FROM u WHERE `ä`=−1;",
+      "mode": "exact",
+      "expected": {
+        "ok": false
+      },
+      "responses": {
+        "python": {
+          "id": 65,
+          "ok": false,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          }
+        },
+        "cpp": {
+          "id": 65,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.053,
+        "cpp": 0.997
+      },
+      "equivalent": true
+    },
+    {
+      "group": "unicode_python_oracle",
+      "name": "reject-not-decimal-\\uff0b1",
+      "scope": "contract",
+      "sql": "SELECT id FROM u WHERE `ä`=＋1;",
+      "mode": "exact",
+      "expected": {
+        "ok": false
+      },
+      "responses": {
+        "python": {
+          "id": 66,
+          "ok": false,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          }
+        },
+        "cpp": {
+          "id": 66,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.056,
+        "cpp": 1.173
+      },
+      "equivalent": true
+    }
+  ]
+}

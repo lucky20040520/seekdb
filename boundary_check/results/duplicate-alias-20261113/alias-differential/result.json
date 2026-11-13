@@ -1,0 +1,52 @@
+{
+  "timestamp_utc": "2026-11-13T14:32:55.359174+00:00",
+  "sources": [
+    "https://github.com/mysql/mysql-server/blob/8.4/mysql-test/t/comments.test",
+    "https://github.com/mysql/mysql-server/blob/8.4/mysql-test/t/limit.test",
+    "https://github.com/mysql/mysql-server/blob/8.4/mysql-test/t/alias.test",
+    "https://dev.mysql.com/doc/refman/8.4/en/string-literals.html",
+    "https://dev.mysql.com/doc/refman/8.4/en/problems-with-alias.html",
+    "https://dev.mysql.com/doc/refman/8.4/en/innodb-error-handling.html"
+  ],
+  "groups": [
+    {
+      "name": "aliases",
+      "cleanup_errors": [],
+      "steps": 33,
+      "seconds": 2.611
+    },
+    {
+      "name": "eager_validation",
+      "cleanup_errors": [],
+      "steps": 228,
+      "seconds": 3.006
+    }
+  ],
+  "image_tags": {
+    "python": "minivector-boundary:python-f1b9f4e",
+    "cpp": "minivector-cpp:alias-20261113"
+  },
+  "script_sha256": "bfd0cc3c6baf667ee639984a2924180d998bb11cbbb8542f72c804dbc60c6dd3",
+  "image_ids": {
+    "python": "sha256:9ba27b48bf5975472ae01691be21b88eda49588d8010e724b841896e722c98b0",
+    "cpp": "sha256:4d08a0a3372ae0f7f9d1b68eb5fbbc0996cb75ea5aceadc76b629387325e86b0"
+  },
+  "steps": 261,
+  "by_scope": {
+    "contract": 249,
+    "mysql_compatibility": 12
+  },
+  "failures": {
+    "python": 0,
+    "cpp": 0
+  },
+  "differences": [],
+  "failed_steps": [],
+  "mysql_compatibility_mismatches": [],
+  "limitations": [
+    "Locally designed probes, not organizer hidden tests.",
+    "Full MySQL behavior is not the contest contract.",
+    "Default image entrypoints; 2 CPU, 2 GiB, network none. Timing is diagnostic only.",
+    "Ambiguous duplicate aliases are differential probes without a normative expectation."
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "images": {
+    "python": "minivector-boundary:python-f1b9f4e",
+    "cpp": "minivector-cpp:alias-20261113"
+  },
+  "steps": 59,
+  "groups": [
+    {
+      "name": "row_budget",
+      "cleanup_errors": []
+    },
+    {
+      "name": "unicode_budget",
+      "cleanup_errors": []
+    }
+  ],
+  "failures": []
+}

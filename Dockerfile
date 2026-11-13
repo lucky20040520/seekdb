@@ -9,4 +9,5 @@ RUN mkdir -p /build && g++ -std=c++17 -O3 -DNDEBUG -ffp-contract=off -Wall -Wext
 FROM python:3.12.8-slim-bookworm
 RUN mkdir -p /data
 COPY --from=build /build/minivector /usr/local/bin/minivector
+COPY cpp/LICENSE.unicode.txt /usr/share/licenses/minivector/UNICODE.txt
 ENTRYPOINT ["/usr/local/bin/minivector", "--data-dir", "/data"]

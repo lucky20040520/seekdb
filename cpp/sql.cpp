@@ -1,8 +1,8 @@
 #include "minivector.hpp"
 #include "profile.hpp"
+#include "unicode.hpp"
 #include <algorithm>
 #include <charconv>
-#include <cctype>
 #include <cmath>
 #include <cstdlib>
 #include <limits>
@@ -11,10 +11,6 @@ namespace mv {
 namespace {
 std::string upper(std::string s) {
     for (char& c:s) if(c>='a' && c<='z') c=char(c-'a'+'A');
-    return s;
-}
-std::string lower(std::string s) {
-    for (char& c:s) if(c>='A' && c<='Z') c=char(c-'A'+'a');
     return s;
 }
 bool alpha(char c) { return (c>='a'&&c<='z')||(c>='A'&&c<='Z')||c=='_'; }
@@ -26,7 +22,8 @@ public:
     explicit Parser(const std::string& sql) {
         size_t i=0;
         while(i<sql.size()) {
-            if(std::isspace(static_cast<unsigned char>(sql[i]))) { ++i; continue; }
+            const auto current=unicode::decode(sql,i);
+            if(unicode::is_space(current.value)) { i+=current.width; continue; }
             if(sql.compare(i,2,"--")==0) { auto end=sql.find('\n',i+2); i=end==std::string::npos?sql.size():end+1; continue; }
             if(sql.compare(i,2,"/*")==0) { auto end=sql.find("*/",i+2); if(end==std::string::npos) fail("unterminated comment","SYNTAX"); i=end+2; continue; }
             size_t start=i;
@@ -40,15 +37,26 @@ public:
                 if(!closed) fail("unterminated quoted token","SYNTAX");
             } else if(alpha(sql[i])) {
                 while(i<sql.size()&&(alpha(sql[i])||digit(sql[i]))) ++i;
-            } else if(digit(sql[i])||(sql[i]=='.'&&i+1<sql.size()&&digit(sql[i+1]))) {
-                while(i<sql.size()&&digit(sql[i])) ++i;
-                if(i<sql.size()&&sql[i]=='.') { ++i; while(i<sql.size()&&digit(sql[i])) ++i; }
+            } else if(unicode::decimal_at(sql,i).value>=0||(sql[i]=='.'&&unicode::decimal_at(sql,i+1).value>=0)) {
+                // Normalize only a numeric SQL token. Quoted text (including
+                // JSON vector literals) and identifiers keep their code points.
+                std::string number;
+                const auto take_digits=[&]() {
+                    while(i<sql.size()) {
+                        const auto next=unicode::decimal_at(sql,i);
+                        if(next.value<0) break;
+                        number+=char('0'+next.value); i+=next.width;
+                    }
+                };
+                take_digits();
+                if(i<sql.size()&&sql[i]=='.') { number+=sql[i++]; take_digits(); }
                 if(i<sql.size()&&(sql[i]=='e'||sql[i]=='E')) {
-                    size_t exponent=i++;
-                    if(i<sql.size()&&(sql[i]=='+'||sql[i]=='-')) ++i;
-                    size_t first=i; while(i<sql.size()&&digit(sql[i])) ++i;
-                    if(first==i) i=exponent;
+                    const size_t exponent=i,length=number.size(); number+=sql[i++];
+                    if(i<sql.size()&&(sql[i]=='+'||sql[i]=='-')) number+=sql[i++];
+                    const size_t first=i; take_digits();
+                    if(first==i) {i=exponent;number.resize(length);}
                 }
+                tokens.push_back(std::move(number)); continue;
             } else if(std::string("(),;*[]=<>+-").find(sql[i])!=std::string::npos) {
                 ++i; if(i<sql.size()&&(sql[start]=='<'||sql[start]=='>')&&sql[i]=='=') ++i;
             } else fail("unrecognized SQL token","SYNTAX");
@@ -66,10 +74,10 @@ public:
         if(token[0]=='`') {
             std::string value;
             for(size_t i=1;i+1<token.size();++i) { value+=token[i]; if(token[i]=='`'&&i+2<token.size()&&token[i+1]=='`') ++i; }
-            return lower(value);
+            return unicode::lower(std::move(value));
         }
         if(!alpha(token[0])||!std::all_of(token.begin(),token.end(),[](char c){return alpha(c)||digit(c);})) fail("expected identifier","SYNTAX");
-        return lower(token);
+        return unicode::lower(std::move(token));
     }
     Json value(unsigned depth=0) {
         if(depth>256) fail("literal nesting too deep","SYNTAX");

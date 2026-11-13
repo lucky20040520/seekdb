@@ -1,0 +1,25 @@
+{
+  "timestamp_utc": "2026-11-13T14:31:15.530772+00:00",
+  "scope": "Supplementary actual-process JSONL tests; no database Python imports; not official hidden tests or performance results",
+  "target": "minivector-boundary:python-f1b9f4e",
+  "profiling": false,
+  "screen_block": null,
+  "cases": 1,
+  "passed_cases": 0,
+  "requests": 19,
+  "results": [
+    {
+      "case": "duplicate_alias_ordering",
+      "passed": false,
+      "error": "SQL outcome mismatch: SELECT id,L2_DISTANCE(v,[0,0]),L2_DISTANCE(v,[10,0]) FROM t ORDER BY l2_distance LIMIT 1 => {'id': 19, 'ok': False, 'error': {'code': 'SYNTAX', 'message': 'expected ('}}",
+      "traceback": "Traceback (most recent call last):\n  File \"E:\\project\\seekdb-query-optimization\\tools\\test_cpp.py\", line 817, in main\n    case(target)\n  File \"E:\\project\\seekdb-query-optimization\\tools\\test_cpp.py\", line 663, in duplicate_alias_ordering\n    check(False)\n  File \"E:\\project\\seekdb-query-optimization\\tools\\test_cpp.py\", line 650, in check\n    s.sql(\"SELECT id,L2_DISTANCE(v,[0,0]),L2_DISTANCE(v,[10,0]) FROM t ORDER BY l2_distance LIMIT 1\",\n  File \"E:\\project\\seekdb-query-optimization\\tools\\test_cpp.py\", line 174, in sql\n    assert response[\"ok\"] is not fail, \"SQL outcome mismatch: %s => %r\" % (sql[:1200], response)\nAssertionError: SQL outcome mismatch: SELECT id,L2_DISTANCE(v,[0,0]),L2_DISTANCE(v,[10,0]) FROM t ORDER BY l2_distance LIMIT 1 => {'id': 19, 'ok': False, 'error': {'code': 'SYNTAX', 'message': 'expected ('}}\n",
+      "last_sql": "SELECT id,L2_DISTANCE(v,[0,0]),L2_DISTANCE(v,[10,0]) FROM t ORDER BY l2_distance LIMIT 1",
+      "last_request": "{\"id\": 19, \"op\": \"execute\", \"sql\": \"SELECT id,L2_DISTANCE(v,[0,0]),L2_DISTANCE(v,[10,0]) FROM t ORDER BY l2_distance LIMIT 1\", \"search_mode\": \"exact\"}",
+      "stderr": [
+        []
+      ],
+      "requests": 19,
+      "seconds": 1.2913098
+    }
+  ]
+}
