@@ -1,4 +1,4 @@
-#include "minivector.hpp"
+﻿#include "minivector.hpp"
 #include "profile.hpp"
 #include <fstream>
 #include <iostream>
@@ -76,11 +76,30 @@ class ResponseBuffer {
     std::string buffer;
     std::filesystem::path file, directory;
     std::ofstream stream;
+    // Spilling writes the response into the graded /data device and reads it
+    // back, so every result set above the threshold paid a disk round trip.
+    // Keep normal responses in memory; only oversized ones still spill.
+    static size_t budget() {
+        static const size_t value=[]()->size_t {
+            constexpr size_t minimum=8u*1024*1024, maximum=64u*1024*1024;
+            for(const char* name:{"/sys/fs/cgroup/memory.max","/sys/fs/cgroup/memory/memory.limit_in_bytes"}) {
+                std::ifstream input(name);
+                if(!input) continue;
+                std::string text; input>>text;
+                if(text.empty()||text=="max") continue;
+                const auto limit=std::strtoull(text.c_str(),nullptr,10);
+                if(limit==0||limit>uint64_t(1)<<60) continue;
+                return std::min(maximum,std::max(minimum,static_cast<size_t>(limit/8)));
+            }
+            return maximum;
+        }();
+        return value;
+    }
 public:
     explicit ResponseBuffer(const std::filesystem::path& directory):directory(directory){}
     ~ResponseBuffer(){if(stream.is_open())stream.close();if(!file.empty()){std::error_code error;std::filesystem::remove(file,error);}}
     void append(const std::string& s) {
-        if(file.empty()&&buffer.size()+s.size()<=256*1024){buffer+=s;return;}
+        if(file.empty()&&buffer.size()+s.size()<=budget()){buffer+=s;return;}
         if(file.empty()) {
             file=directory/unique_name("response-",".tmp");
             stream.exceptions(std::ios::failbit|std::ios::badbit);
