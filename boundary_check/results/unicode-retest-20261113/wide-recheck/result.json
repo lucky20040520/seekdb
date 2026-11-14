@@ -1,0 +1,32 @@
+{
+  "timestamp_utc": "2026-11-13T14:10:42.848477+00:00",
+  "scope": "Locally designed boundary tests, not official hidden cases or official pass evidence",
+  "images": {
+    "python": "sha256:9ba27b48bf5975472ae01691be21b88eda49588d8010e724b841896e722c98b0",
+    "cpp": "sha256:92eeb648fa081ff25db645418a60b9db00543709b64d95bbf127e12b753de811"
+  },
+  "groups": [
+    {
+      "name": "wide",
+      "cleanup_errors": [],
+      "steps": 24,
+      "elapsed_seconds": 8.402
+    }
+  ],
+  "steps": 24,
+  "requests_excluding_lifecycle": 48,
+  "expectation_failures": {
+    "python": 0,
+    "cpp": 0
+  },
+  "differential_count": 0,
+  "differential_by_scope": {},
+  "failures": [],
+  "differences": [],
+  "limits": [
+    "No official hidden inputs or formal platform logs available.",
+    "Error code text is recorded but not equated; the public mapping is empty.",
+    "Wide case exceeds cache/sort budgets, not the full 2 GiB process memory limit.",
+    "This suite measures correctness; per-request timings are diagnostics, not performance scores."
+  ]
+}

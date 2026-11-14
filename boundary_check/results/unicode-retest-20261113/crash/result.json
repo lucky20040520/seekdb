@@ -1,0 +1,3569 @@
+{
+  "timestamp_utc": "2026-11-13T12:56:07.560850+00:00",
+  "scope": "Verified process SIGKILL boundaries with test-only syscall pause instrumentation",
+  "image_tags": {
+    "python": "minivector-boundary:python-killpoint",
+    "cpp": "minivector-cpp:unicode-killpoint-20261113"
+  },
+  "images": {
+    "python": "sha256:932a1cb29877a4e6ade8f3fb00e351e5a05437cdcf9caab790a01335d8650362",
+    "cpp": "sha256:a79ae3fbd99cf671a1cbaa0d9e3710ccf3a4b4b4dcb3e007dbdfad071eddfda7"
+  },
+  "source_hashes": {
+    "crash_points.py": "345731de0431a91418fe5165487e1a6b28130d5d8ee0115e8e472eb533e43a1f",
+    "killpoint.c": "fec2d62c6806c2f743be63fa871f7a62eff0a3dc6ff25f398a6aa65bc5a9cdb7",
+    "Dockerfile.killpoint": "78561609b347cda20f3530b7620b2c23f1766e66c433b68b8945213af7576831"
+  },
+  "cases": [
+    {
+      "phase": "before-rows-sync",
+      "second_recovery_crash": false,
+      "assertions": [
+        {
+          "sql": "CREATE TABLE a(id BIGINT PRIMARY KEY,n BIGINT,v VECTOR(2))",
+          "response": {
+            "id": 1,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(1,0,[0,0]),(2,0,[1,0])",
+          "response": {
+            "id": 2,
+            "ok": true,
+            "affected_rows": 2
+          }
+        },
+        {
+          "sql": "CREATE VECTOR INDEX ai ON a(v)",
+          "response": {
+            "id": 3,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "CREATE TABLE b(id BIGINT PRIMARY KEY,n BIGINT,v VECTOR(2))",
+          "response": {
+            "id": 4,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(1,0,[0,0]),(2,0,[1,0])",
+          "response": {
+            "id": 5,
+            "ok": true,
+            "affected_rows": 2
+          }
+        },
+        {
+          "sql": "CREATE VECTOR INDEX bi ON b(v)",
+          "response": {
+            "id": 6,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM a ORDER BY id",
+          "response": {
+            "id": 1,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                0,
+                [
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM a ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 2,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                1
+              ],
+              [
+                2
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM a WHERE n=7 ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 3,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": []
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(1,9,[9,0])",
+          "response": {
+            "id": 4,
+            "ok": false,
+            "error": {
+              "code": "DUPLICATE",
+              "message": "duplicate primary key"
+            }
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM b ORDER BY id",
+          "response": {
+            "id": 5,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                0,
+                [
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM b ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 6,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                1
+              ],
+              [
+                2
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM b WHERE n=7 ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 7,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": []
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(1,9,[9,0])",
+          "response": {
+            "id": 8,
+            "ok": false,
+            "error": {
+              "code": "DUPLICATE",
+              "message": "duplicate primary key"
+            }
+          }
+        },
+        {
+          "sql": "BEGIN",
+          "response": {
+            "id": 9,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "UPDATE a SET n=9 WHERE id=1",
+          "response": {
+            "id": 10,
+            "ok": true,
+            "affected_rows": 1
+          }
+        },
+        {
+          "sql": "ROLLBACK",
+          "response": {
+            "id": 11,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM a ORDER BY id",
+          "response": {
+            "id": 12,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                0,
+                [
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        }
+      ],
+      "stop_evidence": "before-rows-sync\npid=1\npath=/data/rows-821c26a6ae61495d83d03efa65559a8b.jsonl\n",
+      "response_received_before_kill": false,
+      "expected_state": "all old",
+      "passed": true,
+      "label": "python",
+      "seconds": 2.605
+    },
+    {
+      "phase": "before-index-sync",
+      "second_recovery_crash": false,
+      "assertions": [
+        {
+          "sql": "CREATE TABLE a(id BIGINT PRIMARY KEY,n BIGINT,v VECTOR(2))",
+          "response": {
+            "id": 1,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(1,0,[0,0]),(2,0,[1,0])",
+          "response": {
+            "id": 2,
+            "ok": true,
+            "affected_rows": 2
+          }
+        },
+        {
+          "sql": "CREATE VECTOR INDEX ai ON a(v)",
+          "response": {
+            "id": 3,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "CREATE TABLE b(id BIGINT PRIMARY KEY,n BIGINT,v VECTOR(2))",
+          "response": {
+            "id": 4,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(1,0,[0,0]),(2,0,[1,0])",
+          "response": {
+            "id": 5,
+            "ok": true,
+            "affected_rows": 2
+          }
+        },
+        {
+          "sql": "CREATE VECTOR INDEX bi ON b(v)",
+          "response": {
+            "id": 6,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM a ORDER BY id",
+          "response": {
+            "id": 1,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                0,
+                [
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM a ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 2,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                1
+              ],
+              [
+                2
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM a WHERE n=7 ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 3,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": []
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(1,9,[9,0])",
+          "response": {
+            "id": 4,
+            "ok": false,
+            "error": {
+              "code": "DUPLICATE",
+              "message": "duplicate primary key"
+            }
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM b ORDER BY id",
+          "response": {
+            "id": 5,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                0,
+                [
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM b ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 6,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                1
+              ],
+              [
+                2
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM b WHERE n=7 ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 7,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": []
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(1,9,[9,0])",
+          "response": {
+            "id": 8,
+            "ok": false,
+            "error": {
+              "code": "DUPLICATE",
+              "message": "duplicate primary key"
+            }
+          }
+        },
+        {
+          "sql": "BEGIN",
+          "response": {
+            "id": 9,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "UPDATE a SET n=9 WHERE id=1",
+          "response": {
+            "id": 10,
+            "ok": true,
+            "affected_rows": 1
+          }
+        },
+        {
+          "sql": "ROLLBACK",
+          "response": {
+            "id": 11,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM a ORDER BY id",
+          "response": {
+            "id": 12,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                0,
+                [
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        }
+      ],
+      "stop_evidence": "before-index-sync\npid=1\npath=/data/index-505ac1fda707436e934e86d1f56a13a4.flat\n",
+      "response_received_before_kill": false,
+      "expected_state": "all old",
+      "passed": true,
+      "label": "python",
+      "seconds": 2.535
+    },
+    {
+      "phase": "before-catalog-sync",
+      "second_recovery_crash": false,
+      "assertions": [
+        {
+          "sql": "CREATE TABLE a(id BIGINT PRIMARY KEY,n BIGINT,v VECTOR(2))",
+          "response": {
+            "id": 1,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(1,0,[0,0]),(2,0,[1,0])",
+          "response": {
+            "id": 2,
+            "ok": true,
+            "affected_rows": 2
+          }
+        },
+        {
+          "sql": "CREATE VECTOR INDEX ai ON a(v)",
+          "response": {
+            "id": 3,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "CREATE TABLE b(id BIGINT PRIMARY KEY,n BIGINT,v VECTOR(2))",
+          "response": {
+            "id": 4,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(1,0,[0,0]),(2,0,[1,0])",
+          "response": {
+            "id": 5,
+            "ok": true,
+            "affected_rows": 2
+          }
+        },
+        {
+          "sql": "CREATE VECTOR INDEX bi ON b(v)",
+          "response": {
+            "id": 6,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "BEGIN",
+          "response": {
+            "id": 7,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "UPDATE a SET n=7,v=[7,0] WHERE id=1",
+          "response": {
+            "id": 8,
+            "ok": true,
+            "affected_rows": 1
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(3,7,[8,0])",
+          "response": {
+            "id": 9,
+            "ok": true,
+            "affected_rows": 1
+          }
+        },
+        {
+          "sql": "UPDATE b SET n=7,v=[7,0] WHERE id=1",
+          "response": {
+            "id": 10,
+            "ok": true,
+            "affected_rows": 1
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(3,7,[8,0])",
+          "response": {
+            "id": 11,
+            "ok": true,
+            "affected_rows": 1
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM a ORDER BY id",
+          "response": {
+            "id": 1,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                0,
+                [
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM a ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 2,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                1
+              ],
+              [
+                2
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM a WHERE n=7 ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 3,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": []
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(1,9,[9,0])",
+          "response": {
+            "id": 4,
+            "ok": false,
+            "error": {
+              "code": "DUPLICATE",
+              "message": "duplicate primary key"
+            }
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM b ORDER BY id",
+          "response": {
+            "id": 5,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                0,
+                [
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM b ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 6,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                1
+              ],
+              [
+                2
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM b WHERE n=7 ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 7,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": []
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(1,9,[9,0])",
+          "response": {
+            "id": 8,
+            "ok": false,
+            "error": {
+              "code": "DUPLICATE",
+              "message": "duplicate primary key"
+            }
+          }
+        },
+        {
+          "sql": "BEGIN",
+          "response": {
+            "id": 9,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "UPDATE a SET n=9 WHERE id=1",
+          "response": {
+            "id": 10,
+            "ok": true,
+            "affected_rows": 1
+          }
+        },
+        {
+          "sql": "ROLLBACK",
+          "response": {
+            "id": 11,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM a ORDER BY id",
+          "response": {
+            "id": 12,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                0,
+                [
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        }
+      ],
+      "stop_evidence": "before-catalog-sync\npid=1\npath=/data/catalog-bacc0e6d3d6a45faac7e6b940cbb8a1c.tmp\n",
+      "response_received_before_kill": false,
+      "expected_state": "all old",
+      "passed": true,
+      "label": "python",
+      "seconds": 2.583
+    },
+    {
+      "phase": "before-catalog-rename",
+      "second_recovery_crash": false,
+      "assertions": [
+        {
+          "sql": "CREATE TABLE a(id BIGINT PRIMARY KEY,n BIGINT,v VECTOR(2))",
+          "response": {
+            "id": 1,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(1,0,[0,0]),(2,0,[1,0])",
+          "response": {
+            "id": 2,
+            "ok": true,
+            "affected_rows": 2
+          }
+        },
+        {
+          "sql": "CREATE VECTOR INDEX ai ON a(v)",
+          "response": {
+            "id": 3,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "CREATE TABLE b(id BIGINT PRIMARY KEY,n BIGINT,v VECTOR(2))",
+          "response": {
+            "id": 4,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(1,0,[0,0]),(2,0,[1,0])",
+          "response": {
+            "id": 5,
+            "ok": true,
+            "affected_rows": 2
+          }
+        },
+        {
+          "sql": "CREATE VECTOR INDEX bi ON b(v)",
+          "response": {
+            "id": 6,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "BEGIN",
+          "response": {
+            "id": 7,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "UPDATE a SET n=7,v=[7,0] WHERE id=1",
+          "response": {
+            "id": 8,
+            "ok": true,
+            "affected_rows": 1
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(3,7,[8,0])",
+          "response": {
+            "id": 9,
+            "ok": true,
+            "affected_rows": 1
+          }
+        },
+        {
+          "sql": "UPDATE b SET n=7,v=[7,0] WHERE id=1",
+          "response": {
+            "id": 10,
+            "ok": true,
+            "affected_rows": 1
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(3,7,[8,0])",
+          "response": {
+            "id": 11,
+            "ok": true,
+            "affected_rows": 1
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM a ORDER BY id",
+          "response": {
+            "id": 1,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                0,
+                [
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM a ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 2,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                1
+              ],
+              [
+                2
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM a WHERE n=7 ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 3,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": []
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(1,9,[9,0])",
+          "response": {
+            "id": 4,
+            "ok": false,
+            "error": {
+              "code": "DUPLICATE",
+              "message": "duplicate primary key"
+            }
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM b ORDER BY id",
+          "response": {
+            "id": 5,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                0,
+                [
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM b ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 6,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                1
+              ],
+              [
+                2
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM b WHERE n=7 ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 7,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": []
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(1,9,[9,0])",
+          "response": {
+            "id": 8,
+            "ok": false,
+            "error": {
+              "code": "DUPLICATE",
+              "message": "duplicate primary key"
+            }
+          }
+        },
+        {
+          "sql": "BEGIN",
+          "response": {
+            "id": 9,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "UPDATE a SET n=9 WHERE id=1",
+          "response": {
+            "id": 10,
+            "ok": true,
+            "affected_rows": 1
+          }
+        },
+        {
+          "sql": "ROLLBACK",
+          "response": {
+            "id": 11,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM a ORDER BY id",
+          "response": {
+            "id": 12,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                0,
+                [
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        }
+      ],
+      "stop_evidence": "before-catalog-rename\npid=1\npath=/data/catalog-7afc8604a96e40af8c482cbc3abe94b5.tmp\n",
+      "response_received_before_kill": false,
+      "expected_state": "all old",
+      "passed": true,
+      "label": "python",
+      "seconds": 2.704
+    },
+    {
+      "phase": "after-catalog-rename",
+      "second_recovery_crash": true,
+      "assertions": [
+        {
+          "sql": "CREATE TABLE a(id BIGINT PRIMARY KEY,n BIGINT,v VECTOR(2))",
+          "response": {
+            "id": 1,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(1,0,[0,0]),(2,0,[1,0])",
+          "response": {
+            "id": 2,
+            "ok": true,
+            "affected_rows": 2
+          }
+        },
+        {
+          "sql": "CREATE VECTOR INDEX ai ON a(v)",
+          "response": {
+            "id": 3,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "CREATE TABLE b(id BIGINT PRIMARY KEY,n BIGINT,v VECTOR(2))",
+          "response": {
+            "id": 4,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(1,0,[0,0]),(2,0,[1,0])",
+          "response": {
+            "id": 5,
+            "ok": true,
+            "affected_rows": 2
+          }
+        },
+        {
+          "sql": "CREATE VECTOR INDEX bi ON b(v)",
+          "response": {
+            "id": 6,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "BEGIN",
+          "response": {
+            "id": 7,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "UPDATE a SET n=7,v=[7,0] WHERE id=1",
+          "response": {
+            "id": 8,
+            "ok": true,
+            "affected_rows": 1
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(3,7,[8,0])",
+          "response": {
+            "id": 9,
+            "ok": true,
+            "affected_rows": 1
+          }
+        },
+        {
+          "sql": "UPDATE b SET n=7,v=[7,0] WHERE id=1",
+          "response": {
+            "id": 10,
+            "ok": true,
+            "affected_rows": 1
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(3,7,[8,0])",
+          "response": {
+            "id": 11,
+            "ok": true,
+            "affected_rows": 1
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM a ORDER BY id",
+          "response": {
+            "id": 1,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                7,
+                [
+                  7.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ],
+              [
+                3,
+                7,
+                [
+                  8.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM a ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 2,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                2
+              ],
+              [
+                1
+              ],
+              [
+                3
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM a WHERE n=7 ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 3,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                1
+              ],
+              [
+                3
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(1,9,[9,0])",
+          "response": {
+            "id": 4,
+            "ok": false,
+            "error": {
+              "code": "DUPLICATE",
+              "message": "duplicate primary key"
+            }
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM b ORDER BY id",
+          "response": {
+            "id": 5,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                7,
+                [
+                  7.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ],
+              [
+                3,
+                7,
+                [
+                  8.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM b ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 6,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                2
+              ],
+              [
+                1
+              ],
+              [
+                3
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM b WHERE n=7 ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 7,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                1
+              ],
+              [
+                3
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(1,9,[9,0])",
+          "response": {
+            "id": 8,
+            "ok": false,
+            "error": {
+              "code": "DUPLICATE",
+              "message": "duplicate primary key"
+            }
+          }
+        },
+        {
+          "sql": "BEGIN",
+          "response": {
+            "id": 9,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "UPDATE a SET n=9 WHERE id=1",
+          "response": {
+            "id": 10,
+            "ok": true,
+            "affected_rows": 1
+          }
+        },
+        {
+          "sql": "ROLLBACK",
+          "response": {
+            "id": 11,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM a ORDER BY id",
+          "response": {
+            "id": 12,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                7,
+                [
+                  7.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ],
+              [
+                3,
+                7,
+                [
+                  8.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        }
+      ],
+      "stop_evidence": "after-catalog-rename\npid=1\npath=/data/catalog.json\n",
+      "response_received_before_kill": false,
+      "recovery_stop_evidence": "before-collect-unlink\npid=1\npath=/data/rows-331d1b38c44c40db95a0b055c81a0995.jsonl\n",
+      "recovery_reader_expected_error": "unexpected EOF; stderr=[]",
+      "expected_state": "all committed",
+      "passed": true,
+      "label": "python",
+      "seconds": 4.262
+    },
+    {
+      "phase": "before-collect-unlink",
+      "second_recovery_crash": false,
+      "assertions": [
+        {
+          "sql": "CREATE TABLE a(id BIGINT PRIMARY KEY,n BIGINT,v VECTOR(2))",
+          "response": {
+            "id": 1,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(1,0,[0,0]),(2,0,[1,0])",
+          "response": {
+            "id": 2,
+            "ok": true,
+            "affected_rows": 2
+          }
+        },
+        {
+          "sql": "CREATE VECTOR INDEX ai ON a(v)",
+          "response": {
+            "id": 3,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "CREATE TABLE b(id BIGINT PRIMARY KEY,n BIGINT,v VECTOR(2))",
+          "response": {
+            "id": 4,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(1,0,[0,0]),(2,0,[1,0])",
+          "response": {
+            "id": 5,
+            "ok": true,
+            "affected_rows": 2
+          }
+        },
+        {
+          "sql": "CREATE VECTOR INDEX bi ON b(v)",
+          "response": {
+            "id": 6,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "BEGIN",
+          "response": {
+            "id": 7,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "UPDATE a SET n=7,v=[7,0] WHERE id=1",
+          "response": {
+            "id": 8,
+            "ok": true,
+            "affected_rows": 1
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(3,7,[8,0])",
+          "response": {
+            "id": 9,
+            "ok": true,
+            "affected_rows": 1
+          }
+        },
+        {
+          "sql": "UPDATE b SET n=7,v=[7,0] WHERE id=1",
+          "response": {
+            "id": 10,
+            "ok": true,
+            "affected_rows": 1
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(3,7,[8,0])",
+          "response": {
+            "id": 11,
+            "ok": true,
+            "affected_rows": 1
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM a ORDER BY id",
+          "response": {
+            "id": 1,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                7,
+                [
+                  7.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ],
+              [
+                3,
+                7,
+                [
+                  8.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM a ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 2,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                2
+              ],
+              [
+                1
+              ],
+              [
+                3
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM a WHERE n=7 ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 3,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                1
+              ],
+              [
+                3
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(1,9,[9,0])",
+          "response": {
+            "id": 4,
+            "ok": false,
+            "error": {
+              "code": "DUPLICATE",
+              "message": "duplicate primary key"
+            }
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM b ORDER BY id",
+          "response": {
+            "id": 5,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                7,
+                [
+                  7.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ],
+              [
+                3,
+                7,
+                [
+                  8.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM b ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 6,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                2
+              ],
+              [
+                1
+              ],
+              [
+                3
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM b WHERE n=7 ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 7,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                1
+              ],
+              [
+                3
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(1,9,[9,0])",
+          "response": {
+            "id": 8,
+            "ok": false,
+            "error": {
+              "code": "DUPLICATE",
+              "message": "duplicate primary key"
+            }
+          }
+        },
+        {
+          "sql": "BEGIN",
+          "response": {
+            "id": 9,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "UPDATE a SET n=9 WHERE id=1",
+          "response": {
+            "id": 10,
+            "ok": true,
+            "affected_rows": 1
+          }
+        },
+        {
+          "sql": "ROLLBACK",
+          "response": {
+            "id": 11,
+            "ok": true,
+            "affected_rows": 0
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM a ORDER BY id",
+          "response": {
+            "id": 12,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                7,
+                [
+                  7.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ],
+              [
+                3,
+                7,
+                [
+                  8.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        }
+      ],
+      "stop_evidence": "before-collect-unlink\npid=1\npath=/data/rows-24704cd4b8894c7182a48d12149c793f.jsonl\n",
+      "response_received_before_kill": false,
+      "expected_state": "all committed",
+      "passed": true,
+      "label": "python",
+      "seconds": 2.535
+    },
+    {
+      "phase": "before-rows-sync",
+      "second_recovery_crash": false,
+      "assertions": [
+        {
+          "sql": "CREATE TABLE a(id BIGINT PRIMARY KEY,n BIGINT,v VECTOR(2))",
+          "response": {
+            "id": 1,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(1,0,[0,0]),(2,0,[1,0])",
+          "response": {
+            "id": 2,
+            "affected_rows": 2,
+            "ok": true
+          }
+        },
+        {
+          "sql": "CREATE VECTOR INDEX ai ON a(v)",
+          "response": {
+            "id": 3,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "CREATE TABLE b(id BIGINT PRIMARY KEY,n BIGINT,v VECTOR(2))",
+          "response": {
+            "id": 4,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(1,0,[0,0]),(2,0,[1,0])",
+          "response": {
+            "id": 5,
+            "affected_rows": 2,
+            "ok": true
+          }
+        },
+        {
+          "sql": "CREATE VECTOR INDEX bi ON b(v)",
+          "response": {
+            "id": 6,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM a ORDER BY id",
+          "response": {
+            "id": 1,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                0,
+                [
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM a ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 2,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                1
+              ],
+              [
+                2
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM a WHERE n=7 ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 3,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": []
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(1,9,[9,0])",
+          "response": {
+            "id": 4,
+            "error": {
+              "code": "DUPLICATE",
+              "message": "duplicate primary key"
+            },
+            "ok": false
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM b ORDER BY id",
+          "response": {
+            "id": 5,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                0,
+                [
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM b ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 6,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                1
+              ],
+              [
+                2
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM b WHERE n=7 ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 7,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": []
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(1,9,[9,0])",
+          "response": {
+            "id": 8,
+            "error": {
+              "code": "DUPLICATE",
+              "message": "duplicate primary key"
+            },
+            "ok": false
+          }
+        },
+        {
+          "sql": "BEGIN",
+          "response": {
+            "id": 9,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "UPDATE a SET n=9 WHERE id=1",
+          "response": {
+            "id": 10,
+            "affected_rows": 1,
+            "ok": true
+          }
+        },
+        {
+          "sql": "ROLLBACK",
+          "response": {
+            "id": 11,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM a ORDER BY id",
+          "response": {
+            "id": 12,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                0,
+                [
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        }
+      ],
+      "stop_evidence": "before-rows-sync\npid=1\npath=/data/rows-d581ac581053ea7118e79c13f9722971a.jsonl\n",
+      "response_received_before_kill": false,
+      "expected_state": "all old",
+      "passed": true,
+      "label": "cpp",
+      "seconds": 4378.027
+    },
+    {
+      "phase": "before-index-sync",
+      "second_recovery_crash": false,
+      "assertions": [
+        {
+          "sql": "CREATE TABLE a(id BIGINT PRIMARY KEY,n BIGINT,v VECTOR(2))",
+          "response": {
+            "id": 1,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(1,0,[0,0]),(2,0,[1,0])",
+          "response": {
+            "id": 2,
+            "affected_rows": 2,
+            "ok": true
+          }
+        },
+        {
+          "sql": "CREATE VECTOR INDEX ai ON a(v)",
+          "response": {
+            "id": 3,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "CREATE TABLE b(id BIGINT PRIMARY KEY,n BIGINT,v VECTOR(2))",
+          "response": {
+            "id": 4,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(1,0,[0,0]),(2,0,[1,0])",
+          "response": {
+            "id": 5,
+            "affected_rows": 2,
+            "ok": true
+          }
+        },
+        {
+          "sql": "CREATE VECTOR INDEX bi ON b(v)",
+          "response": {
+            "id": 6,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM a ORDER BY id",
+          "response": {
+            "id": 1,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                0,
+                [
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM a ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 2,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                1
+              ],
+              [
+                2
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM a WHERE n=7 ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 3,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": []
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(1,9,[9,0])",
+          "response": {
+            "id": 4,
+            "error": {
+              "code": "DUPLICATE",
+              "message": "duplicate primary key"
+            },
+            "ok": false
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM b ORDER BY id",
+          "response": {
+            "id": 5,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                0,
+                [
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM b ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 6,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                1
+              ],
+              [
+                2
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM b WHERE n=7 ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 7,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": []
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(1,9,[9,0])",
+          "response": {
+            "id": 8,
+            "error": {
+              "code": "DUPLICATE",
+              "message": "duplicate primary key"
+            },
+            "ok": false
+          }
+        },
+        {
+          "sql": "BEGIN",
+          "response": {
+            "id": 9,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "UPDATE a SET n=9 WHERE id=1",
+          "response": {
+            "id": 10,
+            "affected_rows": 1,
+            "ok": true
+          }
+        },
+        {
+          "sql": "ROLLBACK",
+          "response": {
+            "id": 11,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM a ORDER BY id",
+          "response": {
+            "id": 12,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                0,
+                [
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        }
+      ],
+      "stop_evidence": "before-index-sync\npid=1\npath=/data/index-c4cc38dd0cc501d818e7a00effb03fbbb.flat\n",
+      "response_received_before_kill": false,
+      "expected_state": "all old",
+      "passed": true,
+      "label": "cpp",
+      "seconds": 3.395
+    },
+    {
+      "phase": "before-catalog-sync",
+      "second_recovery_crash": false,
+      "assertions": [
+        {
+          "sql": "CREATE TABLE a(id BIGINT PRIMARY KEY,n BIGINT,v VECTOR(2))",
+          "response": {
+            "id": 1,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(1,0,[0,0]),(2,0,[1,0])",
+          "response": {
+            "id": 2,
+            "affected_rows": 2,
+            "ok": true
+          }
+        },
+        {
+          "sql": "CREATE VECTOR INDEX ai ON a(v)",
+          "response": {
+            "id": 3,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "CREATE TABLE b(id BIGINT PRIMARY KEY,n BIGINT,v VECTOR(2))",
+          "response": {
+            "id": 4,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(1,0,[0,0]),(2,0,[1,0])",
+          "response": {
+            "id": 5,
+            "affected_rows": 2,
+            "ok": true
+          }
+        },
+        {
+          "sql": "CREATE VECTOR INDEX bi ON b(v)",
+          "response": {
+            "id": 6,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "BEGIN",
+          "response": {
+            "id": 7,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "UPDATE a SET n=7,v=[7,0] WHERE id=1",
+          "response": {
+            "id": 8,
+            "affected_rows": 1,
+            "ok": true
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(3,7,[8,0])",
+          "response": {
+            "id": 9,
+            "affected_rows": 1,
+            "ok": true
+          }
+        },
+        {
+          "sql": "UPDATE b SET n=7,v=[7,0] WHERE id=1",
+          "response": {
+            "id": 10,
+            "affected_rows": 1,
+            "ok": true
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(3,7,[8,0])",
+          "response": {
+            "id": 11,
+            "affected_rows": 1,
+            "ok": true
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM a ORDER BY id",
+          "response": {
+            "id": 1,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                0,
+                [
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM a ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 2,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                1
+              ],
+              [
+                2
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM a WHERE n=7 ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 3,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": []
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(1,9,[9,0])",
+          "response": {
+            "id": 4,
+            "error": {
+              "code": "DUPLICATE",
+              "message": "duplicate primary key"
+            },
+            "ok": false
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM b ORDER BY id",
+          "response": {
+            "id": 5,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                0,
+                [
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM b ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 6,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                1
+              ],
+              [
+                2
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM b WHERE n=7 ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 7,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": []
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(1,9,[9,0])",
+          "response": {
+            "id": 8,
+            "error": {
+              "code": "DUPLICATE",
+              "message": "duplicate primary key"
+            },
+            "ok": false
+          }
+        },
+        {
+          "sql": "BEGIN",
+          "response": {
+            "id": 9,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "UPDATE a SET n=9 WHERE id=1",
+          "response": {
+            "id": 10,
+            "affected_rows": 1,
+            "ok": true
+          }
+        },
+        {
+          "sql": "ROLLBACK",
+          "response": {
+            "id": 11,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM a ORDER BY id",
+          "response": {
+            "id": 12,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                0,
+                [
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        }
+      ],
+      "stop_evidence": "before-catalog-sync\npid=1\npath=/data/catalog-e6150df322c092a118e7a00fb2edbe2912.tmp\n",
+      "response_received_before_kill": false,
+      "expected_state": "all old",
+      "passed": true,
+      "label": "cpp",
+      "seconds": 2.884
+    },
+    {
+      "phase": "before-catalog-rename",
+      "second_recovery_crash": false,
+      "assertions": [
+        {
+          "sql": "CREATE TABLE a(id BIGINT PRIMARY KEY,n BIGINT,v VECTOR(2))",
+          "response": {
+            "id": 1,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(1,0,[0,0]),(2,0,[1,0])",
+          "response": {
+            "id": 2,
+            "affected_rows": 2,
+            "ok": true
+          }
+        },
+        {
+          "sql": "CREATE VECTOR INDEX ai ON a(v)",
+          "response": {
+            "id": 3,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "CREATE TABLE b(id BIGINT PRIMARY KEY,n BIGINT,v VECTOR(2))",
+          "response": {
+            "id": 4,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(1,0,[0,0]),(2,0,[1,0])",
+          "response": {
+            "id": 5,
+            "affected_rows": 2,
+            "ok": true
+          }
+        },
+        {
+          "sql": "CREATE VECTOR INDEX bi ON b(v)",
+          "response": {
+            "id": 6,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "BEGIN",
+          "response": {
+            "id": 7,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "UPDATE a SET n=7,v=[7,0] WHERE id=1",
+          "response": {
+            "id": 8,
+            "affected_rows": 1,
+            "ok": true
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(3,7,[8,0])",
+          "response": {
+            "id": 9,
+            "affected_rows": 1,
+            "ok": true
+          }
+        },
+        {
+          "sql": "UPDATE b SET n=7,v=[7,0] WHERE id=1",
+          "response": {
+            "id": 10,
+            "affected_rows": 1,
+            "ok": true
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(3,7,[8,0])",
+          "response": {
+            "id": 11,
+            "affected_rows": 1,
+            "ok": true
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM a ORDER BY id",
+          "response": {
+            "id": 1,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                0,
+                [
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM a ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 2,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                1
+              ],
+              [
+                2
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM a WHERE n=7 ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 3,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": []
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(1,9,[9,0])",
+          "response": {
+            "id": 4,
+            "error": {
+              "code": "DUPLICATE",
+              "message": "duplicate primary key"
+            },
+            "ok": false
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM b ORDER BY id",
+          "response": {
+            "id": 5,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                0,
+                [
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM b ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 6,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                1
+              ],
+              [
+                2
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM b WHERE n=7 ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 7,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": []
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(1,9,[9,0])",
+          "response": {
+            "id": 8,
+            "error": {
+              "code": "DUPLICATE",
+              "message": "duplicate primary key"
+            },
+            "ok": false
+          }
+        },
+        {
+          "sql": "BEGIN",
+          "response": {
+            "id": 9,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "UPDATE a SET n=9 WHERE id=1",
+          "response": {
+            "id": 10,
+            "affected_rows": 1,
+            "ok": true
+          }
+        },
+        {
+          "sql": "ROLLBACK",
+          "response": {
+            "id": 11,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM a ORDER BY id",
+          "response": {
+            "id": 12,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                0,
+                [
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        }
+      ],
+      "stop_evidence": "before-catalog-rename\npid=1\npath=/data/catalog-1ab2bcdec0a2c3f218e7a010538689f712.tmp\n",
+      "response_received_before_kill": false,
+      "expected_state": "all old",
+      "passed": true,
+      "label": "cpp",
+      "seconds": 2.665
+    },
+    {
+      "phase": "after-catalog-rename",
+      "second_recovery_crash": true,
+      "assertions": [
+        {
+          "sql": "CREATE TABLE a(id BIGINT PRIMARY KEY,n BIGINT,v VECTOR(2))",
+          "response": {
+            "id": 1,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(1,0,[0,0]),(2,0,[1,0])",
+          "response": {
+            "id": 2,
+            "affected_rows": 2,
+            "ok": true
+          }
+        },
+        {
+          "sql": "CREATE VECTOR INDEX ai ON a(v)",
+          "response": {
+            "id": 3,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "CREATE TABLE b(id BIGINT PRIMARY KEY,n BIGINT,v VECTOR(2))",
+          "response": {
+            "id": 4,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(1,0,[0,0]),(2,0,[1,0])",
+          "response": {
+            "id": 5,
+            "affected_rows": 2,
+            "ok": true
+          }
+        },
+        {
+          "sql": "CREATE VECTOR INDEX bi ON b(v)",
+          "response": {
+            "id": 6,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "BEGIN",
+          "response": {
+            "id": 7,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "UPDATE a SET n=7,v=[7,0] WHERE id=1",
+          "response": {
+            "id": 8,
+            "affected_rows": 1,
+            "ok": true
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(3,7,[8,0])",
+          "response": {
+            "id": 9,
+            "affected_rows": 1,
+            "ok": true
+          }
+        },
+        {
+          "sql": "UPDATE b SET n=7,v=[7,0] WHERE id=1",
+          "response": {
+            "id": 10,
+            "affected_rows": 1,
+            "ok": true
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(3,7,[8,0])",
+          "response": {
+            "id": 11,
+            "affected_rows": 1,
+            "ok": true
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM a ORDER BY id",
+          "response": {
+            "id": 1,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                7,
+                [
+                  7.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ],
+              [
+                3,
+                7,
+                [
+                  8.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM a ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 2,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                2
+              ],
+              [
+                1
+              ],
+              [
+                3
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM a WHERE n=7 ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 3,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                1
+              ],
+              [
+                3
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(1,9,[9,0])",
+          "response": {
+            "id": 4,
+            "error": {
+              "code": "DUPLICATE",
+              "message": "duplicate primary key"
+            },
+            "ok": false
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM b ORDER BY id",
+          "response": {
+            "id": 5,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                7,
+                [
+                  7.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ],
+              [
+                3,
+                7,
+                [
+                  8.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM b ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 6,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                2
+              ],
+              [
+                1
+              ],
+              [
+                3
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM b WHERE n=7 ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 7,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                1
+              ],
+              [
+                3
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(1,9,[9,0])",
+          "response": {
+            "id": 8,
+            "error": {
+              "code": "DUPLICATE",
+              "message": "duplicate primary key"
+            },
+            "ok": false
+          }
+        },
+        {
+          "sql": "BEGIN",
+          "response": {
+            "id": 9,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "UPDATE a SET n=9 WHERE id=1",
+          "response": {
+            "id": 10,
+            "affected_rows": 1,
+            "ok": true
+          }
+        },
+        {
+          "sql": "ROLLBACK",
+          "response": {
+            "id": 11,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM a ORDER BY id",
+          "response": {
+            "id": 12,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                7,
+                [
+                  7.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ],
+              [
+                3,
+                7,
+                [
+                  8.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        }
+      ],
+      "stop_evidence": "after-catalog-rename\npid=1\npath=/data/catalog.json\n",
+      "response_received_before_kill": false,
+      "recovery_stop_evidence": "before-collect-unlink\npid=1\npath=/data/rows-e93d466cd035cc1418e7a010d33e66611.jsonl.keys\n",
+      "recovery_reader_expected_error": "unexpected EOF; stderr=[]",
+      "expected_state": "all committed",
+      "passed": true,
+      "label": "cpp",
+      "seconds": 4.331
+    },
+    {
+      "phase": "before-collect-unlink",
+      "second_recovery_crash": false,
+      "assertions": [
+        {
+          "sql": "CREATE TABLE a(id BIGINT PRIMARY KEY,n BIGINT,v VECTOR(2))",
+          "response": {
+            "id": 1,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(1,0,[0,0]),(2,0,[1,0])",
+          "response": {
+            "id": 2,
+            "affected_rows": 2,
+            "ok": true
+          }
+        },
+        {
+          "sql": "CREATE VECTOR INDEX ai ON a(v)",
+          "response": {
+            "id": 3,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "CREATE TABLE b(id BIGINT PRIMARY KEY,n BIGINT,v VECTOR(2))",
+          "response": {
+            "id": 4,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(1,0,[0,0]),(2,0,[1,0])",
+          "response": {
+            "id": 5,
+            "affected_rows": 2,
+            "ok": true
+          }
+        },
+        {
+          "sql": "CREATE VECTOR INDEX bi ON b(v)",
+          "response": {
+            "id": 6,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "BEGIN",
+          "response": {
+            "id": 7,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "UPDATE a SET n=7,v=[7,0] WHERE id=1",
+          "response": {
+            "id": 8,
+            "affected_rows": 1,
+            "ok": true
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(3,7,[8,0])",
+          "response": {
+            "id": 9,
+            "affected_rows": 1,
+            "ok": true
+          }
+        },
+        {
+          "sql": "UPDATE b SET n=7,v=[7,0] WHERE id=1",
+          "response": {
+            "id": 10,
+            "affected_rows": 1,
+            "ok": true
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(3,7,[8,0])",
+          "response": {
+            "id": 11,
+            "affected_rows": 1,
+            "ok": true
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM a ORDER BY id",
+          "response": {
+            "id": 1,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                7,
+                [
+                  7.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ],
+              [
+                3,
+                7,
+                [
+                  8.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM a ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 2,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                2
+              ],
+              [
+                1
+              ],
+              [
+                3
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM a WHERE n=7 ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 3,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                1
+              ],
+              [
+                3
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "INSERT INTO a VALUES(1,9,[9,0])",
+          "response": {
+            "id": 4,
+            "error": {
+              "code": "DUPLICATE",
+              "message": "duplicate primary key"
+            },
+            "ok": false
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM b ORDER BY id",
+          "response": {
+            "id": 5,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                7,
+                [
+                  7.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ],
+              [
+                3,
+                7,
+                [
+                  8.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM b ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 6,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                2
+              ],
+              [
+                1
+              ],
+              [
+                3
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "SELECT id FROM b WHERE n=7 ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10",
+          "response": {
+            "id": 7,
+            "ok": true,
+            "columns": [
+              "id"
+            ],
+            "rows": [
+              [
+                1
+              ],
+              [
+                3
+              ]
+            ]
+          }
+        },
+        {
+          "sql": "INSERT INTO b VALUES(1,9,[9,0])",
+          "response": {
+            "id": 8,
+            "error": {
+              "code": "DUPLICATE",
+              "message": "duplicate primary key"
+            },
+            "ok": false
+          }
+        },
+        {
+          "sql": "BEGIN",
+          "response": {
+            "id": 9,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "UPDATE a SET n=9 WHERE id=1",
+          "response": {
+            "id": 10,
+            "affected_rows": 1,
+            "ok": true
+          }
+        },
+        {
+          "sql": "ROLLBACK",
+          "response": {
+            "id": 11,
+            "affected_rows": 0,
+            "ok": true
+          }
+        },
+        {
+          "sql": "SELECT id,n,v FROM a ORDER BY id",
+          "response": {
+            "id": 12,
+            "ok": true,
+            "columns": [
+              "id",
+              "n",
+              "v"
+            ],
+            "rows": [
+              [
+                1,
+                7,
+                [
+                  7.0,
+                  0.0
+                ]
+              ],
+              [
+                2,
+                0,
+                [
+                  1.0,
+                  0.0
+                ]
+              ],
+              [
+                3,
+                7,
+                [
+                  8.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        }
+      ],
+      "stop_evidence": "before-collect-unlink\npid=1\npath=/data/rows-f56ef152d5251d5b18e7a011d14d63346.jsonl\n",
+      "response_received_before_kill": false,
+      "expected_state": "all committed",
+      "passed": true,
+      "label": "cpp",
+      "seconds": 1.819
+    }
+  ],
+  "passed": 12,
+  "asserted_requests": 256
+}

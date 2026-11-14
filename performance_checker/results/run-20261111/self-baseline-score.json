@@ -1,0 +1,36 @@
+{
+  "available": true,
+  "scope": "local estimate; not an official performance score or rank",
+  "baseline": {
+    "write": {
+      "time_ms": 7209.061999999999,
+      "io_bytes": 39202816,
+      "memory_bytes": 53776384
+    },
+    "query": {
+      "time_ms": 3760.7783999999924,
+      "io_bytes": 47017984,
+      "memory_bytes": 78655488
+    }
+  },
+  "eligible": true,
+  "reasons": [],
+  "rounds": [
+    {
+      "write": 0.5218655959236167,
+      "query": 0.49467042770881436,
+      "efficiency": 0.5037354837804151
+    },
+    {
+      "write": 0.49787755763294333,
+      "query": 0.5,
+      "efficiency": 0.4992925192109811
+    },
+    {
+      "write": 0.5030880709610647,
+      "query": 0.5017568693462727,
+      "efficiency": 0.5022006032178701
+    }
+  ],
+  "median_efficiency": 0.502201
+}

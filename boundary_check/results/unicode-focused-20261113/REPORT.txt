@@ -1,0 +1,45 @@
+Unicode 专项复测：以 Python 返回为准
+日期：2026-11-13
+
+本次只复测列名/别名的大小写以及非 ASCII 空白、数字边界，不是官方用例测试。
+Python 基准镜像：minivector-boundary:python-f1b9f4e
+C++ 修复版镜像：minivector-cpp:unicode-20261113
+
+用户原例（在新数据卷逐条执行）
+CREATE TABLE u(id BIGINT PRIMARY KEY, `Ä` BIGINT);
+INSERT INTO u VALUES(1, 7);
+SELECT `ä` AS x FROM u;
+
+两版 SELECT 实际响应完全一致：
+{"id":3,"ok":true,"columns":["x"],"rows":[[7]]}
+
+具体边界                        Python                  C++ 修复版
+声明 `Ä`，使用 `ä`              columns=["x"], rows=[[7]] 一致
+SELECT `Ä` FROM u               columns=["ä"], rows=[[7]] 一致
+AS `Ö`，ORDER BY `ö`            columns=["ö"], rows=[[7]] 一致
+AS X，ORDER BY x                columns=["x"], rows=[[7]] 一致
+SELECT 后紧接 U+00A0            接受，返回 [[7]]          一致
+INSERT 的数字为 ٢、+１２        接受，插入 id=2、值=12    一致
+WHERE id=٢，LIMIT １            接受，返回 [[12]]         一致
+混合数字 1２、LIMIT ٠١          接受，返回 id=2           一致
+29 个 Python 空白字符          全部接受                  一致
+6 个非空白字符                 全部拒绝                  一致
+11 组十进制数字字符            全部接受                  一致
+10 种非十进制数字/不支持写法    全部拒绝                  一致
+
+U+00A0 的实际 SQL（SELECT 后的字符是不换行空格）：
+SELECT `ä` AS x FROM u;
+两版实际响应：{"id":7,"ok":true,"columns":["x"],"rows":[[7]]}
+
+共 66 个成对请求。两版返回的完整 JSON 对象逐条相等，包括错误响应；
+对象键的输出顺序不参与比较。差异 0，断言失败 0，清理错误 0。
+全部请求、SQL、Python/C++ 原始响应见 python-oracle.json。
+
+同时复跑已有两组专项测试：
+unicode_identifiers：Python 通过，C++ 通过。
+unicode_lexing：Python 通过，C++ 通过。
+每版合计 209 条 JSONL 请求，覆盖 Unicode 小写映射、别名引用、重启恢复、
+字符串保持原样、空白字符、数字类型及边界、向量和整数范围校验。
+结果分别见 python.json 和 cpp.json。
+
+本次没有发现需要继续修正的差异，未再修改数据库源码。

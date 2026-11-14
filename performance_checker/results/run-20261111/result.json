@@ -1,0 +1,201 @@
+{
+  "scope": "local diagnostic; not an official performance score",
+  "limitations": [
+    "Synthetic dataset and seeds are not verified to be the official workload.",
+    "Cold-cache preparation, the dedicated device and cgroup writeback attribution are not independently verified.",
+    "Resource counters are read before shutdown; subsequent writes may be omitted.",
+    "docker exec collection helpers share the measured cgroup and affect its counters.",
+    "The official frozen resource limits, baseline, score and ranking are not established by this tool."
+  ],
+  "configuration": {
+    "image": "minivector-round2:f1b9f4e",
+    "mode": "exact",
+    "create_index": false,
+    "rows": 10000,
+    "dimensions": 128,
+    "queries": 1000,
+    "k": 10,
+    "rounds": 3,
+    "data_seed": 19017,
+    "query_seed": 29017,
+    "io_device": "8:48",
+    "cpus": "2",
+    "memory": "2g",
+    "pids": 128
+  },
+  "rounds": [
+    {
+      "write": {
+        "time_ms": 7209.061999999999,
+        "io_bytes": 29896704,
+        "memory_bytes": 44912640,
+        "startup_ms": 352.2697000000001,
+        "load_ms": 7209.061999999999,
+        "preparation_ms": null,
+        "raw_resources": {
+          "sync_exit_code": 0,
+          "sync_stderr": "",
+          "io_stat": "8:48 rbytes=3203072 wbytes=26693632 rios=165 wios=301 dbytes=0 dios=0\n",
+          "memory_peak": "44912640\n",
+          "data_device": "8:48",
+          "errors": []
+        },
+        "persisted": true,
+        "recall": {},
+        "query_counts": {
+          "unfiltered": 0,
+          "filtered": 0
+        }
+      },
+      "query": {
+        "time_ms": 3905.530299999999,
+        "io_bytes": 46747648,
+        "memory_bytes": 78573568,
+        "startup_ms": 329.6241999999978,
+        "load_ms": 7208.9775,
+        "preparation_ms": 622.0168000000008,
+        "raw_resources": {
+          "sync_exit_code": 0,
+          "sync_stderr": "",
+          "io_stat": "8:48 rbytes=20054016 wbytes=26693632 rios=313 wios=301 dbytes=0 dios=0\n",
+          "memory_peak": "78573568\n",
+          "data_device": "8:48",
+          "errors": []
+        },
+        "persisted": true,
+        "recall": {
+          "unfiltered": 1.0,
+          "filtered": 1.0
+        },
+        "query_counts": {
+          "unfiltered": 500,
+          "filtered": 500
+        }
+      },
+      "checks": {
+        "write_correct": true,
+        "query_correct": true,
+        "resources_ok": true,
+        "recall_unfiltered": 1.0,
+        "recall_filtered": 1.0
+      }
+    },
+    {
+      "write": {
+        "time_ms": 7279.965799999985,
+        "io_bytes": 39206912,
+        "memory_bytes": 54493184,
+        "startup_ms": 447.2206000000085,
+        "load_ms": 7279.965799999985,
+        "preparation_ms": null,
+        "raw_resources": {
+          "sync_exit_code": 0,
+          "sync_stderr": "",
+          "io_stat": "8:48 rbytes=12513280 wbytes=26693632 rios=224 wios=301 dbytes=0 dios=0\n7:1 rbytes=90112 wbytes=0 rios=2 wios=0 dbytes=0 dios=0\n",
+          "memory_peak": "54493184\n",
+          "data_device": "8:48",
+          "errors": []
+        },
+        "persisted": true,
+        "recall": {},
+        "query_counts": {
+          "unfiltered": 0,
+          "filtered": 0
+        }
+      },
+      "query": {
+        "time_ms": 3760.7783999999924,
+        "io_bytes": 47017984,
+        "memory_bytes": 78655488,
+        "startup_ms": 315.5189000000007,
+        "load_ms": 7228.394199999997,
+        "preparation_ms": 625.2767999999946,
+        "raw_resources": {
+          "sync_exit_code": 0,
+          "sync_stderr": "",
+          "io_stat": "8:48 rbytes=20324352 wbytes=26693632 rios=324 wios=301 dbytes=0 dios=0\n",
+          "memory_peak": "78655488\n",
+          "data_device": "8:48",
+          "errors": []
+        },
+        "persisted": true,
+        "recall": {
+          "unfiltered": 1.0,
+          "filtered": 1.0
+        },
+        "query_counts": {
+          "unfiltered": 500,
+          "filtered": 500
+        }
+      },
+      "checks": {
+        "write_correct": true,
+        "query_correct": true,
+        "resources_ok": true,
+        "recall_unfiltered": 1.0,
+        "recall_filtered": 1.0
+      }
+    },
+    {
+      "write": {
+        "time_ms": 7062.139800000012,
+        "io_bytes": 39202816,
+        "memory_bytes": 53776384,
+        "startup_ms": 410.52259999997887,
+        "load_ms": 7062.139800000012,
+        "preparation_ms": null,
+        "raw_resources": {
+          "sync_exit_code": 0,
+          "sync_stderr": "",
+          "io_stat": "8:48 rbytes=12509184 wbytes=26693632 rios=223 wios=301 dbytes=0 dios=0\n7:1 rbytes=12288 wbytes=0 rios=1 wios=0 dbytes=0 dios=0\n",
+          "memory_peak": "53776384\n",
+          "data_device": "8:48",
+          "errors": []
+        },
+        "persisted": true,
+        "recall": {},
+        "query_counts": {
+          "unfiltered": 0,
+          "filtered": 0
+        }
+      },
+      "query": {
+        "time_ms": 3708.8582999999744,
+        "io_bytes": 47017984,
+        "memory_bytes": 79179776,
+        "startup_ms": 346.5828000000215,
+        "load_ms": 7287.035600000025,
+        "preparation_ms": 603.8264000000026,
+        "raw_resources": {
+          "sync_exit_code": 0,
+          "sync_stderr": "",
+          "io_stat": "8:48 rbytes=20324352 wbytes=26693632 rios=324 wios=301 dbytes=0 dios=0\n",
+          "memory_peak": "79179776\n",
+          "data_device": "8:48",
+          "errors": []
+        },
+        "persisted": true,
+        "recall": {
+          "unfiltered": 1.0,
+          "filtered": 1.0
+        },
+        "query_counts": {
+          "unfiltered": 500,
+          "filtered": 500
+        }
+      },
+      "checks": {
+        "write_correct": true,
+        "query_correct": true,
+        "resources_ok": true,
+        "recall_unfiltered": 1.0,
+        "recall_filtered": 1.0
+      }
+    }
+  ],
+  "status": "completed",
+  "efficiency": {
+    "available": false,
+    "reason": "No baseline supplied; the efficiency indicator cannot be calculated."
+  }
+}

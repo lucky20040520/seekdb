@@ -1,0 +1,25 @@
+{
+  "timestamp_utc": "2026-11-13T14:31:15.474644+00:00",
+  "scope": "Supplementary actual-process JSONL tests; no database Python imports; not official hidden tests or performance results",
+  "target": "minivector-cpp:unicode-20261113",
+  "profiling": false,
+  "screen_block": null,
+  "cases": 1,
+  "passed_cases": 0,
+  "requests": 5,
+  "results": [
+    {
+      "case": "duplicate_alias_ordering",
+      "passed": false,
+      "error": "rows mismatch: expected [[1, 0.0, 10.0]] got {'id': 5, 'ok': True, 'columns': ['id', 'x', 'x'], 'rows': [[2, 10.0, 0.0]]}",
+      "traceback": "Traceback (most recent call last):\n  File \"E:\\project\\seekdb-query-optimization\\tools\\test_cpp.py\", line 817, in main\n    case(target)\n  File \"E:\\project\\seekdb-query-optimization\\tools\\test_cpp.py\", line 663, in duplicate_alias_ordering\n    check(False)\n  File \"E:\\project\\seekdb-query-optimization\\tools\\test_cpp.py\", line 644, in check\n    s.sql(\"SELECT id,L2_DISTANCE(v,[0,0]) AS x,\" + last + \" AS x FROM t ORDER BY x\" + suffix,\n  File \"E:\\project\\seekdb-query-optimization\\tools\\test_cpp.py\", line 176, in sql\n    assert same(response.get(\"rows\"), rows), \"rows mismatch: expected %r got %r\" % (rows, response)\nAssertionError: rows mismatch: expected [[1, 0.0, 10.0]] got {'id': 5, 'ok': True, 'columns': ['id', 'x', 'x'], 'rows': [[2, 10.0, 0.0]]}\n",
+      "last_sql": "SELECT id,L2_DISTANCE(v,[0,0]) AS x,L2_DISTANCE(v,[10,0]) AS x FROM t ORDER BY x LIMIT 1",
+      "last_request": "{\"id\": 5, \"op\": \"execute\", \"sql\": \"SELECT id,L2_DISTANCE(v,[0,0]) AS x,L2_DISTANCE(v,[10,0]) AS x FROM t ORDER BY x LIMIT 1\", \"search_mode\": \"exact\"}",
+      "stderr": [
+        []
+      ],
+      "requests": 5,
+      "seconds": 1.0331236
+    }
+  ]
+}

@@ -1,0 +1,434 @@
+{
+  "status": "completed",
+  "timestamp_utc": "2026-11-11T07:19:41.196219+00:00",
+  "scope": "Local exact query comparison, not an official score; profiling disabled",
+  "configuration": {
+    "before": "minivector-cpp:profile-20261111",
+    "after": "minivector-cpp:query-20261111",
+    "output": "performance_checker/results/query-20261111-paired",
+    "io_device": "8:48",
+    "blocks": [
+      0,
+      32
+    ],
+    "rows": 10000,
+    "dimensions": 128,
+    "queries": 1000,
+    "k": 10,
+    "cpus": "2",
+    "memory": "2g",
+    "pids": 128,
+    "startup_timeout": 120,
+    "request_timeout": 60,
+    "max_response_bytes": 16777216,
+    "rounds": 3,
+    "data_seed": 19017,
+    "query_seed": 29017
+  },
+  "source_sha256": {
+    "cpp/main.cpp": "c3f84f41f5d344b92744aa59d449202c30e5c7a47c946b49031092bfbc3512e9",
+    "cpp/minivector.hpp": "92ea8695ab72ad988903f41435dc93325cd6b242bdb72473d7b6886f0bd89c14",
+    "cpp/query.cpp": "4f81aea3b06b7868b7c0a940f3a3fabc7c02c72c4cffbce68dd0ac0239adc621",
+    "cpp/storage.cpp": "de67a4d7a23bbe989b4a64844451bdede3a85d4aabd7bca5a793207f81ea0902",
+    "cpp/sql.cpp": "6d79145ca319eaf267072e28471f6bf865ff524d47e5cdd975229a51a68a4902",
+    "cpp/profile.hpp": "e9d015d6e78c505d604234a63b613602819d19158804eb3dae0ba41b3fab9c61",
+    "cpp/distance_screen.hpp": "7449f4e6602b365d01997cef10da59da534ff3eff5c78830a9f3c1d875abef28",
+    "Dockerfile": "8bc573cbbaed9d2931c16eab6e7ebc6e2de6328b867037bbe02bc5e6b9ab1fda",
+    "performance_checker/compare_query.py": "ad19c06ecdfc5034ceb7e9e5832f8b6a8afa24401a0caeb29e70f583b781a1f3",
+    "performance_checker/compare_cache.py": "061ba4c02fce927234ecdc98f2c355bb85714b5ab786e2ad53cdfbc4b7c22d83",
+    "performance_checker/checker.py": "56f0e2e38c583bc2e3d8d38ad835ea363d1260b3fb6c55b914f8749824b099f7",
+    "performance_checker/workload.py": "e6db78d02d05e590e1a345edf638340cdd3fe55f1d69e0ce331c6bd3e10c439e",
+    "performance_checker/transport.py": "251d1a8c961fbb717cf4e5a5a2dae8d56a7f0fc1e1420942f191a3440e3e2a86"
+  },
+  "limitations": [
+    "Resource scope includes load and warmup; query timing excludes both.",
+    "Single unfiltered warmup; equality-list creation is timed.",
+    "Host caches are not explicitly cleared; hardware cache misses/DRAM bytes are not measured.",
+    "No separate write-stage measurement or full efficiency score.",
+    "Device verification does not prove exclusive writeback attribution."
+  ],
+  "images": {
+    "before": {
+      "tag": "minivector-cpp:profile-20261111",
+      "screen_block": null,
+      "id": "sha256:db4e2a0cf24b56696a7419ce23ac8d0c2465e52a69ccac6d1dc0900996a2ecdd"
+    },
+    "full": {
+      "tag": "minivector-cpp:query-20261111",
+      "screen_block": 0,
+      "id": "sha256:3527c7474513c31e6960671461ede8a19cd1b2f2b0ab7422882721cece4e3dc9"
+    },
+    "block32": {
+      "tag": "minivector-cpp:query-20261111",
+      "screen_block": 32,
+      "id": "sha256:3527c7474513c31e6960671461ede8a19cd1b2f2b0ab7422882721cece4e3dc9"
+    }
+  },
+  "rounds": [
+    {
+      "number": 1,
+      "measurement_order": [
+        "before",
+        "full",
+        "block32"
+      ],
+      "variants": {
+        "before": {
+          "time_ms": 1514.0084000000006,
+          "groups": {
+            "unfiltered": {
+              "count": 500,
+              "time_ms": 833.5863999999899
+            },
+            "filtered": {
+              "count": 500,
+              "time_ms": 677.7990999999995
+            }
+          },
+          "startup_ms": 281.8528,
+          "load_ms": 5123.556299999999,
+          "preparation_ms": 231.62039999999973,
+          "io_bytes": 27398144,
+          "memory_bytes": 41713664,
+          "raw_resources": {
+            "sync_exit_code": 0,
+            "sync_stderr": "",
+            "io_stat": "8:48 rbytes=688128 wbytes=26710016 rios=14 wios=301 dbytes=0 dios=0\n",
+            "memory_peak": "41713664\n",
+            "data_device": "8:48",
+            "errors": []
+          },
+          "persisted": true,
+          "answers_sha256": "63ad788352d9eed2e9bfe4b4898667c87a3dbcfa083e41af469d22d7feccf973"
+        },
+        "full": {
+          "time_ms": 1460.567900000001,
+          "groups": {
+            "unfiltered": {
+              "count": 500,
+              "time_ms": 782.856900000049
+            },
+            "filtered": {
+              "count": 500,
+              "time_ms": 675.0092000000224
+            }
+          },
+          "startup_ms": 282.62130000000064,
+          "load_ms": 5030.5603999999985,
+          "preparation_ms": 229.9463000000017,
+          "io_bytes": 26710016,
+          "memory_bytes": 40718336,
+          "raw_resources": {
+            "sync_exit_code": 0,
+            "sync_stderr": "",
+            "io_stat": "8:48 rbytes=0 wbytes=26710016 rios=0 wios=301 dbytes=0 dios=0\n",
+            "memory_peak": "40718336\n",
+            "data_device": "8:48",
+            "errors": []
+          },
+          "persisted": true,
+          "answers_sha256": "63ad788352d9eed2e9bfe4b4898667c87a3dbcfa083e41af469d22d7feccf973"
+        },
+        "block32": {
+          "time_ms": 1474.9516000000008,
+          "groups": {
+            "unfiltered": {
+              "count": 500,
+              "time_ms": 799.9364000000361
+            },
+            "filtered": {
+              "count": 500,
+              "time_ms": 672.3083000000186
+            }
+          },
+          "startup_ms": 277.5336999999993,
+          "load_ms": 5259.088199999997,
+          "preparation_ms": 235.05300000000062,
+          "io_bytes": 26710016,
+          "memory_bytes": 40947712,
+          "raw_resources": {
+            "sync_exit_code": 0,
+            "sync_stderr": "",
+            "io_stat": "8:48 rbytes=0 wbytes=26710016 rios=0 wios=301 dbytes=0 dios=0\n",
+            "memory_peak": "40947712\n",
+            "data_device": "8:48",
+            "errors": []
+          },
+          "persisted": true,
+          "answers_sha256": "63ad788352d9eed2e9bfe4b4898667c87a3dbcfa083e41af469d22d7feccf973"
+        }
+      },
+      "identical_answers": true,
+      "recall": {
+        "unfiltered": 1.0,
+        "filtered": 1.0
+      }
+    },
+    {
+      "number": 2,
+      "measurement_order": [
+        "full",
+        "block32",
+        "before"
+      ],
+      "variants": {
+        "full": {
+          "time_ms": 1422.7817999999957,
+          "groups": {
+            "unfiltered": {
+              "count": 500,
+              "time_ms": 774.6272999995654
+            },
+            "filtered": {
+              "count": 500,
+              "time_ms": 645.3927000006274
+            }
+          },
+          "startup_ms": 295.33450000002404,
+          "load_ms": 5208.765299999982,
+          "preparation_ms": 225.73089999997364,
+          "io_bytes": 26710016,
+          "memory_bytes": 41226240,
+          "raw_resources": {
+            "sync_exit_code": 0,
+            "sync_stderr": "",
+            "io_stat": "8:48 rbytes=0 wbytes=26710016 rios=0 wios=301 dbytes=0 dios=0\n",
+            "memory_peak": "41226240\n",
+            "data_device": "8:48",
+            "errors": []
+          },
+          "persisted": true,
+          "answers_sha256": "7fd3a1b437185ccb4b7f5784413c21ee43f4090fc0f8a468f80d63bf89080176"
+        },
+        "block32": {
+          "time_ms": 1388.8531999999714,
+          "groups": {
+            "unfiltered": {
+              "count": 500,
+              "time_ms": 750.612799999999
+            },
+            "filtered": {
+              "count": 500,
+              "time_ms": 635.5369999992604
+            }
+          },
+          "startup_ms": 287.14179999997214,
+          "load_ms": 5127.25260000002,
+          "preparation_ms": 229.1283000000135,
+          "io_bytes": 26710016,
+          "memory_bytes": 40996864,
+          "raw_resources": {
+            "sync_exit_code": 0,
+            "sync_stderr": "",
+            "io_stat": "8:48 rbytes=0 wbytes=26710016 rios=0 wios=301 dbytes=0 dios=0\n",
+            "memory_peak": "40996864\n",
+            "data_device": "8:48",
+            "errors": []
+          },
+          "persisted": true,
+          "answers_sha256": "7fd3a1b437185ccb4b7f5784413c21ee43f4090fc0f8a468f80d63bf89080176"
+        },
+        "before": {
+          "time_ms": 1491.0231999999723,
+          "groups": {
+            "unfiltered": {
+              "count": 500,
+              "time_ms": 817.8457999998727
+            },
+            "filtered": {
+              "count": 500,
+              "time_ms": 670.5312999997659
+            }
+          },
+          "startup_ms": 288.53960000003553,
+          "load_ms": 5203.922900000009,
+          "preparation_ms": 220.5448000000274,
+          "io_bytes": 26710016,
+          "memory_bytes": 41086976,
+          "raw_resources": {
+            "sync_exit_code": 0,
+            "sync_stderr": "",
+            "io_stat": "8:48 rbytes=0 wbytes=26710016 rios=0 wios=301 dbytes=0 dios=0\n",
+            "memory_peak": "41086976\n",
+            "data_device": "8:48",
+            "errors": []
+          },
+          "persisted": true,
+          "answers_sha256": "7fd3a1b437185ccb4b7f5784413c21ee43f4090fc0f8a468f80d63bf89080176"
+        }
+      },
+      "identical_answers": true,
+      "recall": {
+        "unfiltered": 1.0,
+        "filtered": 1.0
+      }
+    },
+    {
+      "number": 3,
+      "measurement_order": [
+        "block32",
+        "before",
+        "full"
+      ],
+      "variants": {
+        "block32": {
+          "time_ms": 1377.7549000000135,
+          "groups": {
+            "unfiltered": {
+              "count": 500,
+              "time_ms": 747.5804000013113
+            },
+            "filtered": {
+              "count": 500,
+              "time_ms": 627.1466000013106
+            }
+          },
+          "startup_ms": 344.1164000000754,
+          "load_ms": 5058.775699999956,
+          "preparation_ms": 233.04830000006405,
+          "io_bytes": 32702464,
+          "memory_bytes": 46825472,
+          "raw_resources": {
+            "sync_exit_code": 0,
+            "sync_stderr": "",
+            "io_stat": "8:48 rbytes=5992448 wbytes=26710016 rios=84 wios=301 dbytes=0 dios=0\n7:1 rbytes=12288 wbytes=0 rios=1 wios=0 dbytes=0 dios=0\n",
+            "memory_peak": "46825472\n",
+            "data_device": "8:48",
+            "errors": []
+          },
+          "persisted": true,
+          "answers_sha256": "d1e8139e5f7ac4d1cfe7d9a8c53f23f1d88464e61c2f8196d45ab0e168904d0e"
+        },
+        "before": {
+          "time_ms": 1532.4518999999555,
+          "groups": {
+            "unfiltered": {
+              "count": 500,
+              "time_ms": 831.1936999988347
+            },
+            "filtered": {
+              "count": 500,
+              "time_ms": 698.5996999993631
+            }
+          },
+          "startup_ms": 298.91440000005787,
+          "load_ms": 5204.350599999998,
+          "preparation_ms": 222.28389999997944,
+          "io_bytes": 27299840,
+          "memory_bytes": 41533440,
+          "raw_resources": {
+            "sync_exit_code": 0,
+            "sync_stderr": "",
+            "io_stat": "8:48 rbytes=589824 wbytes=26710016 rios=7 wios=301 dbytes=0 dios=0\n",
+            "memory_peak": "41533440\n",
+            "data_device": "8:48",
+            "errors": []
+          },
+          "persisted": true,
+          "answers_sha256": "d1e8139e5f7ac4d1cfe7d9a8c53f23f1d88464e61c2f8196d45ab0e168904d0e"
+        },
+        "full": {
+          "time_ms": 1305.9879999999566,
+          "groups": {
+            "unfiltered": {
+              "count": 500,
+              "time_ms": 704.2636999992737
+            },
+            "filtered": {
+              "count": 500,
+              "time_ms": 598.9791999991212
+            }
+          },
+          "startup_ms": 300.95120000009956,
+          "load_ms": 5125.543999999991,
+          "preparation_ms": 225.06590000000415,
+          "io_bytes": 26710016,
+          "memory_bytes": 40558592,
+          "raw_resources": {
+            "sync_exit_code": 0,
+            "sync_stderr": "",
+            "io_stat": "8:48 rbytes=0 wbytes=26710016 rios=0 wios=301 dbytes=0 dios=0\n",
+            "memory_peak": "40558592\n",
+            "data_device": "8:48",
+            "errors": []
+          },
+          "persisted": true,
+          "answers_sha256": "d1e8139e5f7ac4d1cfe7d9a8c53f23f1d88464e61c2f8196d45ab0e168904d0e"
+        }
+      },
+      "identical_answers": true,
+      "recall": {
+        "unfiltered": 1.0,
+        "filtered": 1.0
+      }
+    }
+  ],
+  "medians": {
+    "before": {
+      "time_ms": 1514.0084000000006,
+      "io_bytes": 27299840,
+      "memory_bytes": 41533440,
+      "preparation_ms": 222.28389999997944,
+      "groups": {
+        "unfiltered": {
+          "time_ms": 831.1936999988347,
+          "queries": 500
+        },
+        "filtered": {
+          "time_ms": 677.7990999999995,
+          "queries": 500
+        }
+      }
+    },
+    "full": {
+      "time_ms": 1422.7817999999957,
+      "io_bytes": 26710016,
+      "memory_bytes": 40718336,
+      "preparation_ms": 225.73089999997364,
+      "groups": {
+        "unfiltered": {
+          "time_ms": 774.6272999995654,
+          "queries": 500
+        },
+        "filtered": {
+          "time_ms": 645.3927000006274,
+          "queries": 500
+        }
+      },
+      "reduction_percent_vs_before": {
+        "time_ms": 6.025501575817205,
+        "io_bytes": 2.1605401350337616,
+        "memory_bytes": 1.9625246548323427
+      },
+      "group_reduction_percent_vs_before": {
+        "unfiltered": 6.805441378988874,
+        "filtered": 4.7811217216682795
+      }
+    },
+    "block32": {
+      "time_ms": 1388.8531999999714,
+      "io_bytes": 26710016,
+      "memory_bytes": 40996864,
+      "preparation_ms": 233.04830000006405,
+      "groups": {
+        "unfiltered": {
+          "time_ms": 750.612799999999,
+          "queries": 500
+        },
+        "filtered": {
+          "time_ms": 635.5369999992604,
+          "queries": 500
+        }
+      },
+      "reduction_percent_vs_before": {
+        "time_ms": 8.26647989535786,
+        "io_bytes": 2.1605401350337616,
+        "memory_bytes": 1.291913214990137
+      },
+      "group_reduction_percent_vs_before": {
+        "unfiltered": 9.694599465677944,
+        "filtered": 6.2351956502655685
+      }
+    }
+  }
+}

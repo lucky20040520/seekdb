@@ -1,0 +1,1 @@
+{"t":{"columns":[{"name":"id","kind":"BIGINT","size":null,"primary":true},{"name":"s","kind":"VARCHAR","size":2,"primary":false},{"name":"v","kind":"VECTOR","size":2,"primary":false}],"file":null,"indexes":{},"files":["rows-2b9bfec6291c47999c650d00890de5e4.jsonl"]}}

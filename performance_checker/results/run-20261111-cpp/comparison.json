@@ -1,0 +1,108 @@
+{
+  "scope": "Local C++ vs Python baseline; not official score or ranking",
+  "python_result": "../run-20261111/result.json",
+  "cpp_result": "result.json",
+  "medians": {
+    "write": {
+      "time_ms": {
+        "python": 7209.061999999999,
+        "cpp": 5126.7608,
+        "python_over_cpp": 1.4061631274078554,
+        "reduction_percent": 28.8844956528325
+      },
+      "io_bytes": {
+        "python": 39202816,
+        "cpp": 26710016,
+        "python_over_cpp": 1.4677196748964882,
+        "reduction_percent": 31.86709852679971
+      },
+      "memory_bytes": {
+        "python": 53776384,
+        "cpp": 35037184,
+        "python_over_cpp": 1.5348375029226093,
+        "reduction_percent": 34.846522964429894
+      }
+    },
+    "query": {
+      "time_ms": {
+        "python": 3760.7783999999924,
+        "cpp": 1753.0275000000302,
+        "python_over_cpp": 2.1453048511788477,
+        "reduction_percent": 53.386578161583955
+      },
+      "io_bytes": {
+        "python": 47017984,
+        "cpp": 26710016,
+        "python_over_cpp": 1.7603128354546849,
+        "reduction_percent": 43.19191567209687
+      },
+      "memory_bytes": {
+        "python": 78655488,
+        "cpp": 39706624,
+        "python_over_cpp": 1.9809160305343512,
+        "reduction_percent": 49.518304431599226
+      }
+    }
+  },
+  "cpp_efficiency": {
+    "available": true,
+    "scope": "local estimate; not an official performance score or rank",
+    "baseline": {
+      "write": {
+        "time_ms": 7209.061999999999,
+        "io_bytes": 39202816,
+        "memory_bytes": 53776384
+      },
+      "query": {
+        "time_ms": 3760.7783999999924,
+        "io_bytes": 47017984,
+        "memory_bytes": 78655488
+      }
+    },
+    "eligible": true,
+    "reasons": [],
+    "rounds": [
+      {
+        "write": 0.5889321675482138,
+        "query": 0.661659930647152,
+        "efficiency": 0.637417342947506
+      },
+      {
+        "write": 0.5897315558597809,
+        "query": 0.6683535517154123,
+        "efficiency": 0.6421462197635351
+      },
+      {
+        "write": 0.5901058016655556,
+        "query": 0.6683161337240863,
+        "efficiency": 0.6422460230379093
+      }
+    ],
+    "median_efficiency": 0.642146
+  },
+  "configuration": {
+    "image": "minivector-cpp:20261111",
+    "mode": "exact",
+    "create_index": false,
+    "rows": 10000,
+    "dimensions": 128,
+    "queries": 1000,
+    "k": 10,
+    "rounds": 3,
+    "data_seed": 19017,
+    "query_seed": 29017,
+    "io_device": "8:48",
+    "cpus": "2",
+    "memory": "2g",
+    "pids": 128
+  },
+  "cpp_image": "sha256:e62a9eb2b20f1de8649ff38cd5fc2cc3f0539753cf048154cdae39875bb493ae",
+  "source_sha256": {
+    "cpp\\CMakeLists.txt": "28df6000c8867d3e4466075ac8232fd0b8cd6c138fdbc91c0cdd3ac0d6ac81d4",
+    "cpp\\main.cpp": "aae0a4145dfa4cfd68df6b0d87116d8c38b0ef7770f85da610369a6d555747c9",
+    "cpp\\minivector.hpp": "7813b01d5c7df8aea2ed9a2cbd9e785c349747a01bd38adda04765d789a59155",
+    "cpp\\query.cpp": "13d440350f281a43f5d25e5a1dd459d65f3d11902caa2ac26889eb623c5920b8",
+    "cpp\\sql.cpp": "ededa5782340784d8bbc7d4cd4b8a79c829feed1284971a47b5e99b66bdb6705",
+    "cpp\\storage.cpp": "8bfae3c603fc833410174252e79b4f21c9c47ed105c26c8d91a1d4ec3f916a01"
+  }
+}

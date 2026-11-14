@@ -1,0 +1,100 @@
+{
+  "timestamp_utc": "2026-11-11T03:35:00.502531+00:00",
+  "scope": "Supplementary actual-process JSONL tests; no database Python imports; not official hidden tests or performance results",
+  "target": "minivector-cpp:contiguous-20261111",
+  "cases": 15,
+  "passed_cases": 15,
+  "requests": 699,
+  "results": [
+    {
+      "case": "crud_and_int64",
+      "passed": true,
+      "requests": 9,
+      "seconds": 0.7897906
+    },
+    {
+      "case": "type_errors_atomicity",
+      "passed": true,
+      "requests": 17,
+      "seconds": 0.6435259999999999
+    },
+    {
+      "case": "invalid_sql_and_schema",
+      "passed": true,
+      "requests": 21,
+      "seconds": 0.624954
+    },
+    {
+      "case": "schema_permutations",
+      "passed": true,
+      "requests": 43,
+      "seconds": 1.031193
+    },
+    {
+      "case": "float32_and_sorting",
+      "passed": true,
+      "requests": 29,
+      "seconds": 0.8571613
+    },
+    {
+      "case": "transaction_combinations",
+      "passed": true,
+      "requests": 40,
+      "seconds": 1.7984624
+    },
+    {
+      "case": "shutdown_rolls_back",
+      "passed": true,
+      "requests": 20,
+      "seconds": 1.7251624000000003
+    },
+    {
+      "case": "kill_uncommitted",
+      "passed": true,
+      "requests": 19,
+      "seconds": 1.8717046000000002
+    },
+    {
+      "case": "kill_after_commit",
+      "passed": true,
+      "requests": 20,
+      "seconds": 1.8151411999999993
+    },
+    {
+      "case": "missing_index_rebuild",
+      "passed": true,
+      "requests": 9,
+      "seconds": 2.585274199999999
+    },
+    {
+      "case": "protocol_boundaries",
+      "passed": true,
+      "requests": 36,
+      "seconds": 0.6580437999999997
+    },
+    {
+      "case": "long_input_recovery",
+      "passed": true,
+      "requests": 8,
+      "seconds": 1.3755901999999995
+    },
+    {
+      "case": "randomized_index_truth",
+      "passed": true,
+      "requests": 294,
+      "seconds": 2.687879099999998
+    },
+    {
+      "case": "wide_records_fallback",
+      "passed": true,
+      "requests": 18,
+      "seconds": 6.4046071
+    },
+    {
+      "case": "contiguous_cache_and_filters",
+      "passed": true,
+      "requests": 116,
+      "seconds": 1.3479256999999976
+    }
+  ]
+}

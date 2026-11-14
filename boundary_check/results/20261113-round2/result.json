@@ -1,0 +1,1543 @@
+{
+  "timestamp_utc": "2026-11-13T12:15:24.038649+00:00",
+  "sources": [
+    "https://github.com/mysql/mysql-server/blob/8.4/mysql-test/t/comments.test",
+    "https://github.com/mysql/mysql-server/blob/8.4/mysql-test/t/limit.test",
+    "https://github.com/mysql/mysql-server/blob/8.4/mysql-test/t/alias.test",
+    "https://dev.mysql.com/doc/refman/8.4/en/string-literals.html",
+    "https://dev.mysql.com/doc/refman/8.4/en/problems-with-alias.html",
+    "https://dev.mysql.com/doc/refman/8.4/en/innodb-error-handling.html"
+  ],
+  "groups": [
+    {
+      "name": "lexical",
+      "cleanup_errors": [],
+      "steps": 81,
+      "seconds": 3.868
+    },
+    {
+      "name": "eager_validation",
+      "cleanup_errors": [],
+      "steps": 228,
+      "seconds": 2.627
+    },
+    {
+      "name": "aliases",
+      "cleanup_errors": [],
+      "steps": 33,
+      "seconds": 2.251
+    },
+    {
+      "name": "float_boundaries",
+      "cleanup_errors": [],
+      "steps": 186,
+      "seconds": 5.982
+    },
+    {
+      "name": "filters_and_state",
+      "cleanup_errors": [],
+      "steps": 377,
+      "seconds": 9.06
+    },
+    {
+      "name": "transactions",
+      "cleanup_errors": [],
+      "steps": 37,
+      "seconds": 6.951
+    }
+  ],
+  "script_sha256": "007b5cc1f7e49ace34911b62a141688f4ae2049c401bb58fa99b3f50788e46a2",
+  "image_ids": {
+    "python": "sha256:9ba27b48bf5975472ae01691be21b88eda49588d8010e724b841896e722c98b0",
+    "cpp": "sha256:e6afcd8ebd0bf07de08238cbbde747a903afd2e08a219b700fd9b9b9423ec988"
+  },
+  "steps": 942,
+  "by_scope": {
+    "contract": 903,
+    "mysql_compatibility": 39
+  },
+  "failures": {
+    "python": 0,
+    "cpp": 0
+  },
+  "differences": [
+    {
+      "group": "aliases",
+      "name": "ambiguous-duplicate-alias-indexed-False",
+      "scope": "mysql_compatibility",
+      "sql": "SELECT id,L2_DISTANCE(v,[0,0]) AS x,L2_DISTANCE(v,[10,0]) AS x FROM t ORDER BY x LIMIT 1",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 13,
+          "ok": true,
+          "columns": [
+            "id",
+            "x",
+            "x"
+          ],
+          "rows": [
+            [
+              1,
+              0.0,
+              10.0
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 13,
+          "ok": true,
+          "columns": [
+            "id",
+            "x",
+            "x"
+          ],
+          "rows": [
+            [
+              2,
+              10.0,
+              0.0
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.838,
+        "cpp": 1.519
+      },
+      "equivalent": false,
+      "mysql_expected": null
+    },
+    {
+      "group": "aliases",
+      "name": "ambiguous-duplicate-alias-indexed-False",
+      "scope": "mysql_compatibility",
+      "sql": "SELECT id,L2_DISTANCE(v,[0,0]) AS x,n AS x FROM t ORDER BY x LIMIT 1",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 14,
+          "ok": true,
+          "columns": [
+            "id",
+            "x",
+            "x"
+          ],
+          "rows": [
+            [
+              1,
+              0.0,
+              30
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 14,
+          "ok": true,
+          "columns": [
+            "id",
+            "x",
+            "x"
+          ],
+          "rows": [
+            [
+              2,
+              10.0,
+              10
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 2.119,
+        "cpp": 1.519
+      },
+      "equivalent": false,
+      "mysql_expected": null
+    },
+    {
+      "group": "aliases",
+      "name": "ambiguous-duplicate-alias-indexed-False",
+      "scope": "mysql_compatibility",
+      "sql": "SELECT v AS x,n AS x FROM t ORDER BY x LIMIT 0",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 16,
+          "ok": false,
+          "error": {
+            "code": "INVALID",
+            "message": "ordering VECTOR unsupported"
+          }
+        },
+        "cpp": {
+          "id": 16,
+          "ok": true,
+          "columns": [
+            "x",
+            "x"
+          ],
+          "rows": []
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.487,
+        "cpp": 2.612
+      },
+      "equivalent": false,
+      "mysql_expected": null
+    },
+    {
+      "group": "aliases",
+      "name": "ambiguous-duplicate-alias-indexed-False",
+      "scope": "mysql_compatibility",
+      "sql": "SELECT n AS x,v AS x FROM t ORDER BY x LIMIT 0",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 17,
+          "ok": true,
+          "columns": [
+            "x",
+            "x"
+          ],
+          "rows": []
+        },
+        "cpp": {
+          "id": 17,
+          "error": {
+            "code": "INVALID",
+            "message": "ordering VECTOR unsupported"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 4.703,
+        "cpp": 2.635
+      },
+      "equivalent": false,
+      "mysql_expected": null
+    },
+    {
+      "group": "aliases",
+      "name": "ambiguous-duplicate-alias-indexed-True",
+      "scope": "mysql_compatibility",
+      "sql": "SELECT id,L2_DISTANCE(v,[0,0]) AS x,L2_DISTANCE(v,[10,0]) AS x FROM t ORDER BY x LIMIT 1",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 29,
+          "ok": true,
+          "columns": [
+            "id",
+            "x",
+            "x"
+          ],
+          "rows": [
+            [
+              1,
+              0.0,
+              10.0
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 29,
+          "ok": true,
+          "columns": [
+            "id",
+            "x",
+            "x"
+          ],
+          "rows": [
+            [
+              2,
+              10.0,
+              0.0
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.815,
+        "cpp": 1.462
+      },
+      "equivalent": false,
+      "mysql_expected": null
+    },
+    {
+      "group": "aliases",
+      "name": "ambiguous-duplicate-alias-indexed-True",
+      "scope": "mysql_compatibility",
+      "sql": "SELECT id,L2_DISTANCE(v,[0,0]) AS x,n AS x FROM t ORDER BY x LIMIT 1",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 30,
+          "ok": true,
+          "columns": [
+            "id",
+            "x",
+            "x"
+          ],
+          "rows": [
+            [
+              1,
+              0.0,
+              30
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 30,
+          "ok": true,
+          "columns": [
+            "id",
+            "x",
+            "x"
+          ],
+          "rows": [
+            [
+              2,
+              10.0,
+              10
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.795,
+        "cpp": 1.399
+      },
+      "equivalent": false,
+      "mysql_expected": null
+    },
+    {
+      "group": "aliases",
+      "name": "ambiguous-duplicate-alias-indexed-True",
+      "scope": "mysql_compatibility",
+      "sql": "SELECT v AS x,n AS x FROM t ORDER BY x LIMIT 0",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 32,
+          "ok": false,
+          "error": {
+            "code": "INVALID",
+            "message": "ordering VECTOR unsupported"
+          }
+        },
+        "cpp": {
+          "id": 32,
+          "ok": true,
+          "columns": [
+            "x",
+            "x"
+          ],
+          "rows": []
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.371,
+        "cpp": 1.335
+      },
+      "equivalent": false,
+      "mysql_expected": null
+    },
+    {
+      "group": "aliases",
+      "name": "ambiguous-duplicate-alias-indexed-True",
+      "scope": "mysql_compatibility",
+      "sql": "SELECT n AS x,v AS x FROM t ORDER BY x LIMIT 0",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 33,
+          "ok": true,
+          "columns": [
+            "x",
+            "x"
+          ],
+          "rows": []
+        },
+        "cpp": {
+          "id": 33,
+          "error": {
+            "code": "INVALID",
+            "message": "ordering VECTOR unsupported"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.522,
+        "cpp": 1.205
+      },
+      "equivalent": false,
+      "mysql_expected": null
+    }
+  ],
+  "failed_steps": [],
+  "mysql_compatibility_mismatches": [
+    {
+      "group": "lexical",
+      "name": "hash-comment",
+      "scope": "mysql_compatibility",
+      "sql": "SELECT id FROM t WHERE id=1 # comment",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 55,
+          "ok": false,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          }
+        },
+        "cpp": {
+          "id": 55,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.28,
+        "cpp": 1.936
+      },
+      "equivalent": true,
+      "mysql_expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ]
+        ]
+      },
+      "mysql_mismatch": {
+        "python": true,
+        "cpp": true
+      }
+    },
+    {
+      "group": "lexical",
+      "name": "dash-without-space",
+      "scope": "mysql_compatibility",
+      "sql": "SELECT id FROM t WHERE id=1--x",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 56,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 56,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.837,
+        "cpp": 1.624
+      },
+      "equivalent": true,
+      "mysql_expected": {
+        "ok": false
+      },
+      "mysql_mismatch": {
+        "python": true,
+        "cpp": true
+      }
+    },
+    {
+      "group": "lexical",
+      "name": "version-comment",
+      "scope": "mysql_compatibility",
+      "sql": "SELECT id FROM t /*!80000 WHERE id=1 */ ORDER BY id",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 57,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ],
+            [
+              10
+            ],
+            [
+              11
+            ],
+            [
+              12
+            ],
+            [
+              13
+            ],
+            [
+              14
+            ],
+            [
+              15
+            ],
+            [
+              16
+            ],
+            [
+              17
+            ],
+            [
+              18
+            ],
+            [
+              19
+            ],
+            [
+              20
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 57,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ],
+            [
+              10
+            ],
+            [
+              11
+            ],
+            [
+              12
+            ],
+            [
+              13
+            ],
+            [
+              14
+            ],
+            [
+              15
+            ],
+            [
+              16
+            ],
+            [
+              17
+            ],
+            [
+              18
+            ],
+            [
+              19
+            ],
+            [
+              20
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 2.322,
+        "cpp": 1.386
+      },
+      "equivalent": true,
+      "mysql_expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ]
+        ]
+      },
+      "mysql_mismatch": {
+        "python": true,
+        "cpp": true
+      }
+    },
+    {
+      "group": "lexical",
+      "name": "adjacent-literals",
+      "scope": "mysql_compatibility",
+      "sql": "SELECT id FROM t WHERE s='a' ''",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 58,
+          "ok": false,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unsupported or trailing SQL: ''"
+          }
+        },
+        "cpp": {
+          "id": 58,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unsupported or trailing SQL: ''"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.342,
+        "cpp": 1.458
+      },
+      "equivalent": true,
+      "mysql_expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ]
+        ]
+      },
+      "mysql_mismatch": {
+        "python": true,
+        "cpp": true
+      }
+    },
+    {
+      "group": "lexical",
+      "name": "double-quoted-literal",
+      "scope": "mysql_compatibility",
+      "sql": "SELECT id FROM t WHERE s=\"a\"",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 59,
+          "ok": false,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          }
+        },
+        "cpp": {
+          "id": 59,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.267,
+        "cpp": 1.244
+      },
+      "equivalent": true,
+      "mysql_expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ]
+        ]
+      },
+      "mysql_mismatch": {
+        "python": true,
+        "cpp": true
+      }
+    },
+    {
+      "group": "lexical",
+      "name": "national-literal",
+      "scope": "mysql_compatibility",
+      "sql": "SELECT id FROM t WHERE s=N'a'",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 60,
+          "ok": false,
+          "error": {
+            "code": "SYNTAX",
+            "message": "expected literal"
+          }
+        },
+        "cpp": {
+          "id": 60,
+          "error": {
+            "code": "SYNTAX",
+            "message": "expected literal"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.232,
+        "cpp": 1.312
+      },
+      "equivalent": true,
+      "mysql_expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ]
+        ]
+      },
+      "mysql_mismatch": {
+        "python": true,
+        "cpp": true
+      }
+    },
+    {
+      "group": "lexical",
+      "name": "charset-literal",
+      "scope": "mysql_compatibility",
+      "sql": "SELECT id FROM t WHERE s=_utf8mb4'a'",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 61,
+          "ok": false,
+          "error": {
+            "code": "SYNTAX",
+            "message": "expected literal"
+          }
+        },
+        "cpp": {
+          "id": 61,
+          "error": {
+            "code": "SYNTAX",
+            "message": "expected literal"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.318,
+        "cpp": 1.276
+      },
+      "equivalent": true,
+      "mysql_expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            1
+          ]
+        ]
+      },
+      "mysql_mismatch": {
+        "python": true,
+        "cpp": true
+      }
+    },
+    {
+      "group": "lexical",
+      "name": "string-quoted-alias",
+      "scope": "mysql_compatibility",
+      "sql": "SELECT id AS 'x' FROM t WHERE id=1",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 62,
+          "ok": false,
+          "error": {
+            "code": "SYNTAX",
+            "message": "expected identifier"
+          }
+        },
+        "cpp": {
+          "id": 62,
+          "error": {
+            "code": "SYNTAX",
+            "message": "expected identifier"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.266,
+        "cpp": 1.863
+      },
+      "equivalent": true,
+      "mysql_expected": {
+        "ok": true,
+        "columns": [
+          "x"
+        ],
+        "rows": [
+          [
+            1
+          ]
+        ]
+      },
+      "mysql_mismatch": {
+        "python": true,
+        "cpp": true
+      }
+    },
+    {
+      "group": "lexical",
+      "name": "implicit-alias",
+      "scope": "mysql_compatibility",
+      "sql": "SELECT id x FROM t WHERE id=1",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 63,
+          "ok": false,
+          "error": {
+            "code": "SYNTAX",
+            "message": "expected FROM"
+          }
+        },
+        "cpp": {
+          "id": 63,
+          "error": {
+            "code": "SYNTAX",
+            "message": "expected FROM"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.339,
+        "cpp": 1.331
+      },
+      "equivalent": true,
+      "mysql_expected": {
+        "ok": true,
+        "columns": [
+          "x"
+        ],
+        "rows": [
+          [
+            1
+          ]
+        ]
+      },
+      "mysql_mismatch": {
+        "python": true,
+        "cpp": true
+      }
+    },
+    {
+      "group": "lexical",
+      "name": "ordinal-order",
+      "scope": "mysql_compatibility",
+      "sql": "SELECT n FROM t WHERE id<=2 ORDER BY 1",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 64,
+          "ok": false,
+          "error": {
+            "code": "SYNTAX",
+            "message": "expected identifier"
+          }
+        },
+        "cpp": {
+          "id": 64,
+          "error": {
+            "code": "SYNTAX",
+            "message": "expected identifier"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.439,
+        "cpp": 1.267
+      },
+      "equivalent": true,
+      "mysql_expected": {
+        "ok": true,
+        "columns": [
+          "n"
+        ],
+        "rows": [
+          [
+            3
+          ],
+          [
+            7
+          ]
+        ]
+      },
+      "mysql_mismatch": {
+        "python": true,
+        "cpp": true
+      }
+    },
+    {
+      "group": "lexical",
+      "name": "limit-offset",
+      "scope": "mysql_compatibility",
+      "sql": "SELECT id FROM t ORDER BY id LIMIT 1 OFFSET 1",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 65,
+          "ok": false,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unsupported or trailing SQL: OFFSET"
+          }
+        },
+        "cpp": {
+          "id": 65,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unsupported or trailing SQL: OFFSET"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.298,
+        "cpp": 1.192
+      },
+      "equivalent": true,
+      "mysql_expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "mysql_mismatch": {
+        "python": true,
+        "cpp": true
+      }
+    },
+    {
+      "group": "lexical",
+      "name": "limit-comma",
+      "scope": "mysql_compatibility",
+      "sql": "SELECT id FROM t ORDER BY id LIMIT 1,1",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 66,
+          "ok": false,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unsupported or trailing SQL: ,"
+          }
+        },
+        "cpp": {
+          "id": 66,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unsupported or trailing SQL: ,"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.226,
+        "cpp": 1.254
+      },
+      "equivalent": true,
+      "mysql_expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "mysql_mismatch": {
+        "python": true,
+        "cpp": true
+      }
+    },
+    {
+      "group": "lexical",
+      "name": "not-equal",
+      "scope": "mysql_compatibility",
+      "sql": "SELECT id FROM t WHERE id<>1 AND id<=2",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 67,
+          "ok": false,
+          "error": {
+            "code": "SYNTAX",
+            "message": "expected literal"
+          }
+        },
+        "cpp": {
+          "id": 67,
+          "error": {
+            "code": "SYNTAX",
+            "message": "expected literal"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.165,
+        "cpp": 1.248
+      },
+      "equivalent": true,
+      "mysql_expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "mysql_mismatch": {
+        "python": true,
+        "cpp": true
+      }
+    },
+    {
+      "group": "lexical",
+      "name": "not-equal-bang",
+      "scope": "mysql_compatibility",
+      "sql": "SELECT id FROM t WHERE id!=1 AND id<=2",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 68,
+          "ok": false,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          }
+        },
+        "cpp": {
+          "id": 68,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 1.995,
+        "cpp": 2.103
+      },
+      "equivalent": true,
+      "mysql_expected": {
+        "ok": true,
+        "columns": [
+          "id"
+        ],
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "mysql_mismatch": {
+        "python": true,
+        "cpp": true
+      }
+    },
+    {
+      "group": "lexical",
+      "name": "mysql-backslash-value",
+      "scope": "mysql_compatibility",
+      "sql": "SELECT s FROM t WHERE id=100",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 70,
+          "ok": true,
+          "columns": [
+            "s"
+          ],
+          "rows": [
+            [
+              "a\\nb"
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 70,
+          "ok": true,
+          "columns": [
+            "s"
+          ],
+          "rows": [
+            [
+              "a\\nb"
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 3.307,
+        "cpp": 1.84
+      },
+      "equivalent": true,
+      "mysql_expected": {
+        "ok": true,
+        "columns": [
+          "s"
+        ],
+        "rows": [
+          [
+            "a\nb"
+          ]
+        ]
+      },
+      "mysql_mismatch": {
+        "python": true,
+        "cpp": true
+      }
+    },
+    {
+      "group": "lexical",
+      "name": "mysql-backslash-value",
+      "scope": "mysql_compatibility",
+      "sql": "SELECT s FROM t WHERE id=101",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 72,
+          "ok": true,
+          "columns": [
+            "s"
+          ],
+          "rows": [
+            [
+              "a\\tb"
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 72,
+          "ok": true,
+          "columns": [
+            "s"
+          ],
+          "rows": [
+            [
+              "a\\tb"
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 6.474,
+        "cpp": 3.334
+      },
+      "equivalent": true,
+      "mysql_expected": {
+        "ok": true,
+        "columns": [
+          "s"
+        ],
+        "rows": [
+          [
+            "a\tb"
+          ]
+        ]
+      },
+      "mysql_mismatch": {
+        "python": true,
+        "cpp": true
+      }
+    },
+    {
+      "group": "lexical",
+      "name": "mysql-backslash-value",
+      "scope": "mysql_compatibility",
+      "sql": "SELECT s FROM t WHERE id=102",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 74,
+          "ok": true,
+          "columns": [
+            "s"
+          ],
+          "rows": [
+            [
+              "a\\0b"
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 74,
+          "ok": true,
+          "columns": [
+            "s"
+          ],
+          "rows": [
+            [
+              "a\\0b"
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 3.722,
+        "cpp": 3.356
+      },
+      "equivalent": true,
+      "mysql_expected": {
+        "ok": true,
+        "columns": [
+          "s"
+        ],
+        "rows": [
+          [
+            "a\u0000b"
+          ]
+        ]
+      },
+      "mysql_mismatch": {
+        "python": true,
+        "cpp": true
+      }
+    },
+    {
+      "group": "lexical",
+      "name": "mysql-backslash-value",
+      "scope": "mysql_compatibility",
+      "sql": "SELECT s FROM t WHERE id=103",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 76,
+          "ok": true,
+          "columns": [
+            "s"
+          ],
+          "rows": [
+            [
+              "a\\qb"
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 76,
+          "ok": true,
+          "columns": [
+            "s"
+          ],
+          "rows": [
+            [
+              "a\\qb"
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 5.993,
+        "cpp": 3.544
+      },
+      "equivalent": true,
+      "mysql_expected": {
+        "ok": true,
+        "columns": [
+          "s"
+        ],
+        "rows": [
+          [
+            "aqb"
+          ]
+        ]
+      },
+      "mysql_mismatch": {
+        "python": true,
+        "cpp": true
+      }
+    },
+    {
+      "group": "lexical",
+      "name": "mysql-backslash-insert",
+      "scope": "mysql_compatibility",
+      "sql": "INSERT INTO t VALUES(104,0,'a\\'b',[0,0])",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 77,
+          "ok": false,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unrecognized SQL token"
+          }
+        },
+        "cpp": {
+          "id": 77,
+          "error": {
+            "code": "SYNTAX",
+            "message": "unterminated quoted token"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 3.696,
+        "cpp": 4.134
+      },
+      "equivalent": true,
+      "mysql_expected": {
+        "ok": true,
+        "affected_rows": 1
+      },
+      "mysql_mismatch": {
+        "python": true,
+        "cpp": true
+      }
+    },
+    {
+      "group": "lexical",
+      "name": "mysql-backslash-value",
+      "scope": "mysql_compatibility",
+      "sql": "SELECT s FROM t WHERE id=104",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 78,
+          "ok": true,
+          "columns": [
+            "s"
+          ],
+          "rows": []
+        },
+        "cpp": {
+          "id": 78,
+          "ok": true,
+          "columns": [
+            "s"
+          ],
+          "rows": []
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 4.769,
+        "cpp": 3.328
+      },
+      "equivalent": true,
+      "mysql_expected": {
+        "ok": true,
+        "columns": [
+          "s"
+        ],
+        "rows": [
+          [
+            "a'b"
+          ]
+        ]
+      },
+      "mysql_mismatch": {
+        "python": true,
+        "cpp": true
+      }
+    },
+    {
+      "group": "lexical",
+      "name": "mysql-backslash-value",
+      "scope": "mysql_compatibility",
+      "sql": "SELECT s FROM t WHERE id=105",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 80,
+          "ok": true,
+          "columns": [
+            "s"
+          ],
+          "rows": [
+            [
+              "a\\\\b"
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 80,
+          "ok": true,
+          "columns": [
+            "s"
+          ],
+          "rows": [
+            [
+              "a\\\\b"
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 4.583,
+        "cpp": 3.063
+      },
+      "equivalent": true,
+      "mysql_expected": {
+        "ok": true,
+        "columns": [
+          "s"
+        ],
+        "rows": [
+          [
+            "a\\b"
+          ]
+        ]
+      },
+      "mysql_mismatch": {
+        "python": true,
+        "cpp": true
+      }
+    },
+    {
+      "group": "lexical",
+      "name": "noop-update-count",
+      "scope": "mysql_compatibility",
+      "sql": "UPDATE t SET n=7 WHERE id=1",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 81,
+          "ok": true,
+          "affected_rows": 1
+        },
+        "cpp": {
+          "id": 81,
+          "affected_rows": 1,
+          "ok": true
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 36.202,
+        "cpp": 34.175
+      },
+      "equivalent": true,
+      "mysql_expected": {
+        "ok": true,
+        "affected_rows": 0
+      },
+      "mysql_mismatch": {
+        "python": true,
+        "cpp": true
+      }
+    }
+  ],
+  "limitations": [
+    "Locally designed probes, not organizer hidden tests.",
+    "Full MySQL behavior is not the contest contract.",
+    "Default image entrypoints; 2 CPU, 2 GiB, network none. Timing is diagnostic only.",
+    "Ambiguous duplicate aliases are differential probes without a normative expectation."
+  ]
+}

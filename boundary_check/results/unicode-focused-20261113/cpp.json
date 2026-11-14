@@ -1,0 +1,24 @@
+{
+  "timestamp_utc": "2026-11-13T14:19:40.279889+00:00",
+  "scope": "Supplementary actual-process JSONL tests; no database Python imports; not official hidden tests or performance results",
+  "target": "minivector-cpp:unicode-20261113",
+  "profiling": false,
+  "screen_block": null,
+  "cases": 2,
+  "passed_cases": 2,
+  "requests": 209,
+  "results": [
+    {
+      "case": "unicode_identifiers",
+      "passed": true,
+      "requests": 41,
+      "seconds": 2.3306506000000002
+    },
+    {
+      "case": "unicode_lexing",
+      "passed": true,
+      "requests": 168,
+      "seconds": 1.9727273000000003
+    }
+  ]
+}

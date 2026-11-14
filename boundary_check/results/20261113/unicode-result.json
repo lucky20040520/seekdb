@@ -1,0 +1,259 @@
+{
+  "timestamp_utc": "2026-11-13T11:21:36.783798+00:00",
+  "scope": "Locally designed boundary tests, not official hidden cases or official pass evidence",
+  "images": {
+    "python": "sha256:9ba27b48bf5975472ae01691be21b88eda49588d8010e724b841896e722c98b0",
+    "cpp": "sha256:e6afcd8ebd0bf07de08238cbbde747a903afd2e08a219b700fd9b9b9423ec988"
+  },
+  "groups": [
+    {
+      "name": "unicode_identifiers",
+      "cleanup_errors": [],
+      "steps": 8,
+      "elapsed_seconds": 1.809
+    }
+  ],
+  "steps": 8,
+  "requests_excluding_lifecycle": 16,
+  "expectation_failures": {
+    "python": 0,
+    "cpp": 0
+  },
+  "differential_count": 6,
+  "differential_by_scope": {
+    "compatibility": 6
+  },
+  "failures": [],
+  "differences": [
+    {
+      "group": "unicode_identifiers",
+      "name": "unicode-column-or-alias",
+      "scope": "compatibility",
+      "sql": "SELECT `Ä` FROM u",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 3,
+          "ok": true,
+          "columns": [
+            "ä"
+          ],
+          "rows": [
+            [
+              7
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 3,
+          "ok": true,
+          "columns": [
+            "Ä"
+          ],
+          "rows": [
+            [
+              7
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 4.304,
+        "cpp": 3.48
+      },
+      "equivalent": false
+    },
+    {
+      "group": "unicode_identifiers",
+      "name": "unicode-column-or-alias",
+      "scope": "compatibility",
+      "sql": "SELECT `ä` AS x FROM u",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 4,
+          "ok": true,
+          "columns": [
+            "x"
+          ],
+          "rows": [
+            [
+              7
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 4,
+          "error": {
+            "code": "SCHEMA",
+            "message": "unknown column: ä"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 4.215,
+        "cpp": 4.261
+      },
+      "equivalent": false
+    },
+    {
+      "group": "unicode_identifiers",
+      "name": "unicode-column-or-alias",
+      "scope": "compatibility",
+      "sql": "SELECT id FROM u WHERE `ä`=7",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 5,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 5,
+          "error": {
+            "code": "SCHEMA",
+            "message": "unknown column: ä"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 4.518,
+        "cpp": 3.574
+      },
+      "equivalent": false
+    },
+    {
+      "group": "unicode_identifiers",
+      "name": "unicode-column-or-alias",
+      "scope": "compatibility",
+      "sql": "SELECT id FROM u ORDER BY `ä`",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 6,
+          "ok": true,
+          "columns": [
+            "id"
+          ],
+          "rows": [
+            [
+              1
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 6,
+          "error": {
+            "code": "SCHEMA",
+            "message": "unknown column: ä"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 4.515,
+        "cpp": 4.269
+      },
+      "equivalent": false
+    },
+    {
+      "group": "unicode_identifiers",
+      "name": "unicode-column-or-alias",
+      "scope": "compatibility",
+      "sql": "SELECT id AS `Ö` FROM u ORDER BY `ö`",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 7,
+          "ok": true,
+          "columns": [
+            "ö"
+          ],
+          "rows": [
+            [
+              1
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 7,
+          "error": {
+            "code": "SCHEMA",
+            "message": "unknown column: ö"
+          },
+          "ok": false
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 4.079,
+        "cpp": 3.493
+      },
+      "equivalent": false
+    },
+    {
+      "group": "unicode_identifiers",
+      "name": "unicode-column-or-alias",
+      "scope": "compatibility",
+      "sql": "SELECT id AS `Ö` FROM u",
+      "mode": "exact",
+      "expected": null,
+      "responses": {
+        "python": {
+          "id": 8,
+          "ok": true,
+          "columns": [
+            "ö"
+          ],
+          "rows": [
+            [
+              1
+            ]
+          ]
+        },
+        "cpp": {
+          "id": 8,
+          "ok": true,
+          "columns": [
+            "Ö"
+          ],
+          "rows": [
+            [
+              1
+            ]
+          ]
+        }
+      },
+      "failures": {},
+      "elapsed_ms": {
+        "python": 3.376,
+        "cpp": 3.279
+      },
+      "equivalent": false
+    }
+  ],
+  "limits": [
+    "No official hidden inputs or formal platform logs available.",
+    "Error code text is recorded but not equated; the public mapping is empty.",
+    "Wide case exceeds cache/sort budgets, not the full 2 GiB process memory limit.",
+    "This suite measures correctness; per-request timings are diagnostics, not performance scores."
+  ]
+}

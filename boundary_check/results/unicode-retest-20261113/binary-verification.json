@@ -1,0 +1,10 @@
+[
+  {
+    "image": "minivector-cpp:unicode-20261113",
+    "binary_sha256": "9a0467178ea702f6d89e7e3244f6f8754942933d477656e86102a88dc278d34c"
+  },
+  {
+    "image": "minivector-cpp:unicode-killpoint-20261113",
+    "binary_sha256": "9a0467178ea702f6d89e7e3244f6f8754942933d477656e86102a88dc278d34c"
+  }
+]
