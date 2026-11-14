@@ -56,9 +56,10 @@ class FlatIndexContracts(unittest.TestCase):
             for row_file,index_file in descriptor['segments'].items():
                 self.assertTrue(flat_index.valid(db.path,row_file,index_file,db.table('t'),'v'))
                 self.assertGreater((db.path/index_file).stat().st_size,flat_index.HEADER.size)
-            # Prove this is the physical index path, not the generic row scan or cache.
-            with patch.object(db,'rows',side_effect=AssertionError('generic scan used')), \
-                 patch.object(db,'cached_vectors',side_effect=AssertionError('cache used')):
+            # With no room for the vector cache, exercise the real disk path.
+            # Merely having an index no longer overrides the small-table plan.
+            db.query_cache_limit = 1
+            with patch.object(db,'rows',side_effect=AssertionError('generic scan used')):
                 self.assertEqual([[1],[2],[3]],results(db,"SELECT id FROM t ORDER BY L2_DISTANCE(v,'[0,0]') LIMIT 10;"))
                 self.assertEqual([[3]],results(db,"SELECT id FROM t WHERE tag='b' ORDER BY L2_DISTANCE(v,'[0,0]') LIMIT 2;",'ann'))
             db.close()
@@ -95,7 +96,7 @@ class FlatIndexContracts(unittest.TestCase):
                     execute(db,"UPDATE t SET v='[9,9]' WHERE id=1;")
             self.assertEqual(old,db.catalog)
             expected_files=set(db.files(db.table('t')))
-            self.assertEqual(expected_files,{p.name for p in db.path.glob('rows-*.jsonl')})
+            self.assertEqual(expected_files,{p.name for p in db.path.glob('rows-*')})
             self.assertEqual([[1],[2],[3]],results(db,"SELECT id FROM t ORDER BY L2_DISTANCE(v,'[0,0]') LIMIT 10;"))
             db.close()
 

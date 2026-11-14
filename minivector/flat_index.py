@@ -1,9 +1,9 @@
 """Immutable disk Flat L2 index. Bounded streaming, no external index engine."""
-import json
 import math
 import os
 import struct
 import uuid
+from . import segments
 
 MAGIC = b'MVFLAT1\0'
 HEADER = struct.Struct('<8sII')
@@ -31,8 +31,8 @@ def valid(directory, row_file, index_file, table, column):
         width = LOCATION.size+4*dimension
         if size < 0 or size % width:
             return False
-        keys = directory/(row_file+'.keys')
-        if keys.exists() and size//width != keys.stat().st_size//8:
+        count = segments.row_count(directory/row_file)
+        if count is not None and size//width != count:
             return False
         return True
     except OSError:
@@ -45,14 +45,9 @@ def build(directory, row_file, table, column):
     filename = 'index-'+uuid.uuid4().hex+'.flat'
     target = directory/filename
     try:
-        with (directory/row_file).open('rb') as source, target.open('wb') as output:
+        with segments.Reader(directory/row_file,table['columns']) as source, target.open('wb') as output:
             output.write(HEADER.pack(MAGIC,dimension,vector_column))
-            while True:
-                offset = source.tell()
-                line = source.readline()
-                if not line:
-                    break
-                row = json.loads(line)
+            for offset,row in source:
                 output.write(LOCATION.pack(row[primary_column],offset))
                 output.write(vector_format.pack(*row[vector_column]))
             output.flush()
@@ -68,7 +63,7 @@ def candidates(directory, table, descriptor, query, matches, filtered):
     record = struct.Struct('<qQ%df'%dimension)
     for row_file,index_file in descriptor['segments'].items():
         # Record locations always refer to the same immutable data generation.
-        with (directory/index_file).open('rb') as index, (directory/row_file).open('rb') as rows:
+        with (directory/index_file).open('rb') as index, segments.Reader(directory/row_file,table['columns']) as rows:
             if index.read(HEADER.size) != HEADER.pack(MAGIC,dimension,vector_column):
                 raise OSError('flat index header mismatch')
             while True:
@@ -80,14 +75,12 @@ def candidates(directory, table, descriptor, query, matches, filtered):
                 values = record.unpack(block)
                 primary,offset = values[:2]
                 if filtered:
-                    rows.seek(offset)
-                    if not matches(json.loads(rows.readline())):
+                    if not matches(rows.at(offset)):
                         continue
                 distance = math.sqrt(math.fsum((a-b)**2 for a,b in zip(values[2:],query)))
                 yield [distance,primary,row_file,offset]
 
 
-def read_row(directory, location):
-    with (directory/location[2]).open('rb') as source:
-        source.seek(location[3])
-        return json.loads(source.readline())
+def read_row(directory, location, table):
+    with segments.Reader(directory/location[2],table['columns']) as source:
+        return source.at(location[3])

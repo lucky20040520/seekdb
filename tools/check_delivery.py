@@ -16,9 +16,15 @@ def main():
     parser.add_argument('--image', required=True)
     args = parser.parse_args()
     assert docker('image', 'inspect', '--format', '{{.Architecture}}', args.image).strip() == 'amd64'
-    versions = json.loads(docker('run', '--rm', '--network', 'none', '--entrypoint', 'python',
-        args.image, '-c', 'import sys,json,numpy;print(json.dumps([sys.version.split()[0],numpy.__version__]))'))
-    assert versions == ['3.12.8', '1.26.4'], 'delivered dependency versions differ'
+    entrypoint = json.loads(docker('image', 'inspect', '--format', '{{json .Config.Entrypoint}}', args.image))
+    if entrypoint[0] == '/usr/local/bin/minivector':
+        help_text = docker('run', '--rm', '--network', 'none', args.image, '--help')
+        assert 'minivector --data-dir PATH --protocol jsonl|diagnostic' in help_text
+        versions = {'runtime': 'C++', 'entrypoint': entrypoint}
+    else:
+        versions = json.loads(docker('run', '--rm', '--network', 'none', '--entrypoint', 'python',
+            args.image, '-c', 'import sys,json,numpy;print(json.dumps([sys.version.split()[0],numpy.__version__]))'))
+        assert versions == ['3.12.8', '1.26.4'], 'delivered dependency versions differ'
     token = 'minivector-delivery-' + uuid.uuid4().hex
     volume, names = token + '-data', [token + '-first', token + '-restart']
     docker('volume', 'create', volume)

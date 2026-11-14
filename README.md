@@ -1,10 +1,15 @@
-# MiniVectorDB correctness baseline
+# MiniVectorDB
 
-当前阶段：官方分支f4d4e26已发布STDIO_PROTOCOL.md及protocol_check，默认入口现已对接JSONL，实际Docker镜像已通过官方交互式握手、shutdown及20公开例，完整回归通过。此前协议无关验证及其实际结果保留，尚无正式29例准入或比赛成绩。运行时Python3.12.8、NumPy1.26.4，存储、查询、索引和事务核心自行实现。
+默认 Docker 入口为 Python，使用官方 JSONL 协议和现有 NumPy 算术依赖。当前实现以 `f1b9f4e204f08f5043b315ba1ebec500ad7af255` 的 Python 代码为基线优化，SQL、执行、存储、事务和索引逻辑保持 Python，性能对照使用 exact。历史记录包含该基线正式 MySQL 用例通过的反馈；当前改动的本地回归和公开测试不能代替重新进行正式准入。
+
+此前的 C++ 优化保留为独立实验，可通过 `Dockerfile.cpp` 构建，未确认正式功能准入通过，不作为默认提交实现，其性能结果不代表本次 Python 优化结果。官方公开题包固定在 `f4d4e26653af823a7601668802f80e374ad6643c`。
 
 ```powershell
+docker build -t minivector-local .
+python protocol_check/run.py --image minivector-local --output protocol-results/python-public
+# Python 实现测试
 python -m unittest discover -s tests -v
-python -m minivector --data-dir ./data --protocol diagnostic
+python -m minivector --data-dir ./python-data --protocol diagnostic
 python tools/validate_material.py
 python tools/run_public.py
 ```
@@ -27,7 +32,7 @@ DELETE FROM docs WHERE id=2;
 COMMIT;
 ```
 
-EOF 正常关闭并放弃未提交事务。再次用同一目录启动即可读取提交状态。容器构建 `docker build -t minivector-local .`；运行 `docker run --rm -i --network none -v minivector-data:/data minivector-local`，不启动网络服务。GitHub Actions 已验证该镜像从源码构建，并在禁网、1 CPU、256 MiB 内存、禁用 swap 的容器中执行自建验收；不是正式功能准入。
+EOF 正常关闭并放弃未提交事务。再次用同一目录启动即可读取提交状态。容器构建 `docker build -t minivector-local .`；运行 `docker run --rm -i --network none -v minivector-data:/data minivector-local`，不启动网络服务。实际进程回归、官方公开题包和本地资源验证分别执行。
 
 完整的空目录到重启示例（在Linux宿主、仓库根目录执行）：
 
@@ -40,23 +45,27 @@ docker run --rm -i --network none -v "$demo_data:/data" minivector-local --proto
 
 第一次运行覆盖写入、普通查询、向量检索、回滚和提交；最后插入主键3但不提交，文件结束关闭进程。第二次启动复用数据目录，应只剩主键1、标题alpha、向量[3,4]，到[0,0]距离为5；主键2已提交删除，主键3随关闭回滚。SQL示例没有退出命令，使用EOF；正式退出方式仍须按驱动对齐。上述挂载保存数据库文件，容器自身随`--rm`删除。
 
-## 存储和事务
+## Python 存储和事务
 
-表定义、索引描述和当前数据段文件名保存在 `catalog.json`。数据段为不可变 UTF-8 JSONL，附带 int64 主键侧文件。INSERT 仅新增数据段，不重写已有行；UPDATE/DELETE 流式生成替换段。整条语句校验完成后才将其纳入当前事务或提交。行文件和主键侧文件分别 flush/fsync，随后新清单 flush/fsync 并通过原子 replace 发布，Linux 下 fsync 数据目录。显式事务的清单覆盖只在内存中保存表级引用，不把所有行载入内存；COMMIT 一次切换清单覆盖所有表，ROLLBACK 放弃未发布文件。正常关闭回滚，启动清理孤立文件；清理被打断不改变提交清单。
+表定义、索引描述和当前数据段文件名保存在 `catalog.json`。Python `segments.py` 使用标准库写入不可变 `.mvb`，保存 float32 向量和类型化标量，段尾合并主键及行位置目录。主键目录超过 256 KiB 时使用有界临时缓冲文件，最终并入数据段。INSERT 只新增段；UPDATE/DELETE 流式生成替换段。段文件完成 flush/fsync 后，才构建必要索引并原子发布新清单；清单自身和数据目录仍执行同步，成功响应在必要持久化完成之后。事务覆盖只保存元数据，COMMIT 一次切换所有表，ROLLBACK 和关闭放弃未提交段，恢复时回收孤立文件。
+
+新 Python 可以读取旧 JSONL 段和已有 Flat 索引，继续写入时允许旧段与新段共存。冻结的旧 Python 只支持旧格式，不能读取新二进制段；基线和候选的性能测量使用独立数据目录。
 
 该方案面向题目规定的单进程强杀模型。运行目录必须由单进程独占，文件损坏及外部篡改不在支持范围。磁盘写入失败属于致命 I/O 错误，进程退出后重新读取清单，避免在提交结果未知时继续处理请求。
 
-## 查询和当前限制
+## Python exact 查询和限制
 
-流式过滤后计算存储为 float32 的向量与查询向量之间的欧氏距离，以主键升序打破并列。小 K 且完整候选行内存估算不超过2 MiB时使用堆，其余排序使用磁盘分段归并。排序分段目标约 2 MiB 序列化数据，归并扇入最多 32；Python 对象开销和单行最大尺寸另计。单条输入 SQL 及其批量 INSERT 值目前仍整体解析，最大语句内存需按题包约束进一步检查。
+过滤后计算存储为 float32 的向量与查询向量之间的欧氏距离，以主键升序打破并列。小表升序 TopK 使用 NumPy 分块计算，批量距离只筛选候选，边界仍以 Python `math.fsum` 精确重算。无过滤时直接切片，复用 float64 临时缓冲；候选堆保存距离、主键和行号，最终按需投影，并复用相同距离表达式的结果。
 
-小表的向量 TopK 可使用最多 16 MiB 的 NumPy float32 数据缓存，float64 分块计算距离，再以 scalar math.fsum 对边界候选精确重排，保持与基线路径一致的距离和主键并列规则。缓存按不可变数据段签名定位，更新、回滚、提交后的可见数据不同即使用不同缓存；超出预算或没有 NumPy 时退回流式扫描。预算只约束缓存估算量，不代表总进程或容器内存上限。
+小表使用总预算 16 MiB 的连续 float32 数组及标量缓存。等值过滤的行号列表共享该预算，并另受 1 MiB/32 项上限约束。缓存按可见的不可变数据段签名失效。
 
-CREATE VECTOR INDEX 已实现实际磁盘Flat L2索引：保存主键、float32向量和行位置，随数据修改同步维护；同一清单原子提交，支持回滚、重启及启动前重建。exact和ann入口均可通过该精确Flat路径返回结果，**未实现近似剪枝加速，不能据此宣称满足尚未冻结的ANN预算或性能达标**。INSERT 已改成数据段追加，主键查重不再解析向量；UPDATE/DELETE 仍重写表，数据段数量增长与元数据/I/O 开销尚需按正式限制验证。当前不把本地加速比换算成平台排名。
+即使已存在 Flat 索引，预算内的小表升序 TopK 仍优先使用连续数组；超过预算时退回流式扫描或磁盘 Flat 路径。磁盘 Flat 的候选保存距离、主键和行位置；无索引流式路径沿用有界完整行堆（K≤4096 且估计不超过 2 MiB），超出后外排序。缓存预算不代表整个容器内存上限，资源测量包含装载、索引和页缓存。单条输入 SQL 及批量 INSERT 值仍整体解析。
+
+CREATE VECTOR INDEX 保存实际磁盘 Flat L2 索引，随数据修改同步维护；同一清单原子提交，支持回滚、重启及启动前重建。性能验证只使用 exact，协议兼容的 ann 入口目前也执行精确算法。主键查重读取段尾目录或旧主键侧文件；UPDATE/DELETE 仍重写表，数据段数量增长与元数据/I/O 开销尚需按正式限制验证。
 
 SQL 支持建表、增删改查、AND 比较、单项 ORDER BY、LIMIT、L2_DISTANCE、事务和实际磁盘Flat索引；VECTOR支持公开样例的带引号数组字面量（如'[3,4]'），同时保留裸数组输入。完整语法边界仍待官方冻结。未支持的 JOIN、聚合、NULL、子查询、主键更新等明确报错。
 
-详见 [必测矩阵](docs/必测矩阵.md)、[验证记录](docs/验证记录.md) 和 [上次经验](docs/powercontext经验复盘.md)。学习材料在 `agent/conversation.json`，不把 Agent 自动实现当作学生独立理解。
+详见 [必测矩阵](docs/必测矩阵.md)、[验证记录](docs/验证记录.md) 和 [上次经验](docs/powercontext经验复盘.md)。学习材料在 `agent/conversation.json`，并与官方模板位置 `conversation.json` 保持相同内容；两处是同一份材料，不把 Agent 自动实现当作学生独立理解。
 
 逐项实现/证据/缺口对应关系见 [已知必测审计](docs/已知必测审计.md)。宽行候选预算只限制估算量，不是总进程内存承诺。
 
@@ -64,8 +73,8 @@ SQL 支持建表、增删改查、AND 比较、单项 ORDER BY、LIMIT、L2_DIST
 
 实际索引布局、事务维护和启动重建见 [磁盘向量索引](docs/磁盘向量索引.md)。
 
-官方镜像检查：`python3 protocol_check/run.py --image minivector-local --output protocol-results/public-new`。该工具不消耗正式提测次数；公开通过不等于正式29例准入。
+官方镜像检查：`python3 protocol_check/run.py --image minivector-local --output protocol-results/public-new`。该工具不消耗正式提测次数；公开通过不等于正式功能准入。
 
 默认JSONL示例：同一数据卷依次输入 `examples/first-run.jsonl` 和 `examples/after-restart.jsonl`，无需 `--protocol diagnostic`。实际验证与新旧说明冲突处理见 [官方JSONL对接](docs/官方JSONL对接.md)。
 
-官方JSONL默认入口已完成三轮10000行/128维/1000查询完整负载、每批100行显式提交、全部查询真值及重启内容核对。写入中位4.576秒，1000查询中位3.689秒；详细资源、超时与正式成绩边界见 [官方JSONL完整负载验证](docs/官方JSONL完整负载验证.md)。
+固定负载为 10000 行、128 维、1000 次 exact 查询、K=10、各半过滤、每批 100 行提交。六项指标由外部父 cgroup 在数据库退出和写回完成后采集；正确性在独立验证容器中核验。Python 方案和实测结果见 [Python 优化报告](docs/python-performance-20261114.md)，复现命令和统计范围见 [性能检测说明](performance_checker/README.md)。此前 C++ 结果只保留为 [历史实验记录](docs/performance-20261114.md)，不混入 Python 成绩。

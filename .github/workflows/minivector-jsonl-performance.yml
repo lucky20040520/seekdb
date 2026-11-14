@@ -1,4 +1,4 @@
-name: MiniVectorDB official JSONL full workload
+name: MiniVectorDB local JSONL full workload
 on:
   push:
     branches: [2026-competition-round2]
@@ -14,19 +14,19 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build actual Linux amd64 submission entry
         run: docker build --platform linux/amd64 -t minivector-jsonl-performance .
-      - name: Smoke test using official transport and unchanged config
+      - name: Smoke test through the JSONL protocol
         run: >-
-          python3 tools/benchmark_jsonl.py --image minivector-jsonl-performance
+          python3 tools/benchmark_jsonl.py --images python=minivector-jsonl-performance
           --rows 200 --dimensions 8 --queries 20 --rounds 1
-          --output benchmark-smoke/result.json
-      - name: Three full rounds of official JSONL workload and all-query truth
+          --oracle-cache benchmark-oracle --allow-missing-resources --output benchmark-smoke
+      - name: Three rounds with all-query truth (CI has no external resource collector)
         run: >-
-          python3 tools/benchmark_jsonl.py --image minivector-jsonl-performance
+          python3 tools/benchmark_jsonl.py --images python=minivector-jsonl-performance
           --rows 10000 --dimensions 128 --queries 1000 --rounds 3
-          --output benchmark-jsonl/full-result.json
+          --oracle-cache benchmark-oracle --allow-missing-resources --output benchmark-jsonl
       - name: Publish actual JSONL results and stderr logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: minivector-official-jsonl-full
+          name: minivector-local-jsonl-full-no-resource-score
           path: benchmark-jsonl/

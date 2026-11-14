@@ -3,7 +3,9 @@ import re
 from .engine import fail
 
 
-TOKEN = re.compile(r"\s+|--[^\n]*(?:\n|$)|/\*[\s\S]*?\*/|'(?:''|[^'])*'|`(?:``|[^`])*`|(?:\d+\.\d*|\.\d+|\d+)(?:[eE][+-]?\d+)?|[A-Za-z_][A-Za-z_0-9]*|<=|>=|[(),;*\[\]=<>+\-]")
+# Consume ordinary quoted text in runs. Vector literals can be thousands of
+# characters; repeated single-character alternation wastes parser work.
+TOKEN = re.compile(r"\s+|--[^\n]*(?:\n|$)|/\*[\s\S]*?\*/|'[^']*(?:''[^']*)*'|`[^`]*(?:``[^`]*)*`|(?:\d+\.\d*|\.\d+|\d+)(?:[eE][+-]?\d+)?|[A-Za-z_][A-Za-z_0-9]*|<=|>=|[(),;*\[\]=<>+\-]")
 
 
 class Parser:

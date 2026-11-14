@@ -76,7 +76,7 @@ class Database:
             for table in catalog.values():
                 for descriptor in table['indexes'].values():
                     live.update(descriptor.get('segments',{}).values())
-        for pattern in ("rows-*.jsonl", "rows-*.keys", "index-*.flat", "sort-*.jsonl", "catalog-*.tmp"):
+        for pattern in ("rows-*.jsonl", "rows-*.mvb", "rows-*.keys", "index-*.flat", "sort-*.jsonl", "catalog-*.tmp"):
             for file in self.path.glob(pattern):
                 if file.name not in live:
                     file.unlink()
@@ -151,16 +151,18 @@ class Database:
         self.accept(catalog)
 
     def rows(self, table):
+        from .segments import Reader
         for file in self.files(table):
-            with (self.path / file).open(encoding="utf-8") as source:
-                for line in source:
-                    yield json.loads(line)
+            with Reader(self.path / file, table['columns']) as source:
+                for _, row in source:
+                    yield row
 
     @staticmethod
     def files(table):
         return table.get("files", [table["file"]] if table["file"] else [])
 
     def primary_keys(self, table):
+        from .segments import Reader
         pk = next(i for i, c in enumerate(table["columns"]) if c["primary"])
         for file in self.files(table):
             keys = self.path / (file + ".keys")
@@ -172,10 +174,9 @@ class Database:
                             break
                         yield from (key[0] for key in struct.iter_unpack("<q", chunk))
             else:
-                # Compatibility with the original correctness baseline.
-                with (self.path / file).open(encoding="utf-8") as source:
-                    for line in source:
-                        yield json.loads(line)[pk]
+                # Binary footer, or legacy JSONL without a key sidecar.
+                with Reader(self.path / file, table['columns']) as source:
+                    yield from source.keys(pk)
 
     @staticmethod
     def validate(column, value, for_storage=True):
@@ -201,37 +202,28 @@ class Database:
                 fail("invalid VECTOR array literal", "TYPE")
         if not isinstance(value, list) or len(value) != column["size"]:
             fail("VECTOR dimension mismatch", "TYPE")
-        result = []
-        for number in value:
-            if type(number) not in (int, float):
-                fail("VECTOR element must be numeric", "TYPE")
-            try:
-                stored = struct.unpack("<f", struct.pack("<f", number))[0]
-            except (OverflowError, struct.error):
-                fail("VECTOR float32 overflow", "TYPE")
-            if not math.isfinite(stored):
-                fail("VECTOR requires finite float32", "TYPE")
-            result.append(stored)
-        return result
+        if any(type(number) not in (int, float) for number in value):
+            fail("VECTOR element must be numeric", "TYPE")
+        # One standard-library conversion per vector, preserving the original
+        # float32 rounding and rejecting booleans, overflow and nonfinite data.
+        layout = '<%df' % len(value)
+        try:
+            stored = struct.unpack(layout, struct.pack(layout, *value))
+        except (OverflowError, struct.error):
+            fail("VECTOR float32 overflow", "TYPE")
+        if not all(map(math.isfinite, stored)):
+            fail("VECTOR requires finite float32", "TYPE")
+        return list(stored)
 
     def rewrite(self, name, rows, append=False):
+        from . import segments
         catalog = copy.deepcopy(self.visible)
-        filename = "rows-" + uuid.uuid4().hex + ".jsonl"
+        filename = "rows-" + uuid.uuid4().hex + ".mvb"
         target = self.path / filename
-        key_target = self.path / (filename + ".keys")
-        pk = next(i for i, c in enumerate(catalog[name]["columns"]) if c["primary"])
         try:
-            with target.open("w", encoding="utf-8", newline="\n") as output, key_target.open("wb") as keys:
-                for row in rows:
-                    output.write(encode(row) + "\n")
-                    keys.write(struct.pack("<q", row[pk]))
-                output.flush()
-                os.fsync(output.fileno())
-                keys.flush()
-                os.fsync(keys.fileno())
+            segments.write(target, catalog[name]['columns'], rows)
         except BaseException:
             target.unlink(missing_ok=True)
-            key_target.unlink(missing_ok=True)
             raise
         if append:
             catalog[name]["files"] = list(self.files(catalog[name])) + [filename]
@@ -243,7 +235,6 @@ class Database:
             self.prepare_indexes(catalog, only=name)
         except BaseException:
             target.unlink(missing_ok=True)
-            key_target.unlink(missing_ok=True)
             raise
         self.accept(catalog)
 
@@ -369,7 +360,7 @@ class Database:
         count = 0
         try:
             for location in locations:
-                yield flat_index.read_row(self.path,location)
+                yield flat_index.read_row(self.path,location,table)
                 count += 1
                 if limit is not None and count >= limit:
                     break
@@ -499,6 +490,7 @@ class Database:
                 if matches(row):
                     yield row
         source = filtered_rows()
+        cached_distance_columns = None
         if order is not None:
             expr, descending = order
             # Heap candidates retain full decoded rows, not just ordering keys.
@@ -524,7 +516,10 @@ class Database:
             cache = None
             descriptor = next((index for index in table['indexes'].values()
                                if distance_expr[0]=='distance' and index['column']==distance_expr[1]),None)
-            if descriptor is None and distance_expr[0] == "distance" and not descending and bounded_candidates:
+            # A durable index need not force the repeated Python scalar path.
+            # Small snapshots use the same bounded NumPy exact scan with or
+            # without an index; oversized snapshots retain the disk fallback.
+            if distance_expr[0] == "distance" and not descending and bounded_candidates:
                 cache = self.cached_vectors(table)
             class Desc:
                 def __init__(self, value): self.value = value
@@ -535,19 +530,30 @@ class Database:
                 if isinstance(value, list):
                     fail("ordering VECTOR unsupported")
                 return (Desc(value) if descending else value, row[pk])
-            if descriptor is not None:
+            if descriptor is not None and cache is None:
                 query = self.validate(columns[distance_expr[1]][1],distance_expr[2])
                 source = self.indexed_rows(table,descriptor,query,matches,conditions,limit,descending)
             elif cache is not None:
                 query_column = columns[distance_expr[1]][1]
                 query = self.validate(query_column, distance_expr[2])
-                source = iter(cache.topk(conditions, query, limit))
+                cached_distance_columns = [projection == distance_expr for projection, _ in projections]
+                include_vector = any(
+                    projection[1] == distance_expr[1] and not use_distance
+                    for (projection, _), use_distance in zip(projections, cached_distance_columns)
+                )
+                source = iter(cache.topk(conditions, query, limit, include_vector))
+                self.query_cache_bytes = cache.size
             else:
                 source = (iter(heapq.nsmallest(limit, source, key=key)) if bounded_candidates
                           else self.external_sort(source, key))
         def projected():
             try:
                 if limit == 0:
+                    return
+                if cached_distance_columns is not None:
+                    for row, distance in source:
+                        yield [distance if use_distance else fn(row)
+                               for fn, use_distance in zip(functions, cached_distance_columns)]
                     return
                 count = 0
                 for row in source:
