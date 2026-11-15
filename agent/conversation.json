@@ -162,6 +162,12 @@
       "status": "executed",
       "source": "本轮实际命令输出",
       "output": "基线：60 项回归通过，20/20 公开样例、95 条 SQL 通过。候选：60 项回归通过，20/20 公开样例、95 条 SQL 通过。公开样例通过本地核心 API 执行。"
+    },
+    {
+      "id": "filter-e2e-three-rounds",
+      "source": "本次 tools.run_filter_local 实际报告。JSON 文本保留逐轮测量及空缺指标。",
+      "status": "executed",
+      "output": "六组各通过 1000 次 exact 查询真值校验，全部写入和查询数据目录通过重启核验。候选减基线的三轮查询耗时差分别为 +5.86、-46.22、-38.12 ms。\n{\"baseline_sha\":\"e1561a7292443e4945b580cb23a24e399c2c18a5\",\"python\":\"3.8.8 (default, Apr 13 2021, 15:08:03) [MSC v.1916 64 bit (AMD64)]\",\"rounds\":[{\"round\":1,\"variant\":\"baseline\",\"write_seconds\":3.6730019000000027,\"query_seconds\":2.2743991000000108,\"verified_queries\":1000,\"persisted\":true,\"io_bytes\":null,\"memory_bytes\":null},{\"round\":1,\"variant\":\"candidate\",\"write_seconds\":4.060476899999998,\"query_seconds\":2.280258100000026,\"verified_queries\":1000,\"persisted\":true,\"io_bytes\":null,\"memory_bytes\":null},{\"round\":2,\"variant\":\"candidate\",\"write_seconds\":3.786789800000008,\"query_seconds\":2.343995600000028,\"verified_queries\":1000,\"persisted\":true,\"io_bytes\":null,\"memory_bytes\":null},{\"round\":2,\"variant\":\"baseline\",\"write_seconds\":4.030914100000018,\"query_seconds\":2.3902150999999776,\"verified_queries\":1000,\"persisted\":true,\"io_bytes\":null,\"memory_bytes\":null},{\"round\":3,\"variant\":\"baseline\",\"write_seconds\":3.7072266000000127,\"query_seconds\":2.2899353999999903,\"verified_queries\":1000,\"persisted\":true,\"io_bytes\":null,\"memory_bytes\":null},{\"round\":3,\"variant\":\"candidate\",\"write_seconds\":3.6664824000000635,\"query_seconds\":2.2518155000000206,\"verified_queries\":1000,\"persisted\":true,\"io_bytes\":null,\"memory_bytes\":null}],\"numpy\":\"1.20.1\",\"candidate_sha\":\"8ec857e60bd63f345c9341038ffd37018a5f163e\",\"scope\":\"Same Windows host, fresh JSONL processes and data directories, alternating order, exact mode.\",\"medians_seconds\":{\"baseline\":{\"write_seconds\":3.7072266000000127,\"query_seconds\":2.2899353999999903},\"candidate\":{\"write_seconds\":3.786789800000008,\"query_seconds\":2.280258100000026}},\"paired_query_delta_ms\":[5.86,-46.22,-38.12]}"
     }
   ],
   "evidence_chains": [
@@ -332,6 +338,10 @@
         {
           "pointer": "/experiments/8/output",
           "quote": "关闭缓存、只查找、完整缓存三组的候选构造中位数分别为 13.36、13.19、17.91 ms。每轮完整缓存 0 次命中、500 次写入、468 次淘汰。超预算时基线和候选的缓存路径调用均为 0。"
+        },
+        {
+          "pointer": "/experiments/11/output",
+          "quote": "六组各通过 1000 次 exact 查询真值校验，全部写入和查询数据目录通过重启核验。候选减基线的三轮查询耗时差分别为 +5.86、-46.22、-38.12 ms。"
         }
       ]
     }
@@ -344,12 +354,16 @@
     {
       "role": "agent",
       "content": "正式准入依赖整套功能；缓存假设要用独立的读取计数来验证，耗时差异不足以确认原因。当前 Prompt 未计分的具体原因需要平台详情。"
+    },
+    {
+      "role": "agent",
+      "content": "查询中位数由 2.290 s 降至 2.280 s，约 0.4%，三轮成对差值方向不一致且落在运行波动范围内，无法确认端到端提速。写入路径没有修改，写入中位数从 3.707 s 到 3.787 s，不归因于本次过滤改动。当前结果支持缓存诊断机制，暂不据此扩大改动。"
     }
   ],
   "limitations": [
     "材料为有边界的摘录。未收录无关对话，未补写学生的理解、实验操作或复盘。",
     "正式提测截图和用户确认支持准入通过，现有材料没有该次性能原始分或 Prompt 评审报告。Prompt 未计分的具体原因未知。",
     "本地 E_local 使用固定 Python 基线，不能换算平台原始指标或名次。统计中 rbytes 为 0，测试不能解释为冷盘读取性能。",
-    "本轮材料锁定时，三轮本机 JSONL 端到端对照仍在运行。Linux CI 尚无运行结果，未取得可核实的容器峰值内存或设备 I/O。没有据此计算平台分数。"
+    "本地三轮已完成。Windows 使用 Python 3.8.8 和 NumPy 1.20.1，与正式容器版本不同。检查时 GitHub 未生成对应的 Linux 运行，I/O 和容器峰值内存缺失，不计算综合指标。"
   ]
 }
