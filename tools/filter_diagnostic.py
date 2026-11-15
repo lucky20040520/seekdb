@@ -8,6 +8,7 @@ import re
 import tempfile
 import textwrap
 import time
+from collections import OrderedDict
 
 from minivector.engine import Database
 from minivector.sql import execute
@@ -17,25 +18,43 @@ from minivector.vector import VectorCache
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("scenario", choices=["repeated", "low-reuse", "over-budget"])
-    parser.add_argument("postings", choices=["on", "off"])
+    parser.add_argument("postings", choices=["on", "off", "lookup-only"])
     args = parser.parse_args()
     repeated = args.scenario == "repeated"
     oversized = args.scenario == "over-budget"
     # Change only the memoization decision in the baseline implementation.
-    if args.postings == "off":
-        source = inspect.getsource(VectorCache.candidate_indexes)
-        source, count = re.subn(
-            r"(?m)^    memoize = .*",
-            "    memoize = False", textwrap.dedent(source), count=1)
+    if args.postings != "on":
+        source = textwrap.dedent(inspect.getsource(VectorCache.candidate_indexes))
+        if args.postings == "off":
+            source, count = re.subn(r"(?m)^    memoize = .*", "    memoize = False", source)
+            source = re.sub(r"(?m)^    signature = .*", "    signature = None", source)
+        else:
+            source, count = re.subn(r"(?m)^    if memoize:$", "    if False:", source)
         assert count == 1
         namespace = {}
         exec(source, namespace)
         VectorCache.candidate_indexes = namespace["candidate_indexes"]
     original = VectorCache.candidate_indexes
     filter_ns = cache_calls = 0
+    counts = {"hits": 0, "writes": 0, "evictions": 0}
+
+    class Postings(OrderedDict):
+        def pop(self, key):
+            counts["hits"] += 1
+            return super().pop(key)
+
+        def popitem(self, last=True):
+            counts["evictions"] += 1
+            return super().popitem(last=last)
+
+        def __setitem__(self, key, value):
+            counts["writes"] += 1
+            super().__setitem__(key, value)
 
     def measure(self, conditions):
         nonlocal filter_ns, cache_calls
+        if not isinstance(self.postings, Postings):
+            self.postings = Postings(self.postings)
         started = time.perf_counter_ns()
         result = original(self, conditions)
         filter_ns += time.perf_counter_ns() - started
@@ -77,7 +96,7 @@ def main():
         print(json.dumps({"scenario": args.scenario, "postings": args.postings,
                           "queries": len(queries), "seconds": elapsed,
                           "filter_seconds": filter_ns / 1e9, "cache_calls": cache_calls,
-                          "cache_bytes": db.query_cache_bytes}))
+                          "cache_bytes": db.query_cache_bytes, **counts}))
         db.close()
 
 

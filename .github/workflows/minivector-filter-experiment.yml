@@ -2,7 +2,7 @@ name: MiniVectorDB exact filter comparison
 on:
   push:
     branches: [codex/minivectordb-python-filter-experiment]
-    paths: [minivector/**, tools/filter_diagnostic.py, .github/workflows/minivector-filter-experiment.yml]
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
@@ -29,13 +29,14 @@ jobs:
       - name: Diagnose the equality cache using isolated containers
         run: |
           for scenario in repeated low-reuse over-budget; do
-            for pair in base:on base:off candidate:on; do
+            for pair in base:on base:lookup-only base:off candidate:on; do
               image=${pair%:*}
               mode=${pair#*:}
+              mkdir -p "results/diagnostic-$scenario-$image-$mode"
               docker run --rm --network=none --cpus=2 --memory=2g --memory-swap=2g --pids-limit=128 \
                 --entrypoint python -v "$PWD/tools/filter_diagnostic.py:/diagnostic.py:ro" \
                 -w /data -e PYTHONPATH=/app "filter-$image" /diagnostic.py "$scenario" "$mode" \
-                > "results/diagnostic-$scenario-$image-$mode.json"
+                > "results/diagnostic-$scenario-$image-$mode/result.json"
             done
           done
       - name: Alternate three end-to-end exact rounds per image
