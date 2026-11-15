@@ -158,7 +158,13 @@
       ],
       "agent_context": [
         "/conversations/9/content"
-      ]
+      ],
+      "python_correspondence": {
+        "question_and_decomposition": "先拆出准入、协议和数据库语义。协议入口处理 ready、逐行请求、id、错误响应和 shutdown；SQL 层再执行功能。",
+        "implementation_or_verification_entry": "minivector/jsonl.py::serve → minivector/sql.py::execute；protocol_check/run.py 验证真实进程交互。",
+        "observation_and_limit": "官方分支变化和公开容器检查回答了协议疑问；正式准入另由 11 月 14 日的平台结果确认。",
+        "annotation_source": "Agent 对正式通过的 Python 提交所做的对应说明"
+      }
     },
     {
       "topic": "独立验证与质疑",
@@ -178,7 +184,13 @@
           "pointer": "/experiments/2/output",
           "quote": "{\"workload\":{\"rows\":10000,\"dimensions\":128,\"queries\":1000,\"k\":10,\"mode\":\"exact\",\"unfiltered_queries\":500,\"equality_filtered_queries\":500,\"commit_batch_rows\":100,\"data_seeds\":[19017,19018,19019],\"query"
         }
-      ]
+      ],
+      "python_correspondence": {
+        "question_and_decomposition": "在动查询代码前确定写入和查询的计量边界，并把全表正确性核验移出计量窗口。",
+        "implementation_or_verification_entry": "验证对象为提交的 Dockerfile 和 Python 容器；计量环境见材料中的 python-measurement-correction-20261114。",
+        "observation_and_limit": "隔离后的结果记录了独立数据卷、父 cgroup、写回稳定检查和外部真值校验。rbytes 为 0，冷盘读取收益仍未验证。",
+        "annotation_source": "Agent 对正式通过的 Python 提交所做的对应说明"
+      }
     },
     {
       "topic": "实验与反馈迭代",
@@ -213,7 +225,13 @@
       ],
       "agent_context": [
         "/conversations/10/content"
-      ]
+      ],
+      "python_correspondence": {
+        "question_and_decomposition": "C++ 未过准入后明确改用 Python，并指定 exact。将优化拆为缓存选路、过滤候选、距离及投影复用。",
+        "implementation_or_verification_entry": "minivector/engine.py::select、cached_vectors → minivector/vector.py::candidate_indexes、topk；tests/test_optimized.py 中的 scalar_differential_and_ties 与 cache_invalidation_and_budget 覆盖精确结果和事务可见性。",
+        "observation_and_limit": "Agent 校验了两个负载场景总计 6000 条查询。最终 Python SHA 经用户提测通过正式准入，Prompt 分数仍未显示。",
+        "annotation_source": "Agent 对正式通过的 Python 提交所做的对应说明"
+      }
     },
     {
       "topic": "取舍与反思",
@@ -233,7 +251,13 @@
           "pointer": "/experiments/7/output",
           "quote": "0.779541"
         }
-      ]
+      ],
+      "python_correspondence": {
+        "question_and_decomposition": "学生提交的方案将存储布局放在查询之后，并要求量化 T、B、M，保留提交持久化。",
+        "implementation_or_verification_entry": "minivector/segments.py::write、Reader 对应二进制段和旧 JSONL；minivector/engine.py::rewrite、publish 对应文件写入和清单原子发布；tests/test_segments.py 与 tests/test_crash_matrix.py 覆盖兼容和恢复。",
+        "observation_and_limit": "无索引场景逻辑文件总量从 25546504 降至 5567828 字节。逻辑容量与物理 I/O 有各自的测量记录。此处结果解释由 Agent 整理，保留学生未进一步解释测量结果的边界。",
+        "annotation_source": "Agent 对正式通过的 Python 提交所做的对应说明"
+      }
     },
     {
       "topic": "技术理解与迁移",
@@ -247,7 +271,13 @@
       "result_evidence": [],
       "agent_context": [
         "/conversations/11/content"
-      ]
+      ],
+      "python_correspondence": {
+        "question_and_decomposition": "学生从耗时对比提出缓存读取次数假设。该假设可迁移到超缓存宽表和已建索引场景验证。",
+        "implementation_or_verification_entry": "minivector/engine.py::cached_vectors、indexed_rows 对应两条执行路径；minivector/vector.py::build 检查预算后决定是否缓存。",
+        "observation_and_limit": "后续独立实验可固定同一查询及数据，分别记录读取调用和设备 rbytes，并控制页缓存状态。该假设的独立实验尚未执行。",
+        "annotation_source": "Agent 对正式通过的 Python 提交所做的对应说明"
+      }
     }
   ],
   "retrospective": [
