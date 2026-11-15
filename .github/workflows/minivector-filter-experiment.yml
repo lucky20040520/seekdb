@@ -1,0 +1,50 @@
+name: MiniVectorDB exact filter comparison
+on:
+  push:
+    branches: [codex/minivectordb-python-filter-experiment]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build qualified baseline and candidate
+        run: |
+          baseline=e1561a7292443e4945b580cb23a24e399c2c18a5
+          git fetch --depth=1 origin "$baseline"
+          root=$(mktemp -d)
+          git archive "$baseline" Dockerfile requirements.txt minivector | tar -x -C "$root"
+          docker build --platform linux/amd64 -t filter-base "$root"
+          docker build --platform linux/amd64 -t filter-candidate .
+          docker image inspect filter-base filter-candidate --format '{{.Id}} {{json .Config.Entrypoint}}'
+      - name: Verify original and candidate using published protocol
+        run: |
+          python3 protocol_check/run.py --image filter-base --output results/public-base
+          python3 protocol_check/run.py --image filter-candidate --output results/public-candidate
+          docker run --rm --network=none --entrypoint python \
+            -v "$PWD:/workspace:ro" -w /workspace filter-candidate -m unittest discover -s tests -q
+      - name: Diagnose the equality cache using isolated containers
+        run: |
+          for scenario in repeated low-reuse over-budget; do
+            for pair in base:on base:lookup-only base:off candidate:on; do
+              image=${pair%:*}
+              mode=${pair#*:}
+              mkdir -p "results/diagnostic-$scenario-$image-$mode"
+              docker run --rm --network=none --cpus=2 --memory=2g --memory-swap=2g --pids-limit=128 \
+                --entrypoint python -v "$PWD/tools/filter_diagnostic.py:/diagnostic.py:ro" \
+                -w /data -e PYTHONPATH=/app "filter-$image" /diagnostic.py "$scenario" "$mode" \
+                > "results/diagnostic-$scenario-$image-$mode/result.json"
+            done
+          done
+      - name: Alternate three end-to-end exact rounds per image
+        run: |
+          python3 -m performance_checker.paired --images base=filter-base candidate=filter-candidate \
+            --oracle-cache /tmp/minivector-oracle --output results/paired --allow-missing-resources
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: exact-filter-evidence
+          path: results/
