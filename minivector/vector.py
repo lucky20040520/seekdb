@@ -79,10 +79,12 @@ class VectorCache:
             value = self.postings.pop(signature)
             self.postings[signature] = value
             return value[0]
-        mask = np.ones(len(self.rows), dtype=bool)
         functions = {'=': np.equal, '<': np.less, '<=': np.less_equal,
                      '>': np.greater, '>=': np.greater_equal}
-        for name, operator, value in conditions:
+        first, *remaining = conditions
+        name, operator, value = first
+        mask = functions[operator](self.scalar[name], value)
+        for name, operator, value in remaining:
             mask &= functions[operator](self.scalar[name], value)
         indexes = np.flatnonzero(mask)
         if memoize:
