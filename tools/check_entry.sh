@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+﻿#!/usr/bin/env bash
 # Pre-submit guard for the shared branch.
 #
 # On a linear branch all teammates commit into the same tree, so these shared
@@ -47,7 +47,8 @@ entry=$(printf '%s\n' "$dockerfile" | grep -E '^ENTRYPOINT' | tail -1)
 say "INFO" "ENTRYPOINT: $entry"
 
 is_cpp=0
-printf '%s' "$entry" | grep -q 'minivector' && is_cpp=1
+# The Python entry also names the module 'minivector', so match the binary path.
+printf '%s' "$entry" | grep -q '/usr/local/bin/minivector' && is_cpp=1
 is_py=0
 printf '%s' "$entry" | grep -q 'python' && is_py=1
 
