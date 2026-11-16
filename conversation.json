@@ -148,6 +148,12 @@
       "role": "student",
       "source": "迁移实测后学生原话摘录",
       "content": "我那句话自相矛盾，两因子守卫其实是有效的  。\n清单哈希可以变，被引用的数据代必须一致\t索引文件名是随机 uuid，重建必换名；所以哈希不能当数据一致性证据\n现在只是 \"一个点通过\""
+    },
+    {
+      "id": "mixed-keys-prediction",
+      "role": "student",
+      "source": "执行前用户原话",
+      "content": "步骤\t结果\t行数\t依据\nINSERT 1\t失败，ok:false + 非空 code\t2\t唯一性真值必须是可见行数据，不是 .keys 侧车。侧车被刻意删掉，正是为了逼出这一点\nINSERT 2\t失败\t2\t同上，2 在二进制段里可见\nINSERT (3),(3) 同批\t失败，0 行落盘\t2\t整句原子：批内自重复必须在写入前整句判定，一条都不能落\nINSERT 3 单独\t成功\t3\t3 在任一段都不存在。"
     }
   ],
   "experiments": [
@@ -258,6 +264,12 @@
       "status": "executed",
       "source": "python -m tools.verify_commit_cut migration；禁用向量缓存以实际使用磁盘 Flat",
       "output": "截去一个完整索引记录后 valid() 返回 false。恢复重建 fsync 前被强杀且未输出 ready。最终 t 和 u 一致提交，磁盘 exact TopK 为 [(2,0.0),(3,3.0)]。\n{\"commit_checkpoint\": \"CUT after\", \"commit_response\": null, \"injected_index_fault\": \"truncate one whole Flat record\", \"truncated_index_valid\": false, \"recovery_checkpoint\": \"CUT rebuild\", \"ready_before_second_kill\": false, \"catalog_unchanged_after_second_kill\": true, \"abandoned_index_removed\": true, \"repaired_index_valid\": true, \"t\": [[2, [0.0, 0.0]], [3, [3.0, 0.0]]], \"u\": [[8]], \"exact_disk_topk\": [[2, 0.0], [3, 3.0]], \"passed\": true}"
+    },
+    {
+      "id": "mixed-keys-initial",
+      "status": "executed",
+      "source": "python -m tools.verify_mixed_keys；核心 API 错误映射和 Reader.keys 跟踪",
+      "output": "键 1 经旧 JSONL 读取后拒绝；键 2 经旧段后由二进制段尾找到并拒绝；批内重复不读旧键。三次失败的清单和文件列表未变，成功后主键为 [1,2,3]。\n{\"values\": \"(1)\", \"response\": {\"ok\": false, \"error\": {\"code\": \"DUPLICATE\", \"message\": \"duplicate primary key\"}}, \"ids\": [1, 2], \"catalog_and_file_list_unchanged\": true, \"key_reads\": [{\"key\": 1, \"path\": \"legacy_jsonl\"}]}\n{\"values\": \"(2)\", \"response\": {\"ok\": false, \"error\": {\"code\": \"DUPLICATE\", \"message\": \"duplicate primary key\"}}, \"ids\": [1, 2], \"catalog_and_file_list_unchanged\": true, \"key_reads\": [{\"key\": 1, \"path\": \"legacy_jsonl\"}, {\"key\": 2, \"path\": \"binary_footer\"}]}\n{\"values\": \"(3),(3)\", \"response\": {\"ok\": false, \"error\": {\"code\": \"DUPLICATE\", \"message\": \"duplicate primary key\"}}, \"ids\": [1, 2], \"catalog_and_file_list_unchanged\": true, \"key_reads\": []}\n{\"values\": \"(3)\", \"response\": {\"ok\": true, \"affected_rows\": 1}, \"ids\": [1, 2, 3], \"catalog_and_file_list_unchanged\": false, \"key_reads\": [{\"key\": 1, \"path\": \"legacy_jsonl\"}, {\"key\": 2, \"path\": \"binary_footer\"}]}"
     }
   ],
   "evidence_chains": [
@@ -506,6 +518,23 @@
         {
           "pointer": "/experiments/17/output",
           "quote": "截去一个完整索引记录后 valid() 返回 false。恢复重建 fsync 前被强杀且未输出 ready。最终 t 和 u 一致提交，磁盘 exact TopK 为 [(2,0.0),(3,3.0)]。"
+        }
+      ]
+    },
+    {
+      "topic": "旧格式兼容与跨段主键判重",
+      "dimension": "技术理解与迁移",
+      "context": "初测核对可见键集合、错误码和旧段及段尾的实际读键轨迹。批内重复作为对照，失败语句事务可见性另有独立实验。学生解释、复测及迁移待补。",
+      "student_evidence": [
+        {
+          "pointer": "/conversations/24/content",
+          "quote": "整句原子：批内自重复必须在写入前整句判定，一条都不能落"
+        }
+      ],
+      "result_evidence": [
+        {
+          "pointer": "/experiments/18/output",
+          "quote": "键 1 经旧 JSONL 读取后拒绝；键 2 经旧段后由二进制段尾找到并拒绝；批内重复不读旧键。三次失败的清单和文件列表未变，成功后主键为 [1,2,3]。"
         }
       ]
     }
