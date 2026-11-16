@@ -8,6 +8,7 @@ import heapq
 import json
 import math
 import os
+import re
 import struct
 import sys
 import tempfile
@@ -26,6 +27,13 @@ class DBError(Exception):
 
 def fail(message, code="INVALID"):
     raise DBError(code, message)
+
+
+# A vector literal that is exactly a JSON array of numbers: optional leading
+# minus, no leading plus, no leading zeros, no bare '.', no trailing dot.
+_VECTOR_NUMBER = r"-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?"
+_VECTOR_LITERAL = re.compile(
+    r"\[\s*(?:" + _VECTOR_NUMBER + r"(?:\s*,\s*" + _VECTOR_NUMBER + r")*)?\s*\]\Z")
 
 
 def sync_directory(path):
@@ -60,7 +68,7 @@ class Database:
         # This small metadata cache is optional and never a source of truth.
         self.key_ranges = OrderedDict()
         self.key_range_bytes = 0
-        self.key_range_limit = 64 * 1024
+        self.key_range_limit = 16 * 1024 * 1024
         # Recovery only reads the last complete journal commit. File deletion
         # is restartable: a crash during cleanup cannot change the committed set.
         self.collect()
@@ -259,13 +267,27 @@ class Database:
         # arrays. Decode only at a VECTOR-typed boundary so VARCHAR text such
         # as '[3,4]' remains an ordinary string.
         if isinstance(value, str):
-            try:
-                value = json.loads(value)
-            except ValueError:
-                fail("invalid VECTOR array literal", "TYPE")
+            numeric = False
+            text = value
+            if text.isascii() and _VECTOR_LITERAL.match(text):
+                # The literal is exactly a JSON array of numbers, which is what
+                # every published sample and the benchmark emit. Parsing it
+                # directly avoids a JSON decoder pass per row; anything else
+                # (non-ASCII digits, underscores, bare '.5', 'true') falls back
+                # to json.loads so the accepted grammar is unchanged.
+                body = text[1:-1].strip()
+                value = [] if not body else [float(part) for part in body.split(",")]
+                numeric = True
+            if not numeric:
+                try:
+                    value = json.loads(text)
+                except ValueError:
+                    fail("invalid VECTOR array literal", "TYPE")
+        else:
+            numeric = False
         if not isinstance(value, list) or len(value) != column["size"]:
             fail("VECTOR dimension mismatch", "TYPE")
-        if any(type(number) not in (int, float) for number in value):
+        if not numeric and any(type(number) not in (int, float) for number in value):
             fail("VECTOR element must be numeric", "TYPE")
         # One standard-library conversion per vector, preserving the original
         # float32 rounding and rejecting booleans, overflow and nonfinite data.
@@ -274,7 +296,9 @@ class Database:
             stored = struct.unpack(layout, struct.pack(layout, *value))
         except (OverflowError, struct.error):
             fail("VECTOR float32 overflow", "TYPE")
-        if not all(map(math.isfinite, stored)):
+        # Any infinite or NaN component makes the sum non-finite; a mix of
+        # +inf and -inf already fails through the same check below.
+        if not math.isfinite(sum(stored)):
             fail("VECTOR requires finite float32", "TYPE")
         return list(stored)
 
