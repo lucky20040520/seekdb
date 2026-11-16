@@ -55,7 +55,7 @@ class Database:
         self.transaction = None
         self.query_cache = OrderedDict()
         self.query_cache_bytes = 0
-        self.query_cache_limit = 16 * 1024 * 1024
+        self.query_cache_limit = self.default_cache_limit()
         # Immutable-file key ranges avoid repeatedly opening disjoint segments.
         # This small metadata cache is optional and never a source of truth.
         self.key_ranges = OrderedDict()
@@ -449,6 +449,33 @@ class Database:
             if hasattr(locations,'close'):
                 locations.close()
             candidates.close()
+
+    @staticmethod
+    def default_cache_limit():
+        """Bound for the in-memory vector cache, scaled to the container limit.
+
+        A fixed 16 MiB keeps a 10k x 128 table cacheable but silently disables
+        caching for 100k rows, where every query then rescans the table.
+        """
+        floor = 64 * 1024 * 1024
+        ceiling = 256 * 1024 * 1024
+        for name in ("/sys/fs/cgroup/memory.max",
+                     "/sys/fs/cgroup/memory/memory.limit_in_bytes"):
+            try:
+                with open(name, encoding="utf-8") as handle:
+                    text = handle.read().strip()
+            except OSError:
+                continue
+            if not text or text == "max":
+                continue
+            try:
+                limit = int(text)
+            except ValueError:
+                continue
+            if limit <= 0 or limit > 1 << 60:
+                continue
+            return max(floor, min(ceiling, limit // 8))
+        return floor
 
     def cached_vectors(self, table):
         signature = tuple(self.files(table))
