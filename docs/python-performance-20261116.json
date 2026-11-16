@@ -1,0 +1,3844 @@
+{
+  "date": "2026-11-16",
+  "scope": "local Python exact comparison; not official admission or score",
+  "baseline_sha": "8ec857e60bd63f345c9341038ffd37018a5f163e",
+  "candidate_runtime_sha256": {
+    "Dockerfile": "64b4ba4a568401ec2b75e04e921a424b944f5ec584a81f9c288ef912f4ea64b5",
+    "requirements.txt": "aba6405e5d8c6a3d7bb5104d28e823afb56305ef2f9d3e707d888f63993dfbd4",
+    "minivector/__init__.py": "63e0e4daa7f4ed54aa06ca998a929efdca3c5e57c18884b8539d004107d4790e",
+    "minivector/__main__.py": "6dd0642d3c910f4c5a768e79b5548d9ebd0974c12e7e30b0bf4d38b9419832c6",
+    "minivector/engine.py": "c65c420ca9d98586954b00ebb50e84174effdefbb916bfdb15982200659ea53f",
+    "minivector/flat_index.py": "6bce06f85fbf7138b2e74ef8dcb1786cfa69acc3b8014187333c41531446f9dc",
+    "minivector/jsonl.py": "6767d4bd4e23a996ea02552ac76813fd79106612a30babd5aa8b1aa8a2742107",
+    "minivector/segments.py": "cbbd40063451650175ada3b9b95b5329d58119b4514a695c6a91a47d09f631fe",
+    "minivector/sql.py": "0cd2fee1dca14593770679c757ad913a6b5a9d736dacfad4e0555fdf4ffd70ac",
+    "minivector/vector.py": "1aaadde978c6c517a99b2328368902ee0ef64758b41d9cf3e998e4315491ddea"
+  },
+  "candidate_image_runtime_files_match": true,
+  "measurement_files_sha256": {
+    "tools/run_desktop_performance.py": "b6faba1e9fc88faf4b89aa0911c1d4c5bc214762dff37b26d49ff8c18e6d6507",
+    "performance_checker/__init__.py": "c5a9701e86c7839a23e55f1a4280fa308707ada4aab234173474b581d6aedff8",
+    "performance_checker/checker.py": "8eb62ca7d4085c952aa56df530ddb384e22b97115ed3b8c03a94011d7b2f2b64",
+    "performance_checker/compare_cache.py": "a7a411c6133fdab8414345638aa6acb31cd58bb33a1e8050dc70dc45892b557e",
+    "performance_checker/compare_query.py": "631e3893de12ca4711ac4a3e244cf28bd3f60ce69edd116d8d1b1c57c1d90d4a",
+    "performance_checker/measure_query_cpu.py": "5d2021fe235a666b12b65799472206408d37d68db01f15f23f3ba96d8d23a44e",
+    "performance_checker/measurement.py": "e340fb42272660de9425f580f76f8f6ce2ec79bfc2771a57eca3899d2dd038d1",
+    "performance_checker/paired.py": "725267e67520d3429005ca1c0eb9ab9c6f46dfec75539a92d7c9262a2ac1e13e",
+    "performance_checker/probe.py": "dfefaec3dd263b79659ad15fbec963efc3e6b6f0423b2e6736ad36ff74b6f68c",
+    "performance_checker/profile_phases.py": "07e34814a99096ee58bc793d4f86b78fe7a5acd0d8496a6c1a1e1626db5e285e",
+    "performance_checker/resources.py": "64fc56dffac5cd208c57030fcf2ed1e0f475aeff9cb8f94ddcce6632e7a4213e",
+    "performance_checker/scoring.py": "8e7d87852e61f23509994d41fdb738119b68da879ad737b2ee256072dcbbb690",
+    "performance_checker/transport.py": "bb7866535fd39bda4b355c50697850a0efc91e283b80ea89ef07b17a0077f78c",
+    "performance_checker/workload.py": "99ebe137124e74eec39db095e6021a6ef61ff9259e77af3ef0d80a22d070a885"
+  },
+  "summary": {
+    "no_index": {
+      "baseline": {
+        "write": {
+          "time_ms": 5204.594399999991,
+          "io_bytes": 6201344,
+          "memory_bytes": 16617472
+        },
+        "query": {
+          "time_ms": 2817.232700000005,
+          "io_bytes": 6201344,
+          "memory_bytes": 34512896
+        }
+      },
+      "candidate": {
+        "write": {
+          "time_ms": 4971.3451000000005,
+          "io_bytes": 6201344,
+          "memory_bytes": 16142336
+        },
+        "query": {
+          "time_ms": 2275.593299999997,
+          "io_bytes": 6201344,
+          "memory_bytes": 34029568
+        }
+      },
+      "baseline_E_local": 0.499981,
+      "candidate_E_local": 0.524395,
+      "E_relative_gain_percent": 4.882985553451014,
+      "round_E_gains": [
+        0.021656216238746584,
+        0.029182599956295407,
+        0.029167790321101894
+      ],
+      "time_reduction_percent": {
+        "write": 4.481603792218481,
+        "query": 19.225937566321992
+      }
+    },
+    "with_index": {
+      "baseline": {
+        "write": {
+          "time_ms": 5166.8994999999995,
+          "io_bytes": 6201344,
+          "memory_bytes": 16539648
+        },
+        "query": {
+          "time_ms": 2941.6487000000016,
+          "io_bytes": 11542528,
+          "memory_bytes": 40710144
+        }
+      },
+      "candidate": {
+        "write": {
+          "time_ms": 4900.960699999999,
+          "io_bytes": 6201344,
+          "memory_bytes": 16322560
+        },
+        "query": {
+          "time_ms": 2239.748200000001,
+          "io_bytes": 11542528,
+          "memory_bytes": 39489536
+        }
+      },
+      "baseline_E_local": 0.499906,
+      "candidate_E_local": 0.529833,
+      "E_relative_gain_percent": 5.986525466787751,
+      "round_E_gains": [
+        0.03215422125181655,
+        0.02992618673928643,
+        0.03697901200314646
+      ],
+      "time_reduction_percent": {
+        "write": 5.14697063490398,
+        "query": 23.860785959927856
+      }
+    }
+  },
+  "profiles": {
+    "no_index": {
+      "scope": "E_local against frozen Python; not official score",
+      "configuration": {
+        "rows": 10000,
+        "dimensions": 128,
+        "queries": 1000,
+        "k": 10,
+        "mode": "exact",
+        "create_index": false,
+        "rounds": 3,
+        "cpus": "2",
+        "memory": "2g",
+        "pids": 128,
+        "io_device": "8:64"
+      },
+      "limitations": [
+        "Synthetic dataset and seeds are not verified to be the official workload.",
+        "Local cache policy: fresh empty volume per phase; executable image layers warmed once; no global cache eviction.",
+        "Docker Desktop data-device counters include filesystem metadata; this is not the official hardware or cold-cache procedure.",
+        "The official frozen resource limits, baseline, score and ranking are not established by this tool."
+      ],
+      "status": "completed",
+      "variants": {
+        "baseline": {
+          "image": "minivector-python:baseline-20261116",
+          "image_id": "sha256:ef6af31f38012849e2b30fb64c924670de09a15bcefa657992f1c34215a00aa8",
+          "configuration": {
+            "rows": 10000,
+            "dimensions": 128,
+            "queries": 1000,
+            "k": 10,
+            "mode": "exact",
+            "create_index": false,
+            "rounds": 3,
+            "cpus": "2",
+            "memory": "2g",
+            "pids": 128,
+            "io_device": "8:64"
+          },
+          "rounds": [
+            {
+              "round": 1,
+              "write": {
+                "time_ms": 5159.7951,
+                "io_bytes": 6201344,
+                "memory_bytes": 16318464,
+                "startup_ms": 324.87060000000014,
+                "load_ms": 5159.7951,
+                "preparation_ms": null,
+                "raw_resources": {
+                  "collector": "external-parent-cgroup-v2-via-wsl",
+                  "cgroup": "minivector-measure-099e0b765a6c457cb175ce74b276bb18",
+                  "data_device": "8:64",
+                  "errors": [],
+                  "sync_exit_code": 0,
+                  "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                  "memory.peak": "16318464\n",
+                  "memory.stat": "anon 0\nfile 5742592\nkernel 475136\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 4939776\nactive_file 802816\nunevictable 0\nslab_reclaimable 399648\nslab_unreclaimable 36712\nslab 436360\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 12915\npgmajfault 0\npgrefill 0\npgactivate 196\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\n",
+                  "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                  "cgroup.events": "populated 0\nfrozen 0\n",
+                  "cpu.stat": "usage_usec 1406570\nuser_usec 1284260\nsystem_usec 122310\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                  "settled_samples": 3,
+                  "data_files": 101,
+                  "logical_data_bytes": 5567828
+                },
+                "persisted": true,
+                "recall": {},
+                "query_counts": {
+                  "unfiltered": 0,
+                  "filtered": 0
+                }
+              },
+              "query": {
+                "time_ms": 2802.542800000001,
+                "io_bytes": 6201344,
+                "memory_bytes": 34463744,
+                "startup_ms": 329.98989999999753,
+                "load_ms": 5005.629900000003,
+                "preparation_ms": 212.03330000000165,
+                "raw_resources": {
+                  "collector": "external-parent-cgroup-v2-via-wsl",
+                  "cgroup": "minivector-measure-16cab57ffc674e50a477b6b89ce7c0b0",
+                  "data_device": "8:64",
+                  "errors": [],
+                  "sync_exit_code": 0,
+                  "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                  "memory.peak": "34463744\n",
+                  "memory.stat": "anon 0\nfile 5750784\nkernel 471040\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 4927488\nactive_file 823296\nunevictable 0\nslab_reclaimable 395568\nslab_unreclaimable 33872\nslab 429440\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 129157\npgmajfault 0\npgrefill 0\npgactivate 199\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 2\nthp_collapse_alloc 0\n",
+                  "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                  "cgroup.events": "populated 0\nfrozen 0\n",
+                  "cpu.stat": "usage_usec 3405365\nuser_usec 3126707\nsystem_usec 278658\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                  "settled_samples": 3,
+                  "data_files": 101,
+                  "logical_data_bytes": 5567828
+                },
+                "persisted": true,
+                "recall": {
+                  "unfiltered": 1.0,
+                  "filtered": 1.0
+                },
+                "query_counts": {
+                  "unfiltered": 500,
+                  "filtered": 500
+                }
+              },
+              "checks": {
+                "write_correct": true,
+                "query_correct": true,
+                "resources_ok": true,
+                "recall_unfiltered": 1.0,
+                "recall_filtered": 1.0
+              }
+            },
+            {
+              "round": 2,
+              "write": {
+                "time_ms": 5322.4661,
+                "io_bytes": 6201344,
+                "memory_bytes": 16617472,
+                "startup_ms": 337.82840000000647,
+                "load_ms": 5322.4661,
+                "preparation_ms": null,
+                "raw_resources": {
+                  "collector": "external-parent-cgroup-v2-via-wsl",
+                  "cgroup": "minivector-measure-b14ac677f3d443e59b55495ccbf2a08c",
+                  "data_device": "8:64",
+                  "errors": [],
+                  "sync_exit_code": 0,
+                  "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                  "memory.peak": "16617472\n",
+                  "memory.stat": "anon 0\nfile 5742592\nkernel 475136\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 4939776\nactive_file 802816\nunevictable 0\nslab_reclaimable 396976\nslab_unreclaimable 33872\nslab 430848\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 12901\npgmajfault 0\npgrefill 0\npgactivate 196\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\n",
+                  "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                  "cgroup.events": "populated 0\nfrozen 0\n",
+                  "cpu.stat": "usage_usec 1496513\nuser_usec 1335047\nsystem_usec 161465\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                  "settled_samples": 3,
+                  "data_files": 101,
+                  "logical_data_bytes": 5567828
+                },
+                "persisted": true,
+                "recall": {},
+                "query_counts": {
+                  "unfiltered": 0,
+                  "filtered": 0
+                }
+              },
+              "query": {
+                "time_ms": 2914.0517999999956,
+                "io_bytes": 6201344,
+                "memory_bytes": 34824192,
+                "startup_ms": 314.26640000000816,
+                "load_ms": 5151.029600000001,
+                "preparation_ms": 213.10350000000255,
+                "raw_resources": {
+                  "collector": "external-parent-cgroup-v2-via-wsl",
+                  "cgroup": "minivector-measure-28ec0a6e2ef54eb1a9291fa991b812d1",
+                  "data_device": "8:64",
+                  "errors": [],
+                  "sync_exit_code": 0,
+                  "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                  "memory.peak": "34824192\n",
+                  "memory.stat": "anon 0\nfile 5742592\nkernel 442368\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 4927488\nactive_file 815104\nunevictable 0\nslab_reclaimable 396312\nslab_unreclaimable 9072\nslab 405384\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 129089\npgmajfault 0\npgrefill 0\npgactivate 199\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 2\nthp_collapse_alloc 0\n",
+                  "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                  "cgroup.events": "populated 0\nfrozen 0\n",
+                  "cpu.stat": "usage_usec 3562721\nuser_usec 3235939\nsystem_usec 326782\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                  "settled_samples": 3,
+                  "data_files": 101,
+                  "logical_data_bytes": 5567828
+                },
+                "persisted": true,
+                "recall": {
+                  "unfiltered": 1.0,
+                  "filtered": 1.0
+                },
+                "query_counts": {
+                  "unfiltered": 500,
+                  "filtered": 500
+                }
+              },
+              "checks": {
+                "write_correct": true,
+                "query_correct": true,
+                "resources_ok": true,
+                "recall_unfiltered": 1.0,
+                "recall_filtered": 1.0
+              }
+            },
+            {
+              "round": 3,
+              "write": {
+                "time_ms": 5204.594399999991,
+                "io_bytes": 6201344,
+                "memory_bytes": 16637952,
+                "startup_ms": 333.0144999999902,
+                "load_ms": 5204.594399999991,
+                "preparation_ms": null,
+                "raw_resources": {
+                  "collector": "external-parent-cgroup-v2-via-wsl",
+                  "cgroup": "minivector-measure-45161351388642ff85007f7bda69b75b",
+                  "data_device": "8:64",
+                  "errors": [],
+                  "sync_exit_code": 0,
+                  "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                  "memory.peak": "16637952\n",
+                  "memory.stat": "anon 0\nfile 5742592\nkernel 475136\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 4939776\nactive_file 802816\nunevictable 0\nslab_reclaimable 399264\nslab_unreclaimable 37336\nslab 436600\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 12895\npgmajfault 0\npgrefill 0\npgactivate 196\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\n",
+                  "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                  "cgroup.events": "populated 0\nfrozen 0\n",
+                  "cpu.stat": "usage_usec 1431464\nuser_usec 1293198\nsystem_usec 138266\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                  "settled_samples": 3,
+                  "data_files": 101,
+                  "logical_data_bytes": 5567828
+                },
+                "persisted": true,
+                "recall": {},
+                "query_counts": {
+                  "unfiltered": 0,
+                  "filtered": 0
+                }
+              },
+              "query": {
+                "time_ms": 2817.232700000005,
+                "io_bytes": 6201344,
+                "memory_bytes": 34512896,
+                "startup_ms": 295.88229999998816,
+                "load_ms": 5106.988099999995,
+                "preparation_ms": 201.59100000000763,
+                "raw_resources": {
+                  "collector": "external-parent-cgroup-v2-via-wsl",
+                  "cgroup": "minivector-measure-d9feaa583d8940a2a8ae957de4c69838",
+                  "data_device": "8:64",
+                  "errors": [],
+                  "sync_exit_code": 0,
+                  "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                  "memory.peak": "34512896\n",
+                  "memory.stat": "anon 0\nfile 5742592\nkernel 471040\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 4927488\nactive_file 815104\nunevictable 0\nslab_reclaimable 395448\nslab_unreclaimable 33480\nslab 428928\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 129464\npgmajfault 0\npgrefill 0\npgactivate 199\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 1\nthp_collapse_alloc 0\n",
+                  "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                  "cgroup.events": "populated 0\nfrozen 0\n",
+                  "cpu.stat": "usage_usec 3458498\nuser_usec 3201447\nsystem_usec 257050\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                  "settled_samples": 3,
+                  "data_files": 101,
+                  "logical_data_bytes": 5567828
+                },
+                "persisted": true,
+                "recall": {
+                  "unfiltered": 1.0,
+                  "filtered": 1.0
+                },
+                "query_counts": {
+                  "unfiltered": 500,
+                  "filtered": 500
+                }
+              },
+              "checks": {
+                "write_correct": true,
+                "query_correct": true,
+                "resources_ok": true,
+                "recall_unfiltered": 1.0,
+                "recall_filtered": 1.0
+              }
+            }
+          ],
+          "efficiency": {
+            "available": true,
+            "scope": "local estimate; not an official performance score or rank",
+            "baseline": {
+              "write": {
+                "time_ms": 5204.594399999991,
+                "io_bytes": 6201344,
+                "memory_bytes": 16617472
+              },
+              "query": {
+                "time_ms": 2817.232700000005,
+                "io_bytes": 6201344,
+                "memory_bytes": 34512896
+              }
+            },
+            "eligible": true,
+            "reasons": [],
+            "rounds": [
+              {
+                "write": 0.5021499791236387,
+                "query": 0.5008530669990132,
+                "efficiency": 0.501285371040555
+              },
+              {
+                "write": 0.4966415322620662,
+                "query": 0.49449806133509894,
+                "efficiency": 0.495212551644088
+              },
+              {
+                "write": 0.499942069285135,
+                "query": 0.5,
+                "efficiency": 0.49998068976171167
+              }
+            ],
+            "median_efficiency": 0.499981
+          },
+          "medians": {
+            "write": {
+              "time_ms": 5204.594399999991,
+              "io_bytes": 6201344,
+              "memory_bytes": 16617472
+            },
+            "query": {
+              "time_ms": 2817.232700000005,
+              "io_bytes": 6201344,
+              "memory_bytes": 34512896
+            }
+          }
+        },
+        "candidate": {
+          "image": "minivector-python:exact-screen-20261116",
+          "image_id": "sha256:94f9268419891bda2737d48723355ebd5332fc5f9675c191447385d147f2b1f7",
+          "configuration": {
+            "rows": 10000,
+            "dimensions": 128,
+            "queries": 1000,
+            "k": 10,
+            "mode": "exact",
+            "create_index": false,
+            "rounds": 3,
+            "cpus": "2",
+            "memory": "2g",
+            "pids": 128,
+            "io_device": "8:64"
+          },
+          "rounds": [
+            {
+              "round": 1,
+              "write": {
+                "time_ms": 4971.3451000000005,
+                "io_bytes": 6201344,
+                "memory_bytes": 16142336,
+                "startup_ms": 341.32749999999845,
+                "load_ms": 4971.3451000000005,
+                "preparation_ms": null,
+                "raw_resources": {
+                  "collector": "external-parent-cgroup-v2-via-wsl",
+                  "cgroup": "minivector-measure-416a82e66d374b36ad87f2be9dcb3266",
+                  "data_device": "8:64",
+                  "errors": [],
+                  "sync_exit_code": 0,
+                  "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                  "memory.peak": "16142336\n",
+                  "memory.stat": "anon 0\nfile 5742592\nkernel 471040\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 5742592\nactive_file 0\nunevictable 0\nslab_reclaimable 395448\nslab_unreclaimable 35432\nslab 430880\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 12720\npgmajfault 0\npgrefill 0\npgactivate 0\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\n",
+                  "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                  "cgroup.events": "populated 0\nfrozen 0\n",
+                  "cpu.stat": "usage_usec 1296338\nuser_usec 1133301\nsystem_usec 163036\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                  "settled_samples": 3,
+                  "data_files": 101,
+                  "logical_data_bytes": 5567828
+                },
+                "persisted": true,
+                "recall": {},
+                "query_counts": {
+                  "unfiltered": 0,
+                  "filtered": 0
+                }
+              },
+              "query": {
+                "time_ms": 2316.4731000000033,
+                "io_bytes": 6201344,
+                "memory_bytes": 33779712,
+                "startup_ms": 313.24419999999975,
+                "load_ms": 4914.235400000002,
+                "preparation_ms": 205.38770000000284,
+                "raw_resources": {
+                  "collector": "external-parent-cgroup-v2-via-wsl",
+                  "cgroup": "minivector-measure-740d8613be00481bac82f327389bcd57",
+                  "data_device": "8:64",
+                  "errors": [],
+                  "sync_exit_code": 0,
+                  "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                  "memory.peak": "33779712\n",
+                  "memory.stat": "anon 0\nfile 5742592\nkernel 475136\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 4927488\nactive_file 815104\nunevictable 0\nslab_reclaimable 397304\nslab_unreclaimable 35016\nslab 432320\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 64884\npgmajfault 0\npgrefill 0\npgactivate 199\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 1\nthp_collapse_alloc 0\n",
+                  "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                  "cgroup.events": "populated 0\nfrozen 0\n",
+                  "cpu.stat": "usage_usec 2783653\nuser_usec 2553735\nsystem_usec 229918\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                  "settled_samples": 3,
+                  "data_files": 101,
+                  "logical_data_bytes": 5567828
+                },
+                "persisted": true,
+                "recall": {
+                  "unfiltered": 1.0,
+                  "filtered": 1.0
+                },
+                "query_counts": {
+                  "unfiltered": 500,
+                  "filtered": 500
+                }
+              },
+              "checks": {
+                "write_correct": true,
+                "query_correct": true,
+                "resources_ok": true,
+                "recall_unfiltered": 1.0,
+                "recall_filtered": 1.0
+              }
+            },
+            {
+              "round": 2,
+              "write": {
+                "time_ms": 4977.404899999996,
+                "io_bytes": 6201344,
+                "memory_bytes": 16015360,
+                "startup_ms": 310.4541000000012,
+                "load_ms": 4977.404899999996,
+                "preparation_ms": null,
+                "raw_resources": {
+                  "collector": "external-parent-cgroup-v2-via-wsl",
+                  "cgroup": "minivector-measure-1e545125cc5741638d9f9d6ae1c6758f",
+                  "data_device": "8:64",
+                  "errors": [],
+                  "sync_exit_code": 0,
+                  "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                  "memory.peak": "16015360\n",
+                  "memory.stat": "anon 0\nfile 5746688\nkernel 475136\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 5742592\nactive_file 4096\nunevictable 0\nslab_reclaimable 397936\nslab_unreclaimable 35432\nslab 433368\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 12818\npgmajfault 0\npgrefill 0\npgactivate 0\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\n",
+                  "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                  "cgroup.events": "populated 0\nfrozen 0\n",
+                  "cpu.stat": "usage_usec 1216865\nuser_usec 1085634\nsystem_usec 131230\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                  "settled_samples": 3,
+                  "data_files": 101,
+                  "logical_data_bytes": 5567828
+                },
+                "persisted": true,
+                "recall": {},
+                "query_counts": {
+                  "unfiltered": 0,
+                  "filtered": 0
+                }
+              },
+              "query": {
+                "time_ms": 2275.593299999997,
+                "io_bytes": 6201344,
+                "memory_bytes": 34168832,
+                "startup_ms": 305.8110000000056,
+                "load_ms": 4960.148000000004,
+                "preparation_ms": 203.15589999999872,
+                "raw_resources": {
+                  "collector": "external-parent-cgroup-v2-via-wsl",
+                  "cgroup": "minivector-measure-0c5fa726970e42ad853e8cfbdf4ee2ca",
+                  "data_device": "8:64",
+                  "errors": [],
+                  "sync_exit_code": 0,
+                  "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                  "memory.peak": "34168832\n",
+                  "memory.stat": "anon 0\nfile 5742592\nkernel 475136\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 4927488\nactive_file 815104\nunevictable 0\nslab_reclaimable 395520\nslab_unreclaimable 33872\nslab 429392\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 64791\npgmajfault 0\npgrefill 0\npgactivate 199\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 1\nthp_collapse_alloc 0\n",
+                  "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                  "cgroup.events": "populated 0\nfrozen 0\n",
+                  "cpu.stat": "usage_usec 2718894\nuser_usec 2488007\nsystem_usec 230887\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                  "settled_samples": 3,
+                  "data_files": 101,
+                  "logical_data_bytes": 5567828
+                },
+                "persisted": true,
+                "recall": {
+                  "unfiltered": 1.0,
+                  "filtered": 1.0
+                },
+                "query_counts": {
+                  "unfiltered": 500,
+                  "filtered": 500
+                }
+              },
+              "checks": {
+                "write_correct": true,
+                "query_correct": true,
+                "resources_ok": true,
+                "recall_unfiltered": 1.0,
+                "recall_filtered": 1.0
+              }
+            },
+            {
+              "round": 3,
+              "write": {
+                "time_ms": 4839.176199999997,
+                "io_bytes": 6201344,
+                "memory_bytes": 16539648,
+                "startup_ms": 327.28559999998197,
+                "load_ms": 4839.176199999997,
+                "preparation_ms": null,
+                "raw_resources": {
+                  "collector": "external-parent-cgroup-v2-via-wsl",
+                  "cgroup": "minivector-measure-298384acf29a4fedbec5223b17a54b95",
+                  "data_device": "8:64",
+                  "errors": [],
+                  "sync_exit_code": 0,
+                  "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                  "memory.peak": "16539648\n",
+                  "memory.stat": "anon 0\nfile 5742592\nkernel 471040\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 5742592\nactive_file 0\nunevictable 0\nslab_reclaimable 395664\nslab_unreclaimable 35040\nslab 430704\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 12727\npgmajfault 0\npgrefill 0\npgactivate 0\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\n",
+                  "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                  "cgroup.events": "populated 0\nfrozen 0\n",
+                  "cpu.stat": "usage_usec 1229053\nuser_usec 1108304\nsystem_usec 120749\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                  "settled_samples": 3,
+                  "data_files": 101,
+                  "logical_data_bytes": 5567828
+                },
+                "persisted": true,
+                "recall": {},
+                "query_counts": {
+                  "unfiltered": 0,
+                  "filtered": 0
+                }
+              },
+              "query": {
+                "time_ms": 2191.3769999999886,
+                "io_bytes": 6201344,
+                "memory_bytes": 34029568,
+                "startup_ms": 321.4537000000064,
+                "load_ms": 4983.6944000000185,
+                "preparation_ms": 195.06819999998015,
+                "raw_resources": {
+                  "collector": "external-parent-cgroup-v2-via-wsl",
+                  "cgroup": "minivector-measure-9068ea566ee440ccaba66d6782533a82",
+                  "data_device": "8:64",
+                  "errors": [],
+                  "sync_exit_code": 0,
+                  "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                  "memory.peak": "34029568\n",
+                  "memory.stat": "anon 0\nfile 5742592\nkernel 471040\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 4927488\nactive_file 815104\nunevictable 0\nslab_reclaimable 400328\nslab_unreclaimable 35648\nslab 435976\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 64370\npgmajfault 0\npgrefill 0\npgactivate 199\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 2\nthp_collapse_alloc 0\n",
+                  "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                  "cgroup.events": "populated 0\nfrozen 0\n",
+                  "cpu.stat": "usage_usec 2681077\nuser_usec 2468756\nsystem_usec 212321\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                  "settled_samples": 3,
+                  "data_files": 101,
+                  "logical_data_bytes": 5567828
+                },
+                "persisted": true,
+                "recall": {
+                  "unfiltered": 1.0,
+                  "filtered": 1.0
+                },
+                "query_counts": {
+                  "unfiltered": 500,
+                  "filtered": 500
+                }
+              },
+              "checks": {
+                "write_correct": true,
+                "query_correct": true,
+                "resources_ok": true,
+                "recall_unfiltered": 1.0,
+                "recall_filtered": 1.0
+              }
+            }
+          ],
+          "efficiency": {
+            "available": true,
+            "scope": "local estimate; not an official performance score or rank",
+            "baseline": {
+              "write": {
+                "time_ms": 5204.594399999991,
+                "io_bytes": 6201344,
+                "memory_bytes": 16617472
+              },
+              "query": {
+                "time_ms": 2817.232700000005,
+                "io_bytes": 6201344,
+                "memory_bytes": 34512896
+              }
+            },
+            "eligible": true,
+            "reasons": [],
+            "rounds": [
+              {
+                "write": 0.5082382452810219,
+                "query": 0.5302932582784415,
+                "efficiency": 0.5229415872793016
+              },
+              {
+                "write": 0.5084262376943127,
+                "query": 0.5323796085534187,
+                "efficiency": 0.5243951516003834
+              },
+              {
+                "write": 0.5111333489343238,
+                "query": 0.5381560456570584,
+                "efficiency": 0.5291484800828136
+              }
+            ],
+            "median_efficiency": 0.524395
+          },
+          "medians": {
+            "write": {
+              "time_ms": 4971.3451000000005,
+              "io_bytes": 6201344,
+              "memory_bytes": 16142336
+            },
+            "query": {
+              "time_ms": 2275.593299999997,
+              "io_bytes": 6201344,
+              "memory_bytes": 34029568
+            }
+          }
+        }
+      },
+      "order": [
+        [
+          "baseline",
+          "candidate"
+        ],
+        [
+          "candidate",
+          "baseline"
+        ],
+        [
+          "baseline",
+          "candidate"
+        ]
+      ],
+      "fixed_baseline_label": "baseline"
+    },
+    "with_index": {
+      "scope": "E_local against frozen Python; not official score",
+      "configuration": {
+        "rows": 10000,
+        "dimensions": 128,
+        "queries": 1000,
+        "k": 10,
+        "mode": "exact",
+        "create_index": true,
+        "rounds": 3,
+        "cpus": "2",
+        "memory": "2g",
+        "pids": 128,
+        "io_device": "8:64"
+      },
+      "limitations": [
+        "Synthetic dataset and seeds are not verified to be the official workload.",
+        "Local cache policy: fresh empty volume per phase; executable image layers warmed once; no global cache eviction.",
+        "Docker Desktop data-device counters include filesystem metadata; this is not the official hardware or cold-cache procedure.",
+        "The official frozen resource limits, baseline, score and ranking are not established by this tool."
+      ],
+      "status": "completed",
+      "variants": {
+        "baseline": {
+          "image": "minivector-python:baseline-20261116",
+          "image_id": "sha256:ef6af31f38012849e2b30fb64c924670de09a15bcefa657992f1c34215a00aa8",
+          "configuration": {
+            "rows": 10000,
+            "dimensions": 128,
+            "queries": 1000,
+            "k": 10,
+            "mode": "exact",
+            "create_index": true,
+            "rounds": 3,
+            "cpus": "2",
+            "memory": "2g",
+            "pids": 128,
+            "io_device": "8:64"
+          },
+          "rounds": [
+            {
+              "round": 1,
+              "write": {
+                "time_ms": 5174.876899999999,
+                "io_bytes": 6201344,
+                "memory_bytes": 16310272,
+                "startup_ms": 327.6684000000003,
+                "load_ms": 5174.876899999999,
+                "preparation_ms": null,
+                "raw_resources": {
+                  "collector": "external-parent-cgroup-v2-via-wsl",
+                  "cgroup": "minivector-measure-ba5135bdd8194d2cbf122e0d93c13614",
+                  "data_device": "8:64",
+                  "errors": [],
+                  "sync_exit_code": 0,
+                  "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                  "memory.peak": "16310272\n",
+                  "memory.stat": "anon 0\nfile 5742592\nkernel 475136\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 4939776\nactive_file 802816\nunevictable 0\nslab_reclaimable 403184\nslab_unreclaimable 37304\nslab 440488\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 12907\npgmajfault 0\npgrefill 0\npgactivate 196\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\n",
+                  "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                  "cgroup.events": "populated 0\nfrozen 0\n",
+                  "cpu.stat": "usage_usec 1462368\nuser_usec 1298582\nsystem_usec 163785\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                  "settled_samples": 3,
+                  "data_files": 101,
+                  "logical_data_bytes": 5567828
+                },
+                "persisted": true,
+                "recall": {},
+                "query_counts": {
+                  "unfiltered": 0,
+                  "filtered": 0
+                }
+              },
+              "query": {
+                "time_ms": 3022.3820000000005,
+                "io_bytes": 11542528,
+                "memory_bytes": 40710144,
+                "startup_ms": 344.4356000000006,
+                "load_ms": 5243.231900000002,
+                "preparation_ms": 973.5653000000007,
+                "raw_resources": {
+                  "collector": "external-parent-cgroup-v2-via-wsl",
+                  "cgroup": "minivector-measure-49f7e3e317564d29a4e5e5473c2daa6d",
+                  "data_device": "8:64",
+                  "errors": [],
+                  "sync_exit_code": 0,
+                  "io.stat": "8:64 rbytes=0 wbytes=11542528 rios=0 wios=302 dbytes=0 dios=0\n",
+                  "memory.peak": "40710144\n",
+                  "memory.stat": "anon 0\nfile 11075584\nkernel 819200\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 5341184\nactive_file 5734400\nunevictable 0\nslab_reclaimable 745200\nslab_unreclaimable 33872\nslab 779072\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 129593\npgmajfault 0\npgrefill 0\npgactivate 1400\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 1\nthp_collapse_alloc 0\n",
+                  "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                  "cgroup.events": "populated 0\nfrozen 0\n",
+                  "cpu.stat": "usage_usec 3729790\nuser_usec 3389974\nsystem_usec 339816\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                  "settled_samples": 3,
+                  "data_files": 201,
+                  "logical_data_bytes": 10858489
+                },
+                "persisted": true,
+                "recall": {
+                  "unfiltered": 1.0,
+                  "filtered": 1.0
+                },
+                "query_counts": {
+                  "unfiltered": 500,
+                  "filtered": 500
+                }
+              },
+              "checks": {
+                "write_correct": true,
+                "query_correct": true,
+                "resources_ok": true,
+                "recall_unfiltered": 1.0,
+                "recall_filtered": 1.0
+              }
+            },
+            {
+              "round": 2,
+              "write": {
+                "time_ms": 5165.783400000009,
+                "io_bytes": 6201344,
+                "memory_bytes": 16539648,
+                "startup_ms": 345.8487000000048,
+                "load_ms": 5165.783400000009,
+                "preparation_ms": null,
+                "raw_resources": {
+                  "collector": "external-parent-cgroup-v2-via-wsl",
+                  "cgroup": "minivector-measure-0d56b3b930404b8c859c396ffb603a1b",
+                  "data_device": "8:64",
+                  "errors": [],
+                  "sync_exit_code": 0,
+                  "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                  "memory.peak": "16539648\n",
+                  "memory.stat": "anon 0\nfile 5742592\nkernel 471040\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 4939776\nactive_file 802816\nunevictable 0\nslab_reclaimable 394312\nslab_unreclaimable 35592\nslab 429904\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 12902\npgmajfault 0\npgrefill 0\npgactivate 196\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\n",
+                  "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                  "cgroup.events": "populated 0\nfrozen 0\n",
+                  "cpu.stat": "usage_usec 1578446\nuser_usec 1393692\nsystem_usec 184754\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                  "settled_samples": 3,
+                  "data_files": 101,
+                  "logical_data_bytes": 5567828
+                },
+                "persisted": true,
+                "recall": {},
+                "query_counts": {
+                  "unfiltered": 0,
+                  "filtered": 0
+                }
+              },
+              "query": {
+                "time_ms": 2941.6487000000016,
+                "io_bytes": 11542528,
+                "memory_bytes": 40841216,
+                "startup_ms": 336.32490000000814,
+                "load_ms": 5108.415100000002,
+                "preparation_ms": 984.3601000000035,
+                "raw_resources": {
+                  "collector": "external-parent-cgroup-v2-via-wsl",
+                  "cgroup": "minivector-measure-fcb4166c039343a8b3aaff0b85b5f629",
+                  "data_device": "8:64",
+                  "errors": [],
+                  "sync_exit_code": 0,
+                  "io.stat": "8:64 rbytes=0 wbytes=11542528 rios=0 wios=302 dbytes=0 dios=0\n",
+                  "memory.peak": "40841216\n",
+                  "memory.stat": "anon 0\nfile 11075584\nkernel 819200\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 5341184\nactive_file 5734400\nunevictable 0\nslab_reclaimable 745776\nslab_unreclaimable 33480\nslab 779256\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 129101\npgmajfault 0\npgrefill 0\npgactivate 1400\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 2\nthp_collapse_alloc 0\n",
+                  "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                  "cgroup.events": "populated 0\nfrozen 0\n",
+                  "cpu.stat": "usage_usec 3692470\nuser_usec 3435043\nsystem_usec 257427\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                  "settled_samples": 3,
+                  "data_files": 201,
+                  "logical_data_bytes": 10858489
+                },
+                "persisted": true,
+                "recall": {
+                  "unfiltered": 1.0,
+                  "filtered": 1.0
+                },
+                "query_counts": {
+                  "unfiltered": 500,
+                  "filtered": 500
+                }
+              },
+              "checks": {
+                "write_correct": true,
+                "query_correct": true,
+                "resources_ok": true,
+                "recall_unfiltered": 1.0,
+                "recall_filtered": 1.0
+              }
+            },
+            {
+              "round": 3,
+              "write": {
+                "time_ms": 5166.8994999999995,
+                "io_bytes": 6201344,
+                "memory_bytes": 16695296,
+                "startup_ms": 339.873300000022,
+                "load_ms": 5166.8994999999995,
+                "preparation_ms": null,
+                "raw_resources": {
+                  "collector": "external-parent-cgroup-v2-via-wsl",
+                  "cgroup": "minivector-measure-5a7346372e2144409caf4af28117eb0e",
+                  "data_device": "8:64",
+                  "errors": [],
+                  "sync_exit_code": 0,
+                  "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                  "memory.peak": "16695296\n",
+                  "memory.stat": "anon 0\nfile 5742592\nkernel 475136\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 4939776\nactive_file 802816\nunevictable 0\nslab_reclaimable 398920\nslab_unreclaimable 33896\nslab 432816\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 12801\npgmajfault 0\npgrefill 0\npgactivate 196\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\n",
+                  "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                  "cgroup.events": "populated 0\nfrozen 0\n",
+                  "cpu.stat": "usage_usec 1548513\nuser_usec 1378813\nsystem_usec 169700\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                  "settled_samples": 3,
+                  "data_files": 101,
+                  "logical_data_bytes": 5567828
+                },
+                "persisted": true,
+                "recall": {},
+                "query_counts": {
+                  "unfiltered": 0,
+                  "filtered": 0
+                }
+              },
+              "query": {
+                "time_ms": 2938.505499999991,
+                "io_bytes": 11542528,
+                "memory_bytes": 40116224,
+                "startup_ms": 323.69690000001583,
+                "load_ms": 5072.186999999985,
+                "preparation_ms": 995.6054000000165,
+                "raw_resources": {
+                  "collector": "external-parent-cgroup-v2-via-wsl",
+                  "cgroup": "minivector-measure-5a622f5336cf417d832ca4afc0abb541",
+                  "data_device": "8:64",
+                  "errors": [],
+                  "sync_exit_code": 0,
+                  "io.stat": "8:64 rbytes=0 wbytes=11542528 rios=0 wios=302 dbytes=0 dios=0\n",
+                  "memory.peak": "40116224\n",
+                  "memory.stat": "anon 0\nfile 11075584\nkernel 802816\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 5341184\nactive_file 5734400\nunevictable 0\nslab_reclaimable 745688\nslab_unreclaimable 18216\nslab 763904\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 129087\npgmajfault 0\npgrefill 0\npgactivate 1400\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 2\nthp_collapse_alloc 0\n",
+                  "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                  "cgroup.events": "populated 0\nfrozen 0\n",
+                  "cpu.stat": "usage_usec 3726751\nuser_usec 3352857\nsystem_usec 373894\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                  "settled_samples": 3,
+                  "data_files": 201,
+                  "logical_data_bytes": 10858489
+                },
+                "persisted": true,
+                "recall": {
+                  "unfiltered": 1.0,
+                  "filtered": 1.0
+                },
+                "query_counts": {
+                  "unfiltered": 500,
+                  "filtered": 500
+                }
+              },
+              "checks": {
+                "write_correct": true,
+                "query_correct": true,
+                "resources_ok": true,
+                "recall_unfiltered": 1.0,
+                "recall_filtered": 1.0
+              }
+            }
+          ],
+          "efficiency": {
+            "available": true,
+            "scope": "local estimate; not an official performance score or rank",
+            "baseline": {
+              "write": {
+                "time_ms": 5166.8994999999995,
+                "io_bytes": 6201344,
+                "memory_bytes": 16539648
+              },
+              "query": {
+                "time_ms": 2941.6487000000016,
+                "io_bytes": 11542528,
+                "memory_bytes": 40710144
+              }
+            },
+            "eligible": true,
+            "reasons": [],
+            "rounds": [
+              {
+                "write": 0.5004249844446934,
+                "query": 0.49594035109474044,
+                "efficiency": 0.49743522887805813
+              },
+              {
+                "write": 0.5000323986718545,
+                "query": 0.4998433062383704,
+                "efficiency": 0.49990633704953175
+              },
+              {
+                "write": 0.4995594713656388,
+                "query": 0.5008765348448859,
+                "efficiency": 0.5004375136851369
+              }
+            ],
+            "median_efficiency": 0.499906
+          },
+          "medians": {
+            "write": {
+              "time_ms": 5166.8994999999995,
+              "io_bytes": 6201344,
+              "memory_bytes": 16539648
+            },
+            "query": {
+              "time_ms": 2941.6487000000016,
+              "io_bytes": 11542528,
+              "memory_bytes": 40710144
+            }
+          }
+        },
+        "candidate": {
+          "image": "minivector-python:exact-screen-20261116",
+          "image_id": "sha256:94f9268419891bda2737d48723355ebd5332fc5f9675c191447385d147f2b1f7",
+          "configuration": {
+            "rows": 10000,
+            "dimensions": 128,
+            "queries": 1000,
+            "k": 10,
+            "mode": "exact",
+            "create_index": true,
+            "rounds": 3,
+            "cpus": "2",
+            "memory": "2g",
+            "pids": 128,
+            "io_device": "8:64"
+          },
+          "rounds": [
+            {
+              "round": 1,
+              "write": {
+                "time_ms": 5033.1477,
+                "io_bytes": 6201344,
+                "memory_bytes": 16322560,
+                "startup_ms": 326.082999999997,
+                "load_ms": 5033.1477,
+                "preparation_ms": null,
+                "raw_resources": {
+                  "collector": "external-parent-cgroup-v2-via-wsl",
+                  "cgroup": "minivector-measure-6963529af6d44cb3a7177694f7bf968b",
+                  "data_device": "8:64",
+                  "errors": [],
+                  "sync_exit_code": 0,
+                  "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                  "memory.peak": "16322560\n",
+                  "memory.stat": "anon 0\nfile 5742592\nkernel 471040\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 5742592\nactive_file 0\nunevictable 0\nslab_reclaimable 396400\nslab_unreclaimable 33480\nslab 429880\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 12817\npgmajfault 0\npgrefill 0\npgactivate 0\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\n",
+                  "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                  "cgroup.events": "populated 0\nfrozen 0\n",
+                  "cpu.stat": "usage_usec 1284214\nuser_usec 1153339\nsystem_usec 130875\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                  "settled_samples": 3,
+                  "data_files": 101,
+                  "logical_data_bytes": 5567828
+                },
+                "persisted": true,
+                "recall": {},
+                "query_counts": {
+                  "unfiltered": 0,
+                  "filtered": 0
+                }
+              },
+              "query": {
+                "time_ms": 2239.748200000001,
+                "io_bytes": 11542528,
+                "memory_bytes": 39489536,
+                "startup_ms": 319.87990000000366,
+                "load_ms": 5006.3302,
+                "preparation_ms": 965.1592999999963,
+                "raw_resources": {
+                  "collector": "external-parent-cgroup-v2-via-wsl",
+                  "cgroup": "minivector-measure-705790d925284c78ab44c451e3b56761",
+                  "data_device": "8:64",
+                  "errors": [],
+                  "sync_exit_code": 0,
+                  "io.stat": "8:64 rbytes=0 wbytes=11542528 rios=0 wios=302 dbytes=0 dios=0\n",
+                  "memory.peak": "39489536\n",
+                  "memory.stat": "anon 0\nfile 11091968\nkernel 823296\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 5341184\nactive_file 5750784\nunevictable 0\nslab_reclaimable 748568\nslab_unreclaimable 35040\nslab 783608\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 64289\npgmajfault 0\npgrefill 0\npgactivate 1400\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 2\nthp_collapse_alloc 0\n",
+                  "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                  "cgroup.events": "populated 0\nfrozen 0\n",
+                  "cpu.stat": "usage_usec 2852651\nuser_usec 2616266\nsystem_usec 236385\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                  "settled_samples": 3,
+                  "data_files": 201,
+                  "logical_data_bytes": 10858489
+                },
+                "persisted": true,
+                "recall": {
+                  "unfiltered": 1.0,
+                  "filtered": 1.0
+                },
+                "query_counts": {
+                  "unfiltered": 500,
+                  "filtered": 500
+                }
+              },
+              "checks": {
+                "write_correct": true,
+                "query_correct": true,
+                "resources_ok": true,
+                "recall_unfiltered": 1.0,
+                "recall_filtered": 1.0
+              }
+            },
+            {
+              "round": 2,
+              "write": {
+                "time_ms": 4900.960699999999,
+                "io_bytes": 6201344,
+                "memory_bytes": 16478208,
+                "startup_ms": 320.4577999999998,
+                "load_ms": 4900.960699999999,
+                "preparation_ms": null,
+                "raw_resources": {
+                  "collector": "external-parent-cgroup-v2-via-wsl",
+                  "cgroup": "minivector-measure-0c940e4f8c134670b0186625d745ece3",
+                  "data_device": "8:64",
+                  "errors": [],
+                  "sync_exit_code": 0,
+                  "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                  "memory.peak": "16478208\n",
+                  "memory.stat": "anon 0\nfile 5742592\nkernel 471040\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 5742592\nactive_file 0\nunevictable 0\nslab_reclaimable 398776\nslab_unreclaimable 33480\nslab 432256\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 12816\npgmajfault 0\npgrefill 0\npgactivate 0\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\n",
+                  "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                  "cgroup.events": "populated 0\nfrozen 0\n",
+                  "cpu.stat": "usage_usec 1234713\nuser_usec 1115357\nsystem_usec 119355\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                  "settled_samples": 3,
+                  "data_files": 101,
+                  "logical_data_bytes": 5567828
+                },
+                "persisted": true,
+                "recall": {},
+                "query_counts": {
+                  "unfiltered": 0,
+                  "filtered": 0
+                }
+              },
+              "query": {
+                "time_ms": 2260.0903000000017,
+                "io_bytes": 11542528,
+                "memory_bytes": 39550976,
+                "startup_ms": 332.8328000000056,
+                "load_ms": 4948.2213,
+                "preparation_ms": 975.1521999999966,
+                "raw_resources": {
+                  "collector": "external-parent-cgroup-v2-via-wsl",
+                  "cgroup": "minivector-measure-b9ffb2878a4148c4ad3e4a0c0c7a9641",
+                  "data_device": "8:64",
+                  "errors": [],
+                  "sync_exit_code": 0,
+                  "io.stat": "8:64 rbytes=0 wbytes=11542528 rios=0 wios=302 dbytes=0 dios=0\n",
+                  "memory.peak": "39550976\n",
+                  "memory.stat": "anon 0\nfile 11075584\nkernel 823296\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 5341184\nactive_file 5734400\nunevictable 0\nslab_reclaimable 747520\nslab_unreclaimable 35040\nslab 782560\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 64891\npgmajfault 0\npgrefill 0\npgactivate 1400\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 1\nthp_collapse_alloc 0\n",
+                  "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                  "cgroup.events": "populated 0\nfrozen 0\n",
+                  "cpu.stat": "usage_usec 2910958\nuser_usec 2618627\nsystem_usec 292331\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                  "settled_samples": 3,
+                  "data_files": 201,
+                  "logical_data_bytes": 10858489
+                },
+                "persisted": true,
+                "recall": {
+                  "unfiltered": 1.0,
+                  "filtered": 1.0
+                },
+                "query_counts": {
+                  "unfiltered": 500,
+                  "filtered": 500
+                }
+              },
+              "checks": {
+                "write_correct": true,
+                "query_correct": true,
+                "resources_ok": true,
+                "recall_unfiltered": 1.0,
+                "recall_filtered": 1.0
+              }
+            },
+            {
+              "round": 3,
+              "write": {
+                "time_ms": 4792.951399999993,
+                "io_bytes": 6201344,
+                "memory_bytes": 16232448,
+                "startup_ms": 322.87500000001046,
+                "load_ms": 4792.951399999993,
+                "preparation_ms": null,
+                "raw_resources": {
+                  "collector": "external-parent-cgroup-v2-via-wsl",
+                  "cgroup": "minivector-measure-8f5d895e8877456a9a1e785bbe6d7fe8",
+                  "data_device": "8:64",
+                  "errors": [],
+                  "sync_exit_code": 0,
+                  "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                  "memory.peak": "16232448\n",
+                  "memory.stat": "anon 0\nfile 5742592\nkernel 471040\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 5742592\nactive_file 0\nunevictable 0\nslab_reclaimable 397608\nslab_unreclaimable 35040\nslab 432648\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 12857\npgmajfault 0\npgrefill 0\npgactivate 0\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\n",
+                  "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                  "cgroup.events": "populated 0\nfrozen 0\n",
+                  "cpu.stat": "usage_usec 1203598\nuser_usec 1105678\nsystem_usec 97919\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                  "settled_samples": 3,
+                  "data_files": 101,
+                  "logical_data_bytes": 5567828
+                },
+                "persisted": true,
+                "recall": {},
+                "query_counts": {
+                  "unfiltered": 0,
+                  "filtered": 0
+                }
+              },
+              "query": {
+                "time_ms": 2124.303300000008,
+                "io_bytes": 11542528,
+                "memory_bytes": 39337984,
+                "startup_ms": 309.70960000001924,
+                "load_ms": 4755.380599999995,
+                "preparation_ms": 956.3139999999919,
+                "raw_resources": {
+                  "collector": "external-parent-cgroup-v2-via-wsl",
+                  "cgroup": "minivector-measure-7f3fdd708e1f401b918bdc6512d9ddf8",
+                  "data_device": "8:64",
+                  "errors": [],
+                  "sync_exit_code": 0,
+                  "io.stat": "8:64 rbytes=0 wbytes=11542528 rios=0 wios=302 dbytes=0 dios=0\n",
+                  "memory.peak": "39337984\n",
+                  "memory.stat": "anon 0\nfile 11075584\nkernel 819200\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 5341184\nactive_file 5734400\nunevictable 0\nslab_reclaimable 745200\nslab_unreclaimable 33896\nslab 779096\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 64258\npgmajfault 0\npgrefill 0\npgactivate 1400\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 2\nthp_collapse_alloc 0\n",
+                  "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                  "cgroup.events": "populated 0\nfrozen 0\n",
+                  "cpu.stat": "usage_usec 2740370\nuser_usec 2539656\nsystem_usec 200714\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                  "settled_samples": 3,
+                  "data_files": 201,
+                  "logical_data_bytes": 10858489
+                },
+                "persisted": true,
+                "recall": {
+                  "unfiltered": 1.0,
+                  "filtered": 1.0
+                },
+                "query_counts": {
+                  "unfiltered": 500,
+                  "filtered": 500
+                }
+              },
+              "checks": {
+                "write_correct": true,
+                "query_correct": true,
+                "resources_ok": true,
+                "recall_unfiltered": 1.0,
+                "recall_filtered": 1.0
+              }
+            }
+          ],
+          "efficiency": {
+            "available": true,
+            "scope": "local estimate; not an official performance score or rank",
+            "baseline": {
+              "write": {
+                "time_ms": 5166.8994999999995,
+                "io_bytes": 6201344,
+                "memory_bytes": 16539648
+              },
+              "query": {
+                "time_ms": 2941.6487000000016,
+                "io_bytes": 11542528,
+                "memory_bytes": 40710144
+              }
+            },
+            "eligible": true,
+            "reasons": [],
+            "rounds": [
+              {
+                "write": 0.5045540595431913,
+                "query": 0.5421071454232164,
+                "efficiency": 0.5295894501298747
+              },
+              {
+                "write": 0.508097782978113,
+                "query": 0.5406998941941707,
+                "efficiency": 0.5298325237888182
+              },
+              {
+                "write": 0.5121424097646313,
+                "query": 0.5500535836501094,
+                "efficiency": 0.5374165256882834
+              }
+            ],
+            "median_efficiency": 0.529833
+          },
+          "medians": {
+            "write": {
+              "time_ms": 4900.960699999999,
+              "io_bytes": 6201344,
+              "memory_bytes": 16322560
+            },
+            "query": {
+              "time_ms": 2239.748200000001,
+              "io_bytes": 11542528,
+              "memory_bytes": 39489536
+            }
+          }
+        }
+      },
+      "order": [
+        [
+          "baseline",
+          "candidate"
+        ],
+        [
+          "candidate",
+          "baseline"
+        ],
+        [
+          "baseline",
+          "candidate"
+        ]
+      ],
+      "fixed_baseline_label": "baseline"
+    }
+  },
+  "baseline_before_changes": {
+    "scope": "E_local against frozen Python; not official score",
+    "configuration": {
+      "rows": 10000,
+      "dimensions": 128,
+      "queries": 1000,
+      "k": 10,
+      "mode": "exact",
+      "create_index": false,
+      "rounds": 1,
+      "cpus": "2",
+      "memory": "2g",
+      "pids": 128,
+      "io_device": "8:64"
+    },
+    "limitations": [
+      "Synthetic dataset and seeds are not verified to be the official workload.",
+      "Local cache policy: fresh empty volume per phase; executable image layers warmed once; no global cache eviction.",
+      "Docker Desktop data-device counters include filesystem metadata; this is not the official hardware or cold-cache procedure.",
+      "The official frozen resource limits, baseline, score and ranking are not established by this tool."
+    ],
+    "status": "completed",
+    "variants": {
+      "baseline": {
+        "image": "minivector-python:baseline-20261116",
+        "image_id": "sha256:ef6af31f38012849e2b30fb64c924670de09a15bcefa657992f1c34215a00aa8",
+        "configuration": {
+          "rows": 10000,
+          "dimensions": 128,
+          "queries": 1000,
+          "k": 10,
+          "mode": "exact",
+          "create_index": false,
+          "rounds": 1,
+          "cpus": "2",
+          "memory": "2g",
+          "pids": 128,
+          "io_device": "8:64"
+        },
+        "rounds": [
+          {
+            "round": 1,
+            "write": {
+              "time_ms": 4900.978799999999,
+              "io_bytes": 6201344,
+              "memory_bytes": 16248832,
+              "startup_ms": 336.86850000000004,
+              "load_ms": 4900.978799999999,
+              "preparation_ms": null,
+              "raw_resources": {
+                "collector": "external-parent-cgroup-v2-via-wsl",
+                "cgroup": "minivector-measure-61b7657a185d423c83d7b99760f490b5",
+                "data_device": "8:64",
+                "errors": [],
+                "sync_exit_code": 0,
+                "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                "memory.peak": "16248832\n",
+                "memory.stat": "anon 0\nfile 5742592\nkernel 450560\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 4939776\nactive_file 802816\nunevictable 0\nslab_reclaimable 394528\nslab_unreclaimable 15904\nslab 410432\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 12801\npgmajfault 0\npgrefill 0\npgactivate 196\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\n",
+                "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                "cgroup.events": "populated 0\nfrozen 0\n",
+                "cpu.stat": "usage_usec 1424232\nuser_usec 1270915\nsystem_usec 153316\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                "settled_samples": 3,
+                "data_files": 101,
+                "logical_data_bytes": 5567828
+              },
+              "persisted": true,
+              "recall": {},
+              "query_counts": {
+                "unfiltered": 0,
+                "filtered": 0
+              }
+            },
+            "query": {
+              "time_ms": 2673.1160000000004,
+              "io_bytes": 6201344,
+              "memory_bytes": 34652160,
+              "startup_ms": 311.6753999999986,
+              "load_ms": 5016.957999999999,
+              "preparation_ms": 207.76989999999884,
+              "raw_resources": {
+                "collector": "external-parent-cgroup-v2-via-wsl",
+                "cgroup": "minivector-measure-9a5b960b4e8b49ac811ec859d902790f",
+                "data_device": "8:64",
+                "errors": [],
+                "sync_exit_code": 0,
+                "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                "memory.peak": "34652160\n",
+                "memory.stat": "anon 0\nfile 5742592\nkernel 471040\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 4927488\nactive_file 815104\nunevictable 0\nslab_reclaimable 394440\nslab_unreclaimable 33480\nslab 427920\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 129061\npgmajfault 0\npgrefill 0\npgactivate 199\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 2\nthp_collapse_alloc 0\n",
+                "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                "cgroup.events": "populated 0\nfrozen 0\n",
+                "cpu.stat": "usage_usec 3365435\nuser_usec 3056936\nsystem_usec 308498\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                "settled_samples": 3,
+                "data_files": 101,
+                "logical_data_bytes": 5567828
+              },
+              "persisted": true,
+              "recall": {
+                "unfiltered": 1.0,
+                "filtered": 1.0
+              },
+              "query_counts": {
+                "unfiltered": 500,
+                "filtered": 500
+              }
+            },
+            "checks": {
+              "write_correct": true,
+              "query_correct": true,
+              "resources_ok": true,
+              "recall_unfiltered": 1.0,
+              "recall_filtered": 1.0
+            }
+          }
+        ]
+      }
+    },
+    "order": [
+      [
+        "baseline"
+      ]
+    ]
+  },
+  "intermediate_not_final": {
+    "scope": "E_local against frozen Python; not official score",
+    "configuration": {
+      "rows": 10000,
+      "dimensions": 128,
+      "queries": 1000,
+      "k": 10,
+      "mode": "exact",
+      "create_index": false,
+      "rounds": 3,
+      "cpus": "2",
+      "memory": "2g",
+      "pids": 128,
+      "io_device": "8:64"
+    },
+    "limitations": [
+      "Synthetic dataset and seeds are not verified to be the official workload.",
+      "Local cache policy: fresh empty volume per phase; executable image layers warmed once; no global cache eviction.",
+      "Docker Desktop data-device counters include filesystem metadata; this is not the official hardware or cold-cache procedure.",
+      "The official frozen resource limits, baseline, score and ranking are not established by this tool."
+    ],
+    "status": "completed",
+    "variants": {
+      "baseline": {
+        "image": "minivector-python:baseline-20261116",
+        "image_id": "sha256:ef6af31f38012849e2b30fb64c924670de09a15bcefa657992f1c34215a00aa8",
+        "configuration": {
+          "rows": 10000,
+          "dimensions": 128,
+          "queries": 1000,
+          "k": 10,
+          "mode": "exact",
+          "create_index": false,
+          "rounds": 3,
+          "cpus": "2",
+          "memory": "2g",
+          "pids": 128,
+          "io_device": "8:64"
+        },
+        "rounds": [
+          {
+            "round": 1,
+            "write": {
+              "time_ms": 5049.7915,
+              "io_bytes": 6201344,
+              "memory_bytes": 16343040,
+              "startup_ms": 337.03720000000015,
+              "load_ms": 5049.7915,
+              "preparation_ms": null,
+              "raw_resources": {
+                "collector": "external-parent-cgroup-v2-via-wsl",
+                "cgroup": "minivector-measure-2a9fffb6a11649dfaf06eebac8a337bd",
+                "data_device": "8:64",
+                "errors": [],
+                "sync_exit_code": 0,
+                "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                "memory.peak": "16343040\n",
+                "memory.stat": "anon 0\nfile 5742592\nkernel 475136\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 4939776\nactive_file 802816\nunevictable 0\nslab_reclaimable 398848\nslab_unreclaimable 34136\nslab 432984\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 12801\npgmajfault 0\npgrefill 0\npgactivate 196\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\n",
+                "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                "cgroup.events": "populated 0\nfrozen 0\n",
+                "cpu.stat": "usage_usec 1471741\nuser_usec 1349447\nsystem_usec 122293\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                "settled_samples": 3,
+                "data_files": 101,
+                "logical_data_bytes": 5567828
+              },
+              "persisted": true,
+              "recall": {},
+              "query_counts": {
+                "unfiltered": 0,
+                "filtered": 0
+              }
+            },
+            "query": {
+              "time_ms": 3348.0263999999984,
+              "io_bytes": 6201344,
+              "memory_bytes": 34959360,
+              "startup_ms": 403.44659999999874,
+              "load_ms": 5277.467500000001,
+              "preparation_ms": 216.40370000000075,
+              "raw_resources": {
+                "collector": "external-parent-cgroup-v2-via-wsl",
+                "cgroup": "minivector-measure-62352586ec144377bb1fa9e3ad122471",
+                "data_device": "8:64",
+                "errors": [],
+                "sync_exit_code": 0,
+                "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                "memory.peak": "34959360\n",
+                "memory.stat": "anon 0\nfile 5742592\nkernel 471040\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 4927488\nactive_file 815104\nunevictable 0\nslab_reclaimable 396024\nslab_unreclaimable 33480\nslab 429504\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 129560\npgmajfault 0\npgrefill 0\npgactivate 200\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 1\nthp_collapse_alloc 0\n",
+                "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                "cgroup.events": "populated 0\nfrozen 0\n",
+                "cpu.stat": "usage_usec 3841975\nuser_usec 3462221\nsystem_usec 379753\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                "settled_samples": 3,
+                "data_files": 101,
+                "logical_data_bytes": 5567828
+              },
+              "persisted": true,
+              "recall": {
+                "unfiltered": 1.0,
+                "filtered": 1.0
+              },
+              "query_counts": {
+                "unfiltered": 500,
+                "filtered": 500
+              }
+            },
+            "checks": {
+              "write_correct": true,
+              "query_correct": true,
+              "resources_ok": true,
+              "recall_unfiltered": 1.0,
+              "recall_filtered": 1.0
+            }
+          },
+          {
+            "round": 2,
+            "write": {
+              "time_ms": 5153.680699999995,
+              "io_bytes": 6201344,
+              "memory_bytes": 16277504,
+              "startup_ms": 318.5339000000056,
+              "load_ms": 5153.680699999995,
+              "preparation_ms": null,
+              "raw_resources": {
+                "collector": "external-parent-cgroup-v2-via-wsl",
+                "cgroup": "minivector-measure-87d0304ead73400abd5478717c9a3d88",
+                "data_device": "8:64",
+                "errors": [],
+                "sync_exit_code": 0,
+                "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                "memory.peak": "16277504\n",
+                "memory.stat": "anon 0\nfile 5742592\nkernel 479232\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 38192\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 4939776\nactive_file 802816\nunevictable 0\nslab_reclaimable 396528\nslab_unreclaimable 36632\nslab 433160\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 12800\npgmajfault 0\npgrefill 0\npgactivate 196\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\n",
+                "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                "cgroup.events": "populated 0\nfrozen 0\n",
+                "cpu.stat": "usage_usec 1451133\nuser_usec 1291197\nsystem_usec 159936\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                "settled_samples": 3,
+                "data_files": 101,
+                "logical_data_bytes": 5567828
+              },
+              "persisted": true,
+              "recall": {},
+              "query_counts": {
+                "unfiltered": 0,
+                "filtered": 0
+              }
+            },
+            "query": {
+              "time_ms": 3164.600500000006,
+              "io_bytes": 6201344,
+              "memory_bytes": 35188736,
+              "startup_ms": 322.7020000000067,
+              "load_ms": 5438.569999999999,
+              "preparation_ms": 217.60749999999973,
+              "raw_resources": {
+                "collector": "external-parent-cgroup-v2-via-wsl",
+                "cgroup": "minivector-measure-c5c424a08d5f40abaa391c6899f7e240",
+                "data_device": "8:64",
+                "errors": [],
+                "sync_exit_code": 0,
+                "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                "memory.peak": "35188736\n",
+                "memory.stat": "anon 0\nfile 5742592\nkernel 471040\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 4927488\nactive_file 815104\nunevictable 0\nslab_reclaimable 395328\nslab_unreclaimable 33872\nslab 429200\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 129603\npgmajfault 0\npgrefill 0\npgactivate 199\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 1\nthp_collapse_alloc 0\n",
+                "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                "cgroup.events": "populated 0\nfrozen 0\n",
+                "cpu.stat": "usage_usec 3801246\nuser_usec 3465721\nsystem_usec 335524\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                "settled_samples": 3,
+                "data_files": 101,
+                "logical_data_bytes": 5567828
+              },
+              "persisted": true,
+              "recall": {
+                "unfiltered": 1.0,
+                "filtered": 1.0
+              },
+              "query_counts": {
+                "unfiltered": 500,
+                "filtered": 500
+              }
+            },
+            "checks": {
+              "write_correct": true,
+              "query_correct": true,
+              "resources_ok": true,
+              "recall_unfiltered": 1.0,
+              "recall_filtered": 1.0
+            }
+          },
+          {
+            "round": 3,
+            "write": {
+              "time_ms": 5086.248600000004,
+              "io_bytes": 6201344,
+              "memory_bytes": 16289792,
+              "startup_ms": 325.21680000002107,
+              "load_ms": 5086.248600000004,
+              "preparation_ms": null,
+              "raw_resources": {
+                "collector": "external-parent-cgroup-v2-via-wsl",
+                "cgroup": "minivector-measure-87fee004f5024a2599d5a1aac22b07de",
+                "data_device": "8:64",
+                "errors": [],
+                "sync_exit_code": 0,
+                "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                "memory.peak": "16289792\n",
+                "memory.stat": "anon 0\nfile 5742592\nkernel 471040\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 4939776\nactive_file 802816\nunevictable 0\nslab_reclaimable 400216\nslab_unreclaimable 33480\nslab 433696\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 12902\npgmajfault 0\npgrefill 0\npgactivate 196\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\n",
+                "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                "cgroup.events": "populated 0\nfrozen 0\n",
+                "cpu.stat": "usage_usec 1619877\nuser_usec 1471491\nsystem_usec 148385\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                "settled_samples": 3,
+                "data_files": 101,
+                "logical_data_bytes": 5567828
+              },
+              "persisted": true,
+              "recall": {},
+              "query_counts": {
+                "unfiltered": 0,
+                "filtered": 0
+              }
+            },
+            "query": {
+              "time_ms": 3105.79469999999,
+              "io_bytes": 6201344,
+              "memory_bytes": 34824192,
+              "startup_ms": 356.642700000009,
+              "load_ms": 4992.7080000000215,
+              "preparation_ms": 242.45489999998426,
+              "raw_resources": {
+                "collector": "external-parent-cgroup-v2-via-wsl",
+                "cgroup": "minivector-measure-6563b346f08d408a97945cad52808754",
+                "data_device": "8:64",
+                "errors": [],
+                "sync_exit_code": 0,
+                "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                "memory.peak": "34824192\n",
+                "memory.stat": "anon 0\nfile 5742592\nkernel 471040\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 4927488\nactive_file 815104\nunevictable 0\nslab_reclaimable 397104\nslab_unreclaimable 33480\nslab 430584\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 129200\npgmajfault 0\npgrefill 0\npgactivate 199\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 2\nthp_collapse_alloc 0\n",
+                "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                "cgroup.events": "populated 0\nfrozen 0\n",
+                "cpu.stat": "usage_usec 3803134\nuser_usec 3431132\nsystem_usec 372002\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                "settled_samples": 3,
+                "data_files": 101,
+                "logical_data_bytes": 5567828
+              },
+              "persisted": true,
+              "recall": {
+                "unfiltered": 1.0,
+                "filtered": 1.0
+              },
+              "query_counts": {
+                "unfiltered": 500,
+                "filtered": 500
+              }
+            },
+            "checks": {
+              "write_correct": true,
+              "query_correct": true,
+              "resources_ok": true,
+              "recall_unfiltered": 1.0,
+              "recall_filtered": 1.0
+            }
+          }
+        ],
+        "efficiency": {
+          "available": true,
+          "scope": "local estimate; not an official performance score or rank",
+          "baseline": {
+            "write": {
+              "time_ms": 5086.248600000004,
+              "io_bytes": 6201344,
+              "memory_bytes": 16289792
+            },
+            "query": {
+              "time_ms": 3164.600500000006,
+              "io_bytes": 6201344,
+              "memory_bytes": 34959360
+            }
+          },
+          "eligible": true,
+          "reasons": [],
+          "rounds": [
+            {
+              "write": 0.5009255009779114,
+              "query": 0.4915531970065703,
+              "efficiency": 0.4946772983303507
+            },
+            {
+              "write": 0.4980602707575327,
+              "query": 0.4996825036852251,
+              "efficiency": 0.4991417593759943
+            },
+            {
+              "write": 0.5,
+              "query": 0.503000645103801,
+              "efficiency": 0.5020004300692007
+            }
+          ],
+          "median_efficiency": 0.499142
+        },
+        "medians": {
+          "write": {
+            "time_ms": 5086.248600000004,
+            "io_bytes": 6201344,
+            "memory_bytes": 16289792
+          },
+          "query": {
+            "time_ms": 3164.600500000006,
+            "io_bytes": 6201344,
+            "memory_bytes": 34959360
+          }
+        }
+      },
+      "candidate": {
+        "image": "minivector-python:candidate-20261116",
+        "image_id": "sha256:325d154a7cab5cb8ff22dc6e6b7459259178eaeb83df686cc8c15454ed4c40cd",
+        "configuration": {
+          "rows": 10000,
+          "dimensions": 128,
+          "queries": 1000,
+          "k": 10,
+          "mode": "exact",
+          "create_index": false,
+          "rounds": 3,
+          "cpus": "2",
+          "memory": "2g",
+          "pids": 128,
+          "io_device": "8:64"
+        },
+        "rounds": [
+          {
+            "round": 1,
+            "write": {
+              "time_ms": 4982.2178,
+              "io_bytes": 6201344,
+              "memory_bytes": 16154624,
+              "startup_ms": 340.2753999999959,
+              "load_ms": 4982.2178,
+              "preparation_ms": null,
+              "raw_resources": {
+                "collector": "external-parent-cgroup-v2-via-wsl",
+                "cgroup": "minivector-measure-1056b709a8ae4f30a19d9b3d3ecd5ef9",
+                "data_device": "8:64",
+                "errors": [],
+                "sync_exit_code": 0,
+                "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                "memory.peak": "16154624\n",
+                "memory.stat": "anon 0\nfile 5742592\nkernel 471040\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 5742592\nactive_file 0\nunevictable 0\nslab_reclaimable 399408\nslab_unreclaimable 35040\nslab 434448\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 12817\npgmajfault 0\npgrefill 0\npgactivate 1\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\n",
+                "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                "cgroup.events": "populated 0\nfrozen 0\n",
+                "cpu.stat": "usage_usec 1424507\nuser_usec 1224306\nsystem_usec 200201\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                "settled_samples": 3,
+                "data_files": 101,
+                "logical_data_bytes": 5567828
+              },
+              "persisted": true,
+              "recall": {},
+              "query_counts": {
+                "unfiltered": 0,
+                "filtered": 0
+              }
+            },
+            "query": {
+              "time_ms": 3131.6654000000026,
+              "io_bytes": 6201344,
+              "memory_bytes": 34160640,
+              "startup_ms": 353.44940000000236,
+              "load_ms": 4857.974900000002,
+              "preparation_ms": 229.29760000000243,
+              "raw_resources": {
+                "collector": "external-parent-cgroup-v2-via-wsl",
+                "cgroup": "minivector-measure-2e681648bfcf460a93a87a6a0d3364aa",
+                "data_device": "8:64",
+                "errors": [],
+                "sync_exit_code": 0,
+                "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                "memory.peak": "34160640\n",
+                "memory.stat": "anon 0\nfile 5746688\nkernel 471040\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 4927488\nactive_file 819200\nunevictable 0\nslab_reclaimable 396328\nslab_unreclaimable 32832\nslab 429160\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 129335\npgmajfault 0\npgrefill 0\npgactivate 199\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 1\nthp_collapse_alloc 0\n",
+                "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                "cgroup.events": "populated 0\nfrozen 0\n",
+                "cpu.stat": "usage_usec 3534787\nuser_usec 3202005\nsystem_usec 332781\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                "settled_samples": 3,
+                "data_files": 101,
+                "logical_data_bytes": 5567828
+              },
+              "persisted": true,
+              "recall": {
+                "unfiltered": 1.0,
+                "filtered": 1.0
+              },
+              "query_counts": {
+                "unfiltered": 500,
+                "filtered": 500
+              }
+            },
+            "checks": {
+              "write_correct": true,
+              "query_correct": true,
+              "resources_ok": true,
+              "recall_unfiltered": 1.0,
+              "recall_filtered": 1.0
+            }
+          },
+          {
+            "round": 2,
+            "write": {
+              "time_ms": 4924.987100000009,
+              "io_bytes": 6201344,
+              "memory_bytes": 16330752,
+              "startup_ms": 343.9977999999968,
+              "load_ms": 4924.987100000009,
+              "preparation_ms": null,
+              "raw_resources": {
+                "collector": "external-parent-cgroup-v2-via-wsl",
+                "cgroup": "minivector-measure-652fc626bfd345ce9b92324a6103b437",
+                "data_device": "8:64",
+                "errors": [],
+                "sync_exit_code": 0,
+                "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                "memory.peak": "16330752\n",
+                "memory.stat": "anon 0\nfile 5742592\nkernel 475136\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 5742592\nactive_file 0\nunevictable 0\nslab_reclaimable 398056\nslab_unreclaimable 33480\nslab 431536\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 12719\npgmajfault 0\npgrefill 0\npgactivate 0\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\n",
+                "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                "cgroup.events": "populated 0\nfrozen 0\n",
+                "cpu.stat": "usage_usec 1293563\nuser_usec 1188906\nsystem_usec 104657\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                "settled_samples": 3,
+                "data_files": 101,
+                "logical_data_bytes": 5567828
+              },
+              "persisted": true,
+              "recall": {},
+              "query_counts": {
+                "unfiltered": 0,
+                "filtered": 0
+              }
+            },
+            "query": {
+              "time_ms": 3412.3993999999984,
+              "io_bytes": 6201344,
+              "memory_bytes": 34590720,
+              "startup_ms": 308.8364999999982,
+              "load_ms": 4974.508400000005,
+              "preparation_ms": 217.6005000000032,
+              "raw_resources": {
+                "collector": "external-parent-cgroup-v2-via-wsl",
+                "cgroup": "minivector-measure-a3189e170bda4978a487faf5ad61cf75",
+                "data_device": "8:64",
+                "errors": [],
+                "sync_exit_code": 0,
+                "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                "memory.peak": "34590720\n",
+                "memory.stat": "anon 0\nfile 5742592\nkernel 466944\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 4927488\nactive_file 815104\nunevictable 0\nslab_reclaimable 394872\nslab_unreclaimable 33480\nslab 428352\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 128852\npgmajfault 0\npgrefill 0\npgactivate 199\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 2\nthp_collapse_alloc 0\n",
+                "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                "cgroup.events": "populated 0\nfrozen 0\n",
+                "cpu.stat": "usage_usec 3556091\nuser_usec 3269562\nsystem_usec 286528\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                "settled_samples": 3,
+                "data_files": 101,
+                "logical_data_bytes": 5567828
+              },
+              "persisted": true,
+              "recall": {
+                "unfiltered": 1.0,
+                "filtered": 1.0
+              },
+              "query_counts": {
+                "unfiltered": 500,
+                "filtered": 500
+              }
+            },
+            "checks": {
+              "write_correct": true,
+              "query_correct": true,
+              "resources_ok": true,
+              "recall_unfiltered": 1.0,
+              "recall_filtered": 1.0
+            }
+          },
+          {
+            "round": 3,
+            "write": {
+              "time_ms": 4927.8045000000075,
+              "io_bytes": 6201344,
+              "memory_bytes": 16052224,
+              "startup_ms": 337.16459999999415,
+              "load_ms": 4927.8045000000075,
+              "preparation_ms": null,
+              "raw_resources": {
+                "collector": "external-parent-cgroup-v2-via-wsl",
+                "cgroup": "minivector-measure-63d9256752ce43cc99a74dcb4726ecf8",
+                "data_device": "8:64",
+                "errors": [],
+                "sync_exit_code": 0,
+                "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                "memory.peak": "16052224\n",
+                "memory.stat": "anon 0\nfile 5742592\nkernel 475136\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 5742592\nactive_file 0\nunevictable 0\nslab_reclaimable 398328\nslab_unreclaimable 35432\nslab 433760\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 12722\npgmajfault 0\npgrefill 0\npgactivate 0\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\n",
+                "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                "cgroup.events": "populated 0\nfrozen 0\n",
+                "cpu.stat": "usage_usec 1269302\nuser_usec 1161453\nsystem_usec 107849\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                "settled_samples": 3,
+                "data_files": 101,
+                "logical_data_bytes": 5567828
+              },
+              "persisted": true,
+              "recall": {},
+              "query_counts": {
+                "unfiltered": 0,
+                "filtered": 0
+              }
+            },
+            "query": {
+              "time_ms": 3118.36009999999,
+              "io_bytes": 6201344,
+              "memory_bytes": 33976320,
+              "startup_ms": 330.02310000000534,
+              "load_ms": 4912.557900000024,
+              "preparation_ms": 212.71289999998544,
+              "raw_resources": {
+                "collector": "external-parent-cgroup-v2-via-wsl",
+                "cgroup": "minivector-measure-13146e4d6f2045599d005e2804df7d3b",
+                "data_device": "8:64",
+                "errors": [],
+                "sync_exit_code": 0,
+                "io.stat": "8:64 rbytes=0 wbytes=6201344 rios=0 wios=201 dbytes=0 dios=0\n",
+                "memory.peak": "33976320\n",
+                "memory.stat": "anon 0\nfile 5742592\nkernel 475136\nkernel_stack 0\npagetables 0\nsec_pagetables 0\npercpu 37840\nsock 0\nvmalloc 0\nshmem 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 0\ninactive_file 4927488\nactive_file 815104\nunevictable 0\nslab_reclaimable 400040\nslab_unreclaimable 35160\nslab 435200\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgscan 0\npgsteal 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgfault 128851\npgmajfault 0\npgrefill 0\npgactivate 199\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nthp_fault_alloc 2\nthp_collapse_alloc 0\n",
+                "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+                "cgroup.events": "populated 0\nfrozen 0\n",
+                "cpu.stat": "usage_usec 3194925\nuser_usec 2910419\nsystem_usec 284505\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+                "settled_samples": 3,
+                "data_files": 101,
+                "logical_data_bytes": 5567828
+              },
+              "persisted": true,
+              "recall": {
+                "unfiltered": 1.0,
+                "filtered": 1.0
+              },
+              "query_counts": {
+                "unfiltered": 500,
+                "filtered": 500
+              }
+            },
+            "checks": {
+              "write_correct": true,
+              "query_correct": true,
+              "resources_ok": true,
+              "recall_unfiltered": 1.0,
+              "recall_filtered": 1.0
+            }
+          }
+        ],
+        "efficiency": {
+          "available": true,
+          "scope": "local estimate; not an official performance score or rank",
+          "baseline": {
+            "write": {
+              "time_ms": 5086.248600000004,
+              "io_bytes": 6201344,
+              "memory_bytes": 16289792
+            },
+            "query": {
+              "time_ms": 3164.600500000006,
+              "io_bytes": 6201344,
+              "memory_bytes": 34959360
+            }
+          },
+          "eligible": true,
+          "reasons": [],
+          "rounds": [
+            {
+              "write": 0.5034904056726447,
+              "query": 0.5026902974834556,
+              "efficiency": 0.5029570002131853
+            },
+            {
+              "write": 0.5047134700580792,
+              "query": 0.4892149813084152,
+              "efficiency": 0.49438114422496987
+            },
+            {
+              "write": 0.5054355238926223,
+              "query": 0.5035911162571765,
+              "efficiency": 0.504205918802325
+            }
+          ],
+          "median_efficiency": 0.502957
+        },
+        "medians": {
+          "write": {
+            "time_ms": 4927.8045000000075,
+            "io_bytes": 6201344,
+            "memory_bytes": 16154624
+          },
+          "query": {
+            "time_ms": 3131.6654000000026,
+            "io_bytes": 6201344,
+            "memory_bytes": 34160640
+          }
+        }
+      }
+    },
+    "order": [
+      [
+        "baseline",
+        "candidate"
+      ],
+      [
+        "candidate",
+        "baseline"
+      ],
+      [
+        "baseline",
+        "candidate"
+      ]
+    ],
+    "fixed_baseline_label": "baseline"
+  },
+  "acceptance": {
+    "baseline_regressions_passed": 60,
+    "candidate_regressions_passed": 68,
+    "measurement_tests_passed": 34,
+    "final_exact_queries_verified": 12000,
+    "public_checker_mode": "unmodified repository checker --command inside candidate image",
+    "public_protocol": {
+      "scope": "public-protocol-check",
+      "passed": true,
+      "cases": [
+        {
+          "id": "sql_crud",
+          "status": "PASS",
+          "message": "",
+          "duration_ms": 143
+        },
+        {
+          "id": "sql_comparisons",
+          "status": "PASS",
+          "message": "",
+          "duration_ms": 101
+        },
+        {
+          "id": "sql_ordering",
+          "status": "PASS",
+          "message": "",
+          "duration_ms": 107
+        },
+        {
+          "id": "sql_empty",
+          "status": "PASS",
+          "message": "",
+          "duration_ms": 111
+        },
+        {
+          "id": "sql_primary_key",
+          "status": "PASS",
+          "message": "",
+          "duration_ms": 106
+        },
+        {
+          "id": "sql_unicode",
+          "status": "PASS",
+          "message": "",
+          "duration_ms": 114
+        },
+        {
+          "id": "sql_bigint",
+          "status": "PASS",
+          "message": "",
+          "duration_ms": 110
+        },
+        {
+          "id": "sql_unsupported",
+          "status": "PASS",
+          "message": "",
+          "duration_ms": 79
+        },
+        {
+          "id": "storage_restart",
+          "status": "PASS",
+          "message": "",
+          "duration_ms": 152
+        },
+        {
+          "id": "vector_euclidean",
+          "status": "PASS",
+          "message": "",
+          "duration_ms": 166
+        },
+        {
+          "id": "transaction_commit",
+          "status": "PASS",
+          "message": "",
+          "duration_ms": 122
+        },
+        {
+          "id": "transaction_rollback",
+          "status": "PASS",
+          "message": "",
+          "duration_ms": 101
+        },
+        {
+          "id": "storage_mutations",
+          "status": "PASS",
+          "message": "",
+          "duration_ms": 238
+        },
+        {
+          "id": "storage_multiple_tables",
+          "status": "PASS",
+          "message": "",
+          "duration_ms": 173
+        },
+        {
+          "id": "vector_ties_and_filter",
+          "status": "PASS",
+          "message": "",
+          "duration_ms": 170
+        },
+        {
+          "id": "vector_float32",
+          "status": "PASS",
+          "message": "",
+          "duration_ms": 177
+        },
+        {
+          "id": "vector_index_maintenance",
+          "status": "PASS",
+          "message": "",
+          "duration_ms": 395
+        },
+        {
+          "id": "transaction_failed_insert",
+          "status": "PASS",
+          "message": "",
+          "duration_ms": 170
+        },
+        {
+          "id": "transaction_autocommit_atomic",
+          "status": "PASS",
+          "message": "",
+          "duration_ms": 141
+        },
+        {
+          "id": "transaction_shutdown_rollback",
+          "status": "PASS",
+          "message": "",
+          "duration_ms": 163
+        }
+      ],
+      "note": "Local diagnostic only; no performance/Agent scores or platform callbacks."
+    },
+    "over_memory": {
+      "image": "minivector-python:exact-screen-20261116",
+      "configuration": {
+        "startup_timeout": 120,
+        "request_timeout": 60,
+        "case_timeout": 600,
+        "max_response_bytes": 16777216,
+        "cpus": "2",
+        "memory": "128m",
+        "pids_limit": 128,
+        "abs_tol": 1e-05,
+        "rel_tol": 1e-05,
+        "error_codes": {}
+      },
+      "rows": 20000,
+      "payload_bytes": 163840000,
+      "memory_limit_bytes": 134217728,
+      "scope": "Reduced-memory boundary probe, not the official 2 GiB full-scale workload",
+      "steps": [
+        {
+          "phase": "schema",
+          "sql_prefix": "CREATE TABLE t(id BIGINT PRIMARY KEY,s VARCHAR(8192),v VECTOR(8))",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.014069200000000004
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (0,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.0780053
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (100,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10267689999999996
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (200,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.11507659999999997
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (300,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.12191600000000002
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (400,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10589939999999987
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (500,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.11745660000000013
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (600,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.08223559999999996
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (700,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.0900881
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (800,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10478999999999994
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (900,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.08446589999999987
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (1000,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10077540000000007
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (1100,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.11251519999999982
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (1200,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09002070000000018
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (1300,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.0978135
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (1400,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.12578770000000006
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (1500,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09201199999999998
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (1600,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.1050757
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (1700,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.1212046
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (1800,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.11561189999999977
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (1900,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09697999999999984
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (2000,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.08769490000000024
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (2100,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09940519999999964
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (2200,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09539079999999966
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (2300,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09199469999999987
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (2400,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.08993410000000024
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (2500,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.11892179999999986
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (2600,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10992770000000007
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (2700,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.0964921999999997
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (2800,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10886320000000005
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (2900,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09160750000000029
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (3000,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.08830820000000017
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (3100,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09733360000000024
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (3200,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09210509999999994
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (3300,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.08753460000000013
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (3400,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09416310000000028
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (3500,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.07996789999999976
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (3600,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.08701769999999964
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (3700,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.08086479999999963
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (3800,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.08245409999999964
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (3900,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09085959999999993
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (4000,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.08933700000000044
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (4100,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09885209999999933
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (4200,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.12723840000000042
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (4300,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10637190000000007
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (4400,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09981780000000029
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (4500,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.12479250000000075
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (4600,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.1189076
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (4700,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.1228347000000003
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (4800,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.0863227000000002
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (4900,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10808270000000064
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (5000,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.08177389999999995
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (5100,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.0856439
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (5200,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09672790000000031
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (5300,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09550329999999985
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (5400,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09296530000000036
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (5500,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09694270000000049
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (5600,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.12275969999999958
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (5700,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09112099999999934
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (5800,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09505309999999945
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (5900,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.0946252000000003
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (6000,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09698640000000047
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (6100,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09488899999999933
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (6200,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09010500000000032
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (6300,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09184940000000008
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (6400,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10434480000000068
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (6500,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10186299999999981
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (6600,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09651530000000008
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (6700,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09632979999999947
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (6800,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.0934752999999997
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (6900,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.110074
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (7000,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.08691350000000053
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (7100,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10340650000000018
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (7200,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.11344180000000037
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (7300,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09924789999999994
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (7400,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10368490000000019
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (7500,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10770759999999946
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (7600,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09958499999999937
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (7700,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10311609999999938
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (7800,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.11048680000000033
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (7900,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10668459999999946
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (8000,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09865139999999961
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (8100,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.11723679999999881
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (8200,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10047370000000022
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (8300,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09215419999999952
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (8400,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.0987083000000002
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (8500,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.11766010000000016
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (8600,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.0918385999999991
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (8700,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.1122633000000004
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (8800,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.12427109999999963
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (8900,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.1258240999999991
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (9000,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.11434999999999995
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (9100,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.1113533000000011
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (9200,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09320570000000039
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (9300,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10474609999999984
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (9400,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09030300000000047
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (9500,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10540890000000047
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (9600,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.08908309999999986
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (9700,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09570580000000106
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (9800,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.13309309999999996
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (9900,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09209109999999932
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (10000,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.11070280000000032
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (10100,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.1018549999999987
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (10200,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10841630000000002
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (10300,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09620679999999915
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (10400,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.0933868000000011
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (10500,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.08969249999999995
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (10600,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.11992320000000056
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (10700,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.11677300000000024
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (10800,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.08141670000000012
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (10900,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.12059189999999909
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (11000,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09907399999999988
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (11100,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.08685960000000037
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (11200,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09507660000000051
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (11300,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09571870000000082
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (11400,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09045609999999904
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (11500,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09199849999999898
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (11600,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09283420000000042
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (11700,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09190529999999875
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (11800,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09254210000000107
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (11900,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.0987872000000003
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (12000,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.0958610999999987
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (12100,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.1203782000000011
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (12200,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.11872799999999906
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (12300,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.11774740000000072
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (12400,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.1036021999999992
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (12500,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10033819999999949
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (12600,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10283849999999894
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (12700,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.0935030999999995
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (12800,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.12993059999999979
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (12900,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.11629819999999924
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (13000,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10635730000000088
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (13100,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.1052692000000004
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (13200,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10522729999999925
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (13300,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.12298739999999952
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (13400,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09865659999999998
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (13500,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09628170000000047
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (13600,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10803570000000029
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (13700,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.11934880000000092
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (13800,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.1028178999999998
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (13900,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.1249027999999992
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (14000,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.1191759999999995
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (14100,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10633899999999841
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (14200,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10004890000000088
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (14300,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09940699999999936
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (14400,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.1172808000000014
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (14500,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.1114594000000011
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (14600,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10280999999999985
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (14700,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09130410000000033
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (14800,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.1153221999999996
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (14900,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10669899999999899
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (15000,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09586800000000117
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (15100,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.12482490000000013
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (15200,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10951709999999792
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (15300,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.13810690000000037
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (15400,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.11014160000000217
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (15500,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10169910000000115
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (15600,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.11257409999999979
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (15700,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.105437000000002
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (15800,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09800569999999809
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (15900,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10953320000000133
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (16000,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.11245710000000031
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (16100,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10094880000000117
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (16200,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.0881065999999997
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (16300,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.08806099999999972
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (16400,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10965880000000183
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (16500,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10296579999999977
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (16600,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.11336139999999872
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (16700,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10587900000000161
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (16800,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09469189999999728
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (16900,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.11372249999999795
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (17000,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10255480000000006
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (17100,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10462499999999864
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (17200,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09055839999999904
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (17300,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09166880000000077
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (17400,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.12253470000000277
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (17500,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.12775999999999854
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (17600,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.11409010000000208
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (17700,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.11042369999999835
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (17800,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.1256295999999999
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (17900,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.1050436000000019
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (18000,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10226989999999958
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (18100,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10281189999999896
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (18200,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10899069999999966
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (18300,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09594799999999992
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (18400,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09901509999999902
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (18500,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09980350000000016
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (18600,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09345569999999981
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (18700,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.0948715
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (18800,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09278210000000087
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (18900,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.1739569000000003
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (19000,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10564600000000013
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (19100,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.12350789999999989
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (19200,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.11739760000000032
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (19300,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.14788529999999867
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (19400,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.13573310000000305
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (19500,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10770929999999979
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (19600,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10175149999999888
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (19700,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10479850000000113
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (19800,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09855459999999994
+        },
+        {
+          "phase": "insert",
+          "sql_prefix": "INSERT INTO t VALUES (19900,'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.09870319999999921
+        },
+        {
+          "phase": "external_sort",
+          "sql_prefix": "SELECT id FROM t ORDER BY id DESC",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 3.0886204
+        },
+        {
+          "phase": "scan_topk",
+          "sql_prefix": "SELECT id FROM t ORDER BY L2_DISTANCE(v,'[0,0,0,0,0,0,0,0]') LIMIT 10",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.4566771000000003
+        },
+        {
+          "phase": "scan_filtered_topk",
+          "sql_prefix": "SELECT id FROM t WHERE id>=15000 ORDER BY L2_DISTANCE(v,'[0,0,0,0,0,0,0,0]') LIMIT 10",
+          "mode": "ann",
+          "passed": true,
+          "seconds": 0.48240380000000016
+        },
+        {
+          "phase": "build_index",
+          "sql_prefix": "CREATE VECTOR INDEX ix ON t(v)",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 2.288020699999997
+        },
+        {
+          "phase": "index_topk",
+          "sql_prefix": "SELECT id FROM t ORDER BY L2_DISTANCE(v,'[0,0,0,0,0,0,0,0]') LIMIT 10",
+          "mode": "ann",
+          "passed": true,
+          "seconds": 0.07501399999999947
+        },
+        {
+          "phase": "index_filtered_topk",
+          "sql_prefix": "SELECT id FROM t WHERE id>=15000 ORDER BY L2_DISTANCE(v,'[0,0,0,0,0,0,0,0]') LIMIT 10",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.4608093999999987
+        },
+        {
+          "phase": "begin",
+          "sql_prefix": "BEGIN",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.001495100000003191
+        },
+        {
+          "phase": "update",
+          "sql_prefix": "UPDATE t SET s='changed',v='[20,0,0,0,0,0,0,0]' WHERE id<4",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 1.1007057000000025
+        },
+        {
+          "phase": "read_own_write",
+          "sql_prefix": "SELECT id FROM t ORDER BY L2_DISTANCE(v,'[0,0,0,0,0,0,0,0]') LIMIT 10",
+          "mode": "ann",
+          "passed": true,
+          "seconds": 0.049439899999999426
+        },
+        {
+          "phase": "rollback",
+          "sql_prefix": "ROLLBACK",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.00934739999999934
+        },
+        {
+          "phase": "rollback_topk",
+          "sql_prefix": "SELECT id FROM t ORDER BY L2_DISTANCE(v,'[0,0,0,0,0,0,0,0]') LIMIT 10",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.10494219999999999
+        },
+        {
+          "phase": "begin",
+          "sql_prefix": "BEGIN",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.0015280999999980338
+        },
+        {
+          "phase": "delete",
+          "sql_prefix": "DELETE FROM t WHERE id<4",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 1.0158099999999983
+        },
+        {
+          "phase": "commit",
+          "sql_prefix": "COMMIT",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.02290179999999964
+        },
+        {
+          "phase": "restart_scan",
+          "sql_prefix": "SELECT id FROM t ORDER BY id",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 2.4240047999999987
+        },
+        {
+          "phase": "restart_index",
+          "sql_prefix": "SELECT id FROM t ORDER BY L2_DISTANCE(v,'[0,0,0,0,0,0,0,0]') LIMIT 10",
+          "mode": "ann",
+          "passed": true,
+          "seconds": 0.048008799999998075
+        },
+        {
+          "phase": "restart_duplicate",
+          "sql_prefix": "INSERT INTO t VALUES(4,'duplicate','[0,0,0,0,0,0,0,0]')",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.0014079999999978554
+        },
+        {
+          "phase": "begin_uncommitted",
+          "sql_prefix": "BEGIN",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.0016356000000001814
+        },
+        {
+          "phase": "delete_uncommitted",
+          "sql_prefix": "DELETE FROM t WHERE id<20",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.8382493000000011
+        },
+        {
+          "phase": "uncommitted_recovery",
+          "sql_prefix": "SELECT id FROM t WHERE id<20 ORDER BY id",
+          "mode": "exact",
+          "passed": true,
+          "seconds": 0.17185429999999968
+        },
+        {
+          "phase": "final_index",
+          "sql_prefix": "SELECT id FROM t ORDER BY L2_DISTANCE(v,'[0,0,0,0,0,0,0,0]') LIMIT 10",
+          "mode": "ann",
+          "passed": true,
+          "seconds": 0.044193499999998664
+        }
+      ],
+      "passed": true,
+      "memory_peak_before_kill": 134217728,
+      "state_before_kill": {
+        "Status": "running",
+        "Running": true,
+        "Paused": false,
+        "Restarting": false,
+        "OOMKilled": false,
+        "Dead": false,
+        "Pid": 6639,
+        "ExitCode": 0,
+        "Error": "",
+        "StartedAt": "2026-11-16T10:29:38.652750639Z",
+        "FinishedAt": "0001-01-01T00:00:00Z"
+      },
+      "max_request_seconds": 3.0886204,
+      "driver": "performance_checker.transport.JsonlSession on host; unchanged boundary assertions"
+    },
+    "public_checker_matches_saved_official_source": true,
+    "official_hidden_admission": "not executed for this candidate"
+  },
+  "diagnostic_profile_call_counts": {
+    "baseline": {
+      "write": [
+        {
+          "file": "engine.py",
+          "function": "validate",
+          "calls": 30000
+        },
+        {
+          "file": "segments.py",
+          "function": "__init__",
+          "calls": 4950
+        }
+      ],
+      "query": [
+        {
+          "file": "engine.py",
+          "function": "validate",
+          "calls": 2500
+        }
+      ]
+    },
+    "candidate": {
+      "write": [
+        {
+          "file": "engine.py",
+          "function": "validate",
+          "calls": 30000
+        },
+        {
+          "file": "segments.py",
+          "function": "__init__",
+          "calls": 99
+        }
+      ],
+      "query": [
+        {
+          "file": "engine.py",
+          "function": "validate",
+          "calls": 1500
+        }
+      ]
+    }
+  }
+}

@@ -11,6 +11,7 @@ from pathlib import Path
 import shutil
 import struct
 import tempfile
+from .journal import open_segment
 
 MAGIC = b'MVROWS1\0'
 HEADER = struct.Struct('<8sIIQQ')
@@ -25,7 +26,7 @@ def _header(source, columns=None):
     if len(block) != HEADER.size:
         raise OSError('truncated row segment header')
     magic, width, reserved, count, footer = HEADER.unpack(block)
-    size = os.fstat(source.fileno()).st_size
+    size = source.length if hasattr(source, 'length') else os.fstat(source.fileno()).st_size
     if (magic != MAGIC or reserved != 0 or (columns is not None and width != columns)
             or footer < HEADER.size or footer + count * LOCATION.size != size):
         raise OSError('invalid row segment header')
@@ -36,7 +37,7 @@ def row_count(path):
     """Cheap count for cache admission and derived-index validation."""
     path = Path(path)
     if path.suffix == '.mvb':
-        with path.open('rb') as source:
+        with open_segment(path) as source:
             return _header(source)[0]
     keys = Path(str(path) + '.keys')
     return keys.stat().st_size // I64.size if keys.exists() else None
@@ -45,18 +46,27 @@ def row_count(path):
 def payload_size(path):
     """Lower bound for decoded data; exclude binary framing and footer."""
     path = Path(path)
-    with path.open('rb') as source:
+    with open_segment(path) as source:
         count, footer = _header(source)
     return footer - HEADER.size - count * U64.size
 
 
 def write(path, columns, rows):
+    with path.open('wb') as output:
+        write_stream(output, columns, rows, path.parent)
+        output.flush()
+        os.fsync(output.fileno())
+
+
+def write_stream(output, columns, rows, directory):
+    """Write a self-contained segment at the current offset, without a barrier."""
     primary = next(i for i, column in enumerate(columns) if column['primary'])
     formats = [struct.Struct('<%df' % c['size']) if c['kind'] == 'VECTOR' else None
                for c in columns]
     # All spill I/O belongs to the database directory and its measured volume.
-    with path.open('wb') as output, tempfile.SpooledTemporaryFile(
-            max_size=FOOTER_MEMORY, dir=str(path.parent), mode='w+b') as locations:
+    start = output.tell()
+    with tempfile.SpooledTemporaryFile(
+            max_size=FOOTER_MEMORY, dir=str(directory), mode='w+b') as locations:
         output.write(HEADER.pack(MAGIC, len(columns), 0, 0, HEADER.size))
         count = 0
         for row in rows:
@@ -70,23 +80,23 @@ def write(path, columns, rows):
                 else:
                     parts.append(fmt.pack(*value))
             payload = b''.join(parts)
-            offset = output.tell()
+            offset = output.tell()-start
             output.write(U64.pack(len(payload)))
             output.write(payload)
             locations.write(LOCATION.pack(row[primary], offset))
             count += 1
-        footer = output.tell()
+        footer = output.tell()-start
         locations.seek(0)
         shutil.copyfileobj(locations, output, length=64 * 1024)
-        output.seek(0)
+        end = output.tell()
+        output.seek(start)
         output.write(HEADER.pack(MAGIC, len(columns), 0, count, footer))
-        output.flush()
-        os.fsync(output.fileno())
+        output.seek(end)
 
 
 class Reader:
     def __init__(self, path, columns):
-        self.source = Path(path).open('rb')
+        self.source = open_segment(path)
         self.columns = columns
         self.binary = Path(path).suffix == '.mvb'
         try:

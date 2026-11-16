@@ -49,8 +49,11 @@ class SegmentContracts(unittest.TestCase):
             db = Database(root)
             execute(db, 'CREATE TABLE t(id BIGINT PRIMARY KEY,s VARCHAR(2),v VECTOR(2));')
             execute(db, "INSERT INTO t VALUES(1,'ab','[1,2]');")
-            file = Path(root) / db.files(db.table('t'))[0]
-            original = file.read_bytes()
+            with segments.open_segment(Path(root) / db.files(db.table('t'))[0]) as source:
+                original = source.read()
+            # Exercise the standalone legacy codec as well as journal-backed
+            # reads. Corrupting this fixture must never damage the live log.
+            file = Path(root) / 'corrupt.mvb'
             mutations = [original[:-1], original[:20]]
             for offset, value in ((24, 2**63), (32, 2**63), (48, 2**63)):
                 value_bytes = bytearray(original)
@@ -61,6 +64,7 @@ class SegmentContracts(unittest.TestCase):
                 with self.assertRaises(OSError):
                     with segments.Reader(file, db.table('t')['columns']) as source:
                         list(source)
+            db.close()
 
     def test_wide_binary_rows_reject_cache_before_decoding(self):
         with tempfile.TemporaryDirectory() as root:

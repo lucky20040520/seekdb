@@ -47,17 +47,19 @@ docker run --rm -i --network none -v "$demo_data:/data" minivector-local --proto
 
 ## Python 存储和事务
 
-表定义、索引描述和当前数据段文件名保存在 `catalog.json`。Python `segments.py` 使用标准库写入不可变 `.mvb`，保存 float32 向量和类型化标量，段尾合并主键及行位置目录。主键目录超过 256 KiB 时使用有界临时缓冲文件，最终并入数据段。INSERT 只新增段；UPDATE/DELETE 流式生成替换段。段文件完成 flush/fsync 后，才构建必要索引并原子发布新清单；清单自身和数据目录仍执行同步，成功响应在必要持久化完成之后。事务覆盖只保存元数据，COMMIT 一次切换所有表，ROLLBACK 和关闭放弃未提交段，恢复时回收孤立文件。
+`CURRENT` 指定当前 `journal-*.mvj` 日志。Python `journal.py` 将不可变二进制行段与目录增量写入带长度、SHA-256 和封印的记录；只有完整目录提交才能发布事务，fsync 完成后才返回成功。`segments.py` 保存 float32 向量和类型化标量，段尾合并主键及行位置目录；主键目录超过 256 KiB 时使用有界临时缓冲文件。普通 INSERT 追加日志；UPDATE/DELETE 流式重写，原表负载超过 8 MiB 时使用独立不可变段，避免低内存下读写同一大日志的长尾。独立行文件、必要索引及其目录项先持久化，再发布目录提交。
 
-新 Python 可以读取旧 JSONL 段和已有 Flat 索引，继续写入时允许旧段与新段共存。冻结的旧 Python 只支持旧格式，不能读取新二进制段；基线和候选的性能测量使用独立数据目录。
+COMMIT 一次发布所有表，ROLLBACK 和关闭截断未提交日志尾部并回收孤立文件。无效空间达到阈值后，checkpoint 流式复制活跃段、同步新日志和目录、原子替换 CURRENT 并再次同步目录，之后才回收旧代。普通无索引批量提交只需一次 fsync；独立段、索引维护及 checkpoint 保留额外同步屏障。
+
+新 Python 可以读取旧 `catalog.json`、JSONL/二进制段和已有 Flat 索引，继续写入时允许旧段与日志段共存。冻结的旧 Python 不能读取新 CURRENT/日志目录；回退旧引擎需使用旧数据快照。基线和候选的性能测量使用独立数据目录。
 
 该方案面向题目规定的单进程强杀模型。运行目录必须由单进程独占，文件损坏及外部篡改不在支持范围。磁盘写入失败属于致命 I/O 错误，进程退出后重新读取清单，避免在提交结果未知时继续处理请求。
 
 ## Python exact 查询和限制
 
-过滤后计算存储为 float32 的向量与查询向量之间的欧氏距离，以主键升序打破并列。小表升序 TopK 使用 NumPy 分块计算，批量距离只筛选候选，边界仍以 Python `math.fsum` 精确重算。无过滤时直接切片，复用 float64 临时缓冲；候选堆保存距离、主键和行号，最终按需投影，并复用相同距离表达式的结果。
+过滤后计算存储为 float32 的向量与查询向量之间的欧氏距离，以主键升序打破并列。预算内的小表优先使用可选范数缓存和 NumPy 点积，通过保守绝对误差界筛选候选；相消、溢出、候选过多或预算不足时回退分块减法路径。最终仍以 Python `math.fsum` 精确重算，候选堆保存距离、主键和行号，最终按需投影，并复用相同距离表达式的结果。
 
-小表使用总预算 16 MiB 的连续 float32 数组及标量缓存。等值过滤的行号列表共享该预算，并另受 1 MiB/32 项上限约束。缓存按可见的不可变数据段签名失效。
+小表使用总预算 16 MiB 的连续 float32 数组、标量及可选范数缓存。等值过滤的行号列表共享该预算，并另受 1 MiB/32 项上限约束。缓存按可见的不可变数据段签名失效。JSON 输出对不超过估计 64 KiB 的简单行使用快速编码，大行流式编码；完整响应仍先经过 256 KiB 内存上限的 spool，保持现有协议和异常原子性。
 
 即使已存在 Flat 索引，预算内的小表升序 TopK 仍优先使用连续数组；超过预算时退回流式扫描或磁盘 Flat 路径。磁盘 Flat 的候选保存距离、主键和行位置；无索引流式路径沿用有界完整行堆（K≤4096 且估计不超过 2 MiB），超出后外排序。缓存预算不代表整个容器内存上限，资源测量包含装载、索引和页缓存。单条输入 SQL 及批量 INSERT 值仍整体解析。
 
@@ -65,7 +67,7 @@ CREATE VECTOR INDEX 保存实际磁盘 Flat L2 索引，随数据修改同步维
 
 SQL 支持建表、增删改查、AND 比较、单项 ORDER BY、LIMIT、L2_DISTANCE、事务和实际磁盘Flat索引；VECTOR支持公开样例的带引号数组字面量（如'[3,4]'），同时保留裸数组输入。完整语法边界仍待官方冻结。未支持的 JOIN、聚合、NULL、子查询、主键更新等明确报错。
 
-详见 [必测矩阵](docs/必测矩阵.md)、[验证记录](docs/验证记录.md) 和 [上次经验](docs/powercontext经验复盘.md)。学习材料在 `agent/conversation.json`，并与官方模板位置 `conversation.json` 保持相同内容；两处是同一份材料，不把 Agent 自动实现当作学生独立理解。
+详见 [必测矩阵](docs/必测矩阵.md)、[验证记录](docs/验证记录.md) 和 [上次经验](docs/powercontext经验复盘.md)。学习材料保留在 `agent/conversation.json` 和官方模板位置 `conversation.json`。两处现已使用用户提供的 11.16 版材料，内容完全一致；不把 Agent 自动实现当作学生独立理解。
 
 逐项实现/证据/缺口对应关系见 [已知必测审计](docs/已知必测审计.md)。宽行候选预算只限制估算量，不是总进程内存承诺。
 
@@ -77,4 +79,4 @@ SQL 支持建表、增删改查、AND 比较、单项 ORDER BY、LIMIT、L2_DIST
 
 默认JSONL示例：同一数据卷依次输入 `examples/first-run.jsonl` 和 `examples/after-restart.jsonl`，无需 `--protocol diagnostic`。实际验证与新旧说明冲突处理见 [官方JSONL对接](docs/官方JSONL对接.md)。
 
-固定负载为 10000 行、128 维、1000 次 exact 查询、K=10、各半过滤、每批 100 行提交。六项指标由外部父 cgroup 在数据库退出和写回完成后采集；正确性在独立验证容器中核验。Python 方案和实测结果见 [Python 优化报告](docs/python-performance-20261114.md)，复现命令和统计范围见 [性能检测说明](performance_checker/README.md)。此前 C++ 结果只保留为 [历史实验记录](docs/performance-20261114.md)，不混入 Python 成绩。
+固定负载为 10000 行、128 维、1000 次 exact 查询、K=10、各半过滤、每批 100 行提交。六项指标由外部父 cgroup 在数据库退出和写回完成后采集；正确性在独立验证容器中核验。最新方案与实测见 [Python 距离、JSON 和提交路径优化](docs/python-journal-20261116.md)，前一阶段见 [Python 增量优化](docs/python-performance-20261116.md)，复现命令和统计范围见 [性能检测说明](performance_checker/README.md)。此前 C++ 结果只保留为 [历史实验记录](docs/performance-20261114.md)，不混入 Python 成绩。

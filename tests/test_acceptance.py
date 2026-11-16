@@ -217,13 +217,13 @@ db=engine.Database(sys.argv[1])
 execute(db,'BEGIN;')
 execute(db,"INSERT INTO t VALUES (5,'a',[0,0]);")
 execute(db,'INSERT INTO b VALUES (5);')
-original=engine.os.replace
+original=db.journal.commit
 def interrupted(*args):
     if sys.argv[2]=='after': original(*args)
     print('COMMIT_BOUNDARY',flush=True)
     sys.stdin.readline()
     if sys.argv[2]=='before': original(*args)
-engine.os.replace=interrupted
+db.journal.commit=interrupted
 execute(db,'COMMIT;')
 '''
             child = subprocess.Popen([sys.executable, '-u', '-c', script, self.temp.name, stage], cwd=str(ROOT),

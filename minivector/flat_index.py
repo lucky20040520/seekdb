@@ -39,7 +39,7 @@ def valid(directory, row_file, index_file, table, column):
         return False
 
 
-def build(directory, row_file, table, column):
+def build(directory, row_file, table, column, sync=True):
     vector_column, primary_column, dimension = layout(table,column)
     vector_format = struct.Struct('<%df'%dimension)
     filename = 'index-'+uuid.uuid4().hex+'.flat'
@@ -51,7 +51,8 @@ def build(directory, row_file, table, column):
                 output.write(LOCATION.pack(row[primary_column],offset))
                 output.write(vector_format.pack(*row[vector_column]))
             output.flush()
-            os.fsync(output.fileno())
+            if sync:
+                os.fsync(output.fileno())
         return filename
     except BaseException:
         target.unlink(missing_ok=True)
