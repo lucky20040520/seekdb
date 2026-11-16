@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 # Pre-submit guard for the shared branch.
 #
 # On a linear branch all teammates commit into the same tree, so these shared

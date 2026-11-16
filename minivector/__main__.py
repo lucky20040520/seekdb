@@ -5,6 +5,12 @@ import sys
 from .engine import Database, DBError
 from .sql import execute
 
+# A request id is echoed verbatim and may be an arbitrary-precision integer.
+# CPython 3.11+ refuses to convert integers longer than 4300 digits by default,
+# which turned such a request into a protocol error instead of a normal reply.
+if hasattr(sys, "set_int_max_str_digits"):
+    sys.set_int_max_str_digits(0)
+
 
 def statements(stream):
     buffer, state, delimiter = [], "normal", None
