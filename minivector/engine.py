@@ -1,7 +1,7 @@
-"""Disk-streaming immutable tables with atomic catalog publication.
+"""Disk-streaming immutable tables with journaled catalog publication.
 
 No database or vector-index library is used. The catalog is the commit record;
-unpublished immutable files have no effect on recovery.
+unpublished immutable segments have no effect on recovery.
 """
 import copy
 import heapq
@@ -9,10 +9,13 @@ import json
 import math
 import os
 import struct
+import sys
 import tempfile
 import uuid
 from collections import OrderedDict
 from pathlib import Path
+
+JOURNAL_REWRITE_LIMIT = 8 * 1024 * 1024
 
 
 class DBError(Exception):
@@ -43,13 +46,22 @@ class Database:
         self.path = Path(directory)
         self.path.mkdir(parents=True, exist_ok=True)
         self.catalog_path = self.path / "catalog.json"
-        self.catalog = (json.loads(self.catalog_path.read_text(encoding="utf-8"))
-                        if self.catalog_path.exists() else {})
+        from .journal import Journal
+        legacy = (json.loads(self.catalog_path.read_text(encoding="utf-8"))
+                  if not (self.path/'CURRENT').exists() and self.catalog_path.exists() else {})
+        self.journal = Journal(self.path, legacy, sync_directory)
+        self.catalog = self.journal.catalog
+        self._external_files = self.external_files(self.catalog)
         self.transaction = None
         self.query_cache = OrderedDict()
         self.query_cache_bytes = 0
         self.query_cache_limit = 16 * 1024 * 1024
-        # Recovery only reads the last atomically published catalog. File deletion
+        # Immutable-file key ranges avoid repeatedly opening disjoint segments.
+        # This small metadata cache is optional and never a source of truth.
+        self.key_ranges = OrderedDict()
+        self.key_range_bytes = 0
+        self.key_range_limit = 64 * 1024
+        # Recovery only reads the last complete journal commit. File deletion
         # is restartable: a crash during cleanup cannot change the committed set.
         self.collect()
         # Derived indexes may be rebuilt, but construction and durable publication
@@ -64,9 +76,18 @@ class Database:
         return self.catalog if self.transaction is None else self.transaction
 
     def collect(self):
+        if self.journal.closed or self.journal.poisoned:
+            return
+        if self.transaction is None:
+            self.journal.discard_tail()
+            self.catalog = self.journal.checkpoint(self.catalog)
+            self.journal.collect(self.catalog)
         live = {file for t in self.catalog.values() for file in self.files(t)}
         if self.transaction is not None:
             live.update(file for t in self.transaction.values() for file in self.files(t))
+        for file in list(self.key_ranges):
+            if file not in live:
+                self.key_range_bytes -= self.key_ranges.pop(file)[2]
         for signature in list(self.query_cache):
             if any(file not in live for file in signature):
                 self.query_cache_bytes -= self.query_cache.pop(signature).size
@@ -82,18 +103,27 @@ class Database:
                     file.unlink()
 
     def publish(self, catalog):
-        temporary = self.path / ("catalog-" + uuid.uuid4().hex + ".tmp")
-        with temporary.open("w", encoding="utf-8", newline="\n") as output:
-            output.write(encode(catalog))
-            output.flush()
-            os.fsync(output.fileno())
-        # Ensure table names are durable before publishing their references.
-        sync_directory(self.path)
-        os.replace(str(temporary), str(self.catalog_path))
+        external = self.external_files(catalog)
+        added = external-self._external_files
+        if added:
+            # Legacy row files and derived disk indexes live outside the log.
+            # Persist both their contents and names before publishing references.
+            for name in sorted(added):
+                with (self.path/name).open('r+b') as source:
+                    os.fsync(source.fileno())
+            sync_directory(self.path)
+        self.journal.commit(catalog)
         self.catalog = catalog
-        # If directory fsync fails after replace, cleanup must still preserve
-        # files referenced by the now-visible catalog before the process exits.
-        sync_directory(self.path)
+        self._external_files = external
+
+    @classmethod
+    def external_files(cls, catalog):
+        from .journal import reference
+        result = {name for table in catalog.values() for name in cls.files(table) if reference(name) is None}
+        for table in catalog.values():
+            for descriptor in table['indexes'].values():
+                result.update(descriptor.get('segments', {}).values())
+        return result
 
     def accept(self, catalog):
         if self.transaction is None:
@@ -122,7 +152,10 @@ class Database:
 
     def close(self):
         self.transaction = None
-        self.collect()
+        try:
+            self.collect()
+        finally:
+            self.journal.close()
 
     def table(self, name):
         try:
@@ -162,21 +195,51 @@ class Database:
         return table.get("files", [table["file"]] if table["file"] else [])
 
     def primary_keys(self, table):
+        for file in self.files(table):
+            yield from self.file_primary_keys(table, file)
+
+    def file_primary_keys(self, table, file):
         from .segments import Reader
         pk = next(i for i, c in enumerate(table["columns"]) if c["primary"])
+        keys = self.path / (file + ".keys")
+        if keys.exists():
+            with keys.open("rb") as source:
+                while True:
+                    chunk = source.read(64 * 1024)
+                    if not chunk:
+                        break
+                    yield from (key[0] for key in struct.iter_unpack("<q", chunk))
+        else:
+            # Binary footer, or legacy JSONL without a key sidecar.
+            with Reader(self.path / file, table['columns']) as source:
+                yield from source.keys(pk)
+
+    def check_primary_keys(self, table, keys):
+        if not keys:
+            return
+        lower, upper = min(keys), max(keys)
         for file in self.files(table):
-            keys = self.path / (file + ".keys")
-            if keys.exists():
-                with keys.open("rb") as source:
-                    while True:
-                        chunk = source.read(64 * 1024)
-                        if not chunk:
-                            break
-                        yield from (key[0] for key in struct.iter_unpack("<q", chunk))
-            else:
-                # Binary footer, or legacy JSONL without a key sidecar.
-                with Reader(self.path / file, table['columns']) as source:
-                    yield from source.keys(pk)
+            bounds = self.key_ranges.get(file)
+            if bounds is not None:
+                if bounds[0] is None or upper < bounds[0] or lower > bounds[1]:
+                    continue
+            # Reserve enough for two int64 extrema before learning a range.
+            # On saturation keep useful existing entries rather than cycling
+            # through every segment on each scan of a larger-than-cache table.
+            cost = 256 + sys.getsizeof(file) + sys.getsizeof((0, 0, 0)) + 2 * sys.getsizeof(2**63)
+            learn = bounds is None and self.key_range_bytes + cost + 256 <= self.key_range_limit
+            minimum = maximum = None
+            for key in self.file_primary_keys(table, file):
+                if key in keys:
+                    fail("duplicate primary key", "DUPLICATE")
+                if learn:
+                    minimum = key if minimum is None else min(minimum, key)
+                    maximum = key if maximum is None else max(maximum, key)
+            # Only a complete successful scan may supply a range. Failed or
+            # interrupted reads cannot cache a partial range and hide duplicates.
+            if learn:
+                self.key_ranges[file] = (minimum, maximum, cost)
+                self.key_range_bytes += cost
 
     @staticmethod
     def validate(column, value, for_storage=True):
@@ -216,15 +279,32 @@ class Database:
         return list(stored)
 
     def rewrite(self, name, rows, append=False):
-        from . import segments
         catalog = copy.deepcopy(self.visible)
-        filename = "rows-" + uuid.uuid4().hex + ".mvb"
-        target = self.path / filename
-        try:
-            segments.write(target, catalog[name]['columns'], rows)
-        except BaseException:
-            target.unlink(missing_ok=True)
-            raise
+        savepoint = self.journal.savepoint()
+        external = False
+        if not append:
+            from . import segments
+            size = 0
+            for file in self.files(catalog[name]):
+                path = self.path/file
+                size += segments.payload_size(path) if path.suffix == '.mvb' else path.stat().st_size
+                if size > JOURNAL_REWRITE_LIMIT:
+                    external = True
+                    break
+        if external:
+            # Large rewrites otherwise read and dirty the same log inode under
+            # memory pressure. Stream into a separate immutable segment; publish
+            # fsyncs its contents and name before the catalog commit as usual.
+            self.journal.idle()
+            filename = 'rows-'+uuid.uuid4().hex+'.mvb'
+            try:
+                with (self.path/filename).open('x+b') as output:
+                    segments.write_stream(output, catalog[name]['columns'], rows, self.path)
+            except BaseException:
+                (self.path/filename).unlink(missing_ok=True)
+                raise
+        else:
+            filename = self.journal.append_segment(catalog[name]['columns'], rows)
         if append:
             catalog[name]["files"] = list(self.files(catalog[name])) + [filename]
             catalog[name]["file"] = None
@@ -234,7 +314,10 @@ class Database:
         try:
             self.prepare_indexes(catalog, only=name)
         except BaseException:
-            target.unlink(missing_ok=True)
+            self.journal.rewind(savepoint)
+            self.journal.idle()
+            if external:
+                (self.path/filename).unlink(missing_ok=True)
             raise
         self.accept(catalog)
 
@@ -256,9 +339,7 @@ class Database:
                 fail("duplicate primary key", "DUPLICATE")
             keys.add(row[pk])
             new.append(row)
-        for key in self.primary_keys(table):
-            if key in keys:
-                fail("duplicate primary key", "DUPLICATE")
+        self.check_primary_keys(table, keys)
         self.rewrite(name, iter(new), append=True)
         return len(new)
 
@@ -334,7 +415,7 @@ class Database:
                     for row_file in self.files(table):
                         index_file = old.get(row_file)
                         if not flat_index.valid(self.path,row_file,index_file,table,descriptor['column']):
-                            index_file = flat_index.build(self.path,row_file,table,descriptor['column'])
+                            index_file = flat_index.build(self.path,row_file,table,descriptor['column'],False)
                             created.append(index_file)
                         segments[row_file] = index_file
                     if descriptor.get('algorithm')!=flat_index.ALGORITHM or descriptor.get('segments')!=segments:
@@ -457,6 +538,17 @@ class Database:
         pk = next(i for i, c in enumerate(table["columns"]) if c["primary"])
         matches = self.conditions(table, conditions)
         aliases = {}
+        distance_queries = []
+        def distance_query(expr):
+            # Reuse only this parsed expression, including ORDER BY aliases.
+            # Value equality would incorrectly equate [1] with invalid [True].
+            # The cache lasts one SELECT, never across schema/visibility changes.
+            for previous, query in distance_queries:
+                if previous is expr:
+                    return query
+            query = self.validate(columns[expr[1]][1], expr[2])
+            distance_queries.append((expr, query))
+            return query
         def expression(expr, resolve_alias=False):
             kind = expr[0]
             if kind == "column":
@@ -472,7 +564,7 @@ class Database:
             index, column = columns[expr[1]]
             if column["kind"] != "VECTOR":
                 fail("distance requires VECTOR", "TYPE")
-            query = self.validate(column, expr[2])
+            query = distance_query(expr)
             return lambda row: math.sqrt(math.fsum((a-b)**2 for a, b in zip(row[index], query)))
         if projections == "*":
             projections = [(('column', c["name"]), c["name"]) for c in table["columns"]]
@@ -531,11 +623,10 @@ class Database:
                     fail("ordering VECTOR unsupported")
                 return (Desc(value) if descending else value, row[pk])
             if descriptor is not None and cache is None:
-                query = self.validate(columns[distance_expr[1]][1],distance_expr[2])
+                query = distance_query(distance_expr)
                 source = self.indexed_rows(table,descriptor,query,matches,conditions,limit,descending)
             elif cache is not None:
-                query_column = columns[distance_expr[1]][1]
-                query = self.validate(query_column, distance_expr[2])
+                query = distance_query(distance_expr)
                 cached_distance_columns = [projection == distance_expr for projection, _ in projections]
                 include_vector = any(
                     projection[1] == distance_expr[1] and not use_distance

@@ -10,6 +10,33 @@ from minivector.sql import execute
 
 
 class OptimizedPaths(unittest.TestCase):
+    def test_distance_reuse_preserves_validation_across_expressions_and_statements(self):
+        with tempfile.TemporaryDirectory() as root:
+            db = Database(root)
+            execute(db, 'CREATE TABLE t(id BIGINT PRIMARY KEY,v VECTOR(2));')
+            db.insert('t', [[1, [1, 0]], [2, [0, 1]]])
+            for cache_limit, indexed in ((16*1024*1024, False), (0, False), (0, True)):
+                db.query_cache_limit = cache_limit
+                db.query_cache.clear()
+                db.query_cache_bytes = 0
+                if indexed:
+                    execute(db, 'CREATE VECTOR INDEX vi ON t(v);')
+                with self.assertRaises(DBError):
+                    db.select('t', [(('distance', 'v', [1, 0]), 'd'),
+                                    (('distance', 'v', [True, 0]), 'bad')],
+                              order=(('column', 'd'), False), limit=1)
+                for invalid in ('[true,0]', '[1]', '[1e100,0]'):
+                    with self.assertRaises(DBError):
+                        execute(db, "SELECT L2_DISTANCE(v,[1,0]) AS d,L2_DISTANCE(v,'%s') AS bad "
+                                'FROM t ORDER BY d LIMIT 1;' % invalid)
+                    with self.assertRaises(DBError):
+                        execute(db, "SELECT id FROM t ORDER BY L2_DISTANCE(v,'%s') LIMIT 1;" % invalid)
+                self.assertEqual([[1, 0.0]], list(execute(db,
+                    "SELECT id,L2_DISTANCE(v,'[1,0]') AS d FROM t ORDER BY d LIMIT 1;")[1]))
+                self.assertEqual([[2, 0.0]], list(execute(db,
+                    "SELECT id,L2_DISTANCE(v,'[0,1]') AS d FROM t ORDER BY d LIMIT 1;")[1]))
+            db.close()
+
     def test_long_quoted_input_preserves_escaping_and_atomic_errors(self):
         with tempfile.TemporaryDirectory() as root:
             db = Database(root)
@@ -77,6 +104,7 @@ class OptimizedPaths(unittest.TestCase):
 
     def test_directory_sync_error_preserves_published_files(self):
         import minivector.engine as engine
+        import minivector.journal as journal
         with tempfile.TemporaryDirectory() as root:
             db=Database(root)
             execute(db,'CREATE TABLE t(id BIGINT PRIMARY KEY);')
@@ -87,29 +115,36 @@ class OptimizedPaths(unittest.TestCase):
                 if len(calls)==2:
                     raise OSError('simulated directory sync failure after replace')
                 original(path)
-            with patch.object(engine,'sync_directory',interrupted):
+            with patch.object(db.journal,'sync_directory',interrupted), \
+                 patch.object(journal,'CHECKPOINT_MIN',0), patch.object(journal,'CHECKPOINT_GARBAGE',0):
                 with self.assertRaises(OSError):
                     execute(db,'INSERT INTO t VALUES (1);')
             db.close()
             db=Database(root)
             self.assertEqual([[1]],list(execute(db,'SELECT id FROM t;')[1]))
+            db.close()
 
     def test_insert_is_append_only_and_rollback_safe(self):
+        from minivector.journal import open_segment
         with tempfile.TemporaryDirectory() as root:
             db=Database(root)
             execute(db,'CREATE TABLE t(id BIGINT PRIMARY KEY,v VECTOR(2));')
             execute(db,'INSERT INTO t VALUES (1,[1,0]);')
             first=db.files(db.table('t'))[0]
-            first_bytes=(Path(root)/first).read_bytes()
+            with open_segment(Path(root)/first) as source:
+                first_bytes=source.read()
+            committed_size=(Path(root)/db.journal.name).stat().st_size
             execute(db,'BEGIN;')
             execute(db,'INSERT INTO t VALUES (2,[2,0]);')
             self.assertEqual(2,len(db.files(db.table('t'))))
-            self.assertEqual(first_bytes,(Path(root)/first).read_bytes())
+            with open_segment(Path(root)/first) as source:
+                self.assertEqual(first_bytes,source.read())
             execute(db,'ROLLBACK;')
             self.assertEqual([first],db.files(db.table('t')))
             self.assertEqual([[1]],list(execute(db,'SELECT id FROM t;')[1]))
-            self.assertEqual([first], [p.name for p in Path(root).glob('rows-*')])
+            self.assertEqual(committed_size,(Path(root)/db.journal.name).stat().st_size)
             self.assertEqual([1], list(db.primary_keys(db.table('t'))))
+            db.close()
 
     def test_cached_scalar_differential_and_ties(self):
         with tempfile.TemporaryDirectory() as root:

@@ -91,12 +91,12 @@ class FlatIndexContracts(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             db=self.setup_table(directory)
             old=json.loads(json.dumps(db.catalog))
+            committed_size=(db.path/db.journal.name).stat().st_size
             with patch.object(flat_index,'build',side_effect=OSError('index build interrupted')):
                 with self.assertRaises(OSError):
                     execute(db,"UPDATE t SET v='[9,9]' WHERE id=1;")
             self.assertEqual(old,db.catalog)
-            expected_files=set(db.files(db.table('t')))
-            self.assertEqual(expected_files,{p.name for p in db.path.glob('rows-*')})
+            self.assertEqual(committed_size,(db.path/db.journal.name).stat().st_size)
             self.assertEqual([[1],[2],[3]],results(db,"SELECT id FROM t ORDER BY L2_DISTANCE(v,'[0,0]') LIMIT 10;"))
             db.close()
 

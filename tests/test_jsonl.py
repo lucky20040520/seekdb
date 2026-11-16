@@ -16,6 +16,25 @@ from minivector.engine import DBError
 
 
 class JSONLContracts(unittest.TestCase):
+    def test_fast_and_streamed_rows_preserve_json_and_atomic_failure(self):
+        with tempfile.TemporaryDirectory() as directory:
+            class DB:
+                path = directory
+            rows = [[-(2**63), 2**63-1, -0.0, '\u6c49\U0001f600\n"\\', [1e-40, 3.4e38]],
+                    ['x'*300000]]
+            output = io.StringIO()
+            with patch.object(sys, 'stdout', output):
+                jsonl.emit_query(DB(), {'nested': [1, 'id']}, ['values'], iter(rows))
+            expected = json.dumps({'id': {'nested': [1, 'id']}, 'ok': True, 'columns': ['values'],
+                                   'rows': rows}, ensure_ascii=False, allow_nan=False, separators=(',', ':'))+'\n'
+            self.assertEqual(expected, output.getvalue())
+            self.assertEqual([], list(Path(directory).iterdir()))
+            for invalid in (float('nan'), float('inf')):
+                output = io.StringIO()
+                with patch.object(sys, 'stdout', output), self.assertRaises(ValueError):
+                    jsonl.emit_query(DB(), 1, ['v'], iter([[1.0], [invalid]]))
+                self.assertEqual('', output.getvalue())
+
     def test_bad_json_rejected_and_lazy_query_failure_never_sends_partial_result(self):
         for text in ('{"id":1,"id":2}', '{"id":NaN}', '{"id":1e999}'):
             with self.assertRaises(ValueError):

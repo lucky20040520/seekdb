@@ -31,6 +31,25 @@ def emit(value):
     print(json.dumps(value, ensure_ascii=False, allow_nan=False, separators=(',', ':')), flush=True)
 
 
+def small_row(row):
+    """Bound the fast encoder's temporary string; wide rows keep streaming."""
+    remaining = 64 * 1024
+    for value in row:
+        if isinstance(value, str):
+            remaining -= 6 * len(value) + 3
+        elif type(value) in (int, float):
+            remaining -= 32
+        elif isinstance(value, list):
+            remaining -= 32 * len(value) + 3
+            if remaining < 0 or not all(type(v) in (int, float) for v in value):
+                return False
+        else:
+            return False
+        if remaining < 0:
+            return False
+    return True
+
+
 def emit_query(db, ident, columns, rows):
     # Build the single physical JSON line before sending any bytes: a lazy
     # query error cannot leave half a response. Large results spill to /data,
@@ -44,7 +63,12 @@ def emit_query(db, ident, columns, rows):
         for row in rows:
             if not first:
                 output.write(',')
-            json.dump(row, output, ensure_ascii=False, allow_nan=False, separators=(',', ':'))
+            if small_row(row):
+                # dumps uses CPython's one-shot encoder; dump iterates Python
+                # chunks. Keep the same options and the atomic response spool.
+                output.write(json.dumps(row, ensure_ascii=False, allow_nan=False, separators=(',', ':')))
+            else:
+                json.dump(row, output, ensure_ascii=False, allow_nan=False, separators=(',', ':'))
             first = False
         output.write(']}\n')
         output.seek(0)
