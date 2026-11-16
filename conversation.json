@@ -160,6 +160,12 @@
       "role": "student",
       "source": "初测后用户原话摘录",
       "content": "还需补一个测试：插 (1),(1)。 记录里有两个 1，数据里也有 1，两边都该报重。\n- 如果读 0 行 → 说明先查记录自身，我的解释对。\n- 如果读 1 行 → 说明先去翻数据，我的解释错，需要修改。\n同时加插 (1),(3)，作为对照。 记录内不重复，只有数据里有 1，这个一定读 1 行。有它作对照，才能证明 “读 0 行” 是特殊情况，不是 “所有失败都不读数据”。"
+    },
+    {
+      "id": "mixed-keys-migration-prediction",
+      "role": "student",
+      "source": "迁移前用户原话摘录",
+      "content": "事务内（删除 1、插入 replacement 之后，未提交）\t(1,'replacement')、(2,'new')\t2\nROLLBACK 后重启\t(1,'old')、(2,'new')\t2\n另一次相同事务 COMMIT 后重启\t(1,'replacement')、(2,'new')\t2。\n事务内插入就报了 DUPLICATE\t查重看的是旧文件里那行还没删掉的 old，不是 “现在能看见什么”。说明删除没有进入查重视野"
     }
   ],
   "experiments": [
@@ -282,6 +288,12 @@
       "status": "executed",
       "source": "本地混合段核心 API 受控对照",
       "output": "同一初始快照：(1),(1) 返回 DUPLICATE，Reader.keys 轨迹为空；(1),(3) 返回 DUPLICATE，轨迹只读出旧段键 1。两次照常读取到 [1,2]，清单和文件列表未变。\n[{\"values\": \"(1),(1)\", \"response\": {\"ok\": false, \"error\": {\"code\": \"DUPLICATE\", \"message\": \"duplicate primary key\"}}, \"ids\": [1, 2], \"catalog_and_file_list_unchanged\": true, \"key_reads\": []}, {\"values\": \"(1),(3)\", \"response\": {\"ok\": false, \"error\": {\"code\": \"DUPLICATE\", \"message\": \"duplicate primary key\"}}, \"ids\": [1, 2], \"catalog_and_file_list_unchanged\": true, \"key_reads\": [{\"key\": 1, \"path\": \"legacy_jsonl\"}]}]"
+    },
+    {
+      "id": "mixed-keys-migration",
+      "status": "executed",
+      "source": "python -m tools.verify_mixed_keys migration；独立目录、关闭后重开数据库实例",
+      "output": "重插两组只扫描到键 2。事务内读到 replacement；回滚重开读到 old 且旧文件保留；提交重开读到 replacement 且旧文件清理。\n{\"outcome\": \"ROLLBACK\", \"key_reads_on_reinsert\": [2], \"in_transaction\": [[1, \"replacement\"], [2, \"new\"]], \"after_reopen\": [[1, \"old\"], [2, \"new\"]], \"legacy_file_survives\": true, \"passed\": true}\n{\"outcome\": \"COMMIT\", \"key_reads_on_reinsert\": [2], \"in_transaction\": [[1, \"replacement\"], [2, \"new\"]], \"after_reopen\": [[1, \"replacement\"], [2, \"new\"]], \"legacy_file_survives\": false, \"passed\": true}"
     }
   ],
   "evidence_chains": [
@@ -536,7 +548,7 @@
     {
       "topic": "旧格式兼容与跨段主键判重",
       "dimension": "技术理解与迁移",
-      "context": "初测核对可见键集合、错误码和旧段及段尾的实际读键轨迹。批内重复作为对照，失败语句事务可见性另有独立实验。学生提出同时与批内和存量冲突的对照，并用仅与存量冲突的语句排除所有失败均不读键的解释。复测支持先完成批内检查，再扫描存量键。删除后重插迁移预测待补。",
+      "context": "初测核对可见键集合、错误码和旧段及段尾的实际读键轨迹。批内重复作为对照，失败语句事务可见性另有独立实验。学生提出同时与批内和存量冲突的对照，并用仅与存量冲突的语句排除所有失败均不读键的解释。复测支持先完成批内检查，再扫描存量键。学生预测删除后重插在事务内和提交后可见 replacement，回滚恢复 old。实测支持预测；迁移后的学生解释待补。",
       "student_evidence": [
         {
           "pointer": "/conversations/24/content",
@@ -545,6 +557,10 @@
         {
           "pointer": "/conversations/25/content",
           "quote": "有它作对照，才能证明 “读 0 行” 是特殊情况，不是 “所有失败都不读数据”。"
+        },
+        {
+          "pointer": "/conversations/26/content",
+          "quote": "事务内插入就报了 DUPLICATE\t查重看的是旧文件里那行还没删掉的 old，不是 “现在能看见什么”。说明删除没有进入查重视野"
         }
       ],
       "result_evidence": [
@@ -555,6 +571,10 @@
         {
           "pointer": "/experiments/19/output",
           "quote": "同一初始快照：(1),(1) 返回 DUPLICATE，Reader.keys 轨迹为空；(1),(3) 返回 DUPLICATE，轨迹只读出旧段键 1。两次照常读取到 [1,2]，清单和文件列表未变。"
+        },
+        {
+          "pointer": "/experiments/20/output",
+          "quote": "重插两组只扫描到键 2。事务内读到 replacement；回滚重开读到 old 且旧文件保留；提交重开读到 replacement 且旧文件清理。"
         }
       ]
     }
