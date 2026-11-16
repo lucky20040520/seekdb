@@ -172,6 +172,12 @@
       "role": "student",
       "source": "迁移实测后用户原话摘录",
       "content": "原因：能否插入，取决于这条记录是否可见，与文件里是否还留有这行数据无关。\n其他事务并发：本次是单客户端单事务。若两个事务同时操作键 1（一个删一个插），可见性隔离会与判重冲突。题面不要求多客户端，所以这条不推广。\n崩溃时机：提交后、清理前被杀。重启必须仍读到 replacement；若重启时判重扫物理段，会出现“查得到 replacement、却插不进 1”的矛盾状态。\n第 4 条建议单独测一次，它是这条链唯一还没打到的点。"
+    },
+    {
+      "id": "statement-failure-prediction",
+      "role": "student",
+      "source": "测前用户原话摘录",
+      "content": "事务内（插入失败之后） (1,'edited') 1   COMMIT 后重启 (1,'edited') 1   ROLLBACK 后重启 (1,'old') 1\n失败的是那条插入语句，它一行都不该留下，所以 (2,'new') 查不到；但前一条 UPDATE 是独立成功的语句，它的效果要保留，所以事务内仍是 edited。回滚才把整笔事务退回原样。\n所以顺序是：失败 → 查事务内 → 提交 → 重启查 → 再复现一遍走回滚。"
     }
   ],
   "experiments": [
@@ -306,6 +312,12 @@
       "source": "python -m tools.verify_mixed_keys crash",
       "status": "executed",
       "output": "清单已发布而旧段未清理时强杀，客户端未收到确认。恢复前旧文件仍在但已无清单引用；恢复后旧文件被清理，读到 replacement，拒绝直接重复插入，事务内删除后可重插。\n{\"commit_response\": null, \"legacy_exists_before_recovery\": true, \"legacy_referenced_by_published_catalog\": false, \"legacy_exists_after_recovery\": false, \"restarted_rows\": [[1, \"replacement\"], [2, \"new\"]], \"live_duplicate_rejected\": true, \"reinsert_after_delete\": true}"
+    },
+    {
+      "id": "statement-failure-initial",
+      "source": "python -m tools.verify_statement_failure，真实 JSONL 响应及进程重开",
+      "status": "executed",
+      "output": "两组批量 INSERT 均实际返回 DUPLICATE。失败后事务内只见 (1,'edited')。COMMIT 成功后重开仍为 edited，ROLLBACK 成功后重开为 old。\n{\"outcome\": \"COMMIT\", \"failed_statement\": {\"id\": 5, \"ok\": false, \"error\": {\"code\": \"DUPLICATE\", \"message\": \"duplicate primary key\"}}, \"inside\": [[1, \"edited\"]], \"transaction_end\": {\"id\": 7, \"ok\": true, \"affected_rows\": 0}, \"reopened\": [[1, \"edited\"]]}\n{\"outcome\": \"ROLLBACK\", \"failed_statement\": {\"id\": 5, \"ok\": false, \"error\": {\"code\": \"DUPLICATE\", \"message\": \"duplicate primary key\"}}, \"inside\": [[1, \"edited\"]], \"transaction_end\": {\"id\": 7, \"ok\": true, \"affected_rows\": 0}, \"reopened\": [[1, \"old\"]]}"
     }
   ],
   "evidence_chains": [
@@ -595,6 +607,27 @@
         {
           "pointer": "/experiments/21/output",
           "quote": "清单已发布而旧段未清理时强杀，客户端未收到确认。恢复前旧文件仍在但已无清单引用；恢复后旧文件被清理，读到 replacement，拒绝直接重复插入，事务内删除后可重插。"
+        }
+      ]
+    },
+    {
+      "topic": "失败语句与事务可见性",
+      "dimension": "独立验证与质疑",
+      "context": "学生分别用键 2 追踪失败语句的部分写入、用键 1 的值追踪成功修改是否被连带撤销，并指定先查事务内再结束事务。对照两组独立目录。复测和非法向量迁移待补。",
+      "student_evidence": [
+        {
+          "pointer": "/conversations/28/content",
+          "quote": "失败的是那条插入语句，它一行都不该留下，所以 (2,'new') 查不到；但前一条 UPDATE 是独立成功的语句，它的效果要保留，所以事务内仍是 edited。回滚才把整笔事务退回原样。"
+        },
+        {
+          "pointer": "/conversations/28/content",
+          "quote": "所以顺序是：失败 → 查事务内 → 提交 → 重启查 → 再复现一遍走回滚。"
+        }
+      ],
+      "result_evidence": [
+        {
+          "pointer": "/experiments/22/output",
+          "quote": "两组批量 INSERT 均实际返回 DUPLICATE。失败后事务内只见 (1,'edited')。COMMIT 成功后重开仍为 edited，ROLLBACK 成功后重开为 old。"
         }
       ]
     }
