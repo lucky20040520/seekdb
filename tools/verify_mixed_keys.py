@@ -8,6 +8,7 @@ from unittest.mock import patch
 from minivector.engine import Database, DBError
 from minivector.segments import Reader
 from minivector.sql import execute
+from tools.verify_commit_cut import Session
 
 
 def initial():
@@ -104,11 +105,56 @@ def migration(outcome):
                           "legacy_file_survives": legacy.exists(), "passed": True}))
 
 
+def crash_before_cleanup():
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        db = Database(root)
+        execute(db, "CREATE TABLE t(id BIGINT PRIMARY KEY, label VARCHAR(16));")
+        legacy = root / "rows-legacy.jsonl"
+        legacy.write_text('[1,"old"]\n', encoding="utf-8")
+        db.catalog["t"]["file"] = legacy.name
+        db.publish(db.catalog)
+        execute(db, "INSERT INTO t VALUES (2,'new');")
+        db.close()
+        with Session(root, "after") as writer:
+            writer.request(1, "BEGIN;")
+            writer.request(2, "DELETE FROM t WHERE id=1;")
+            writer.request(3, "INSERT INTO t VALUES (1,'replacement');")
+            writer.send(4, "COMMIT;")
+            assert writer.stderr.get(timeout=10) == "CUT after"
+            assert writer.stdout.empty()
+        assert legacy.exists()
+        table = json.loads((root / "catalog.json").read_bytes())["t"]
+        assert legacy.name not in Database.files(table)
+        reopened = Database(root)
+        rows = list(execute(reopened, "SELECT * FROM t ORDER BY id;")[1])
+        assert rows == [[1, "replacement"], [2, "new"]]
+        assert not legacy.exists()
+        try:
+            execute(reopened, "INSERT INTO t VALUES (1,'duplicate');")
+        except DBError as error:
+            assert error.code == "DUPLICATE"
+        else:
+            raise AssertionError("duplicate live replacement accepted")
+        execute(reopened, "BEGIN;")
+        execute(reopened, "DELETE FROM t WHERE id=1;")
+        assert execute(reopened, "INSERT INTO t VALUES (1,'again');") == 1
+        execute(reopened, "ROLLBACK;")
+        reopened.close()
+        print(json.dumps({"commit_response": None, "legacy_exists_before_recovery": True,
+                          "legacy_referenced_by_published_catalog": False,
+                          "legacy_exists_after_recovery": False, "restarted_rows": rows,
+                          "live_duplicate_rejected": True, "reinsert_after_delete": True}))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("scenario", nargs="?", choices=("initial", "migration"), default="initial")
-    if parser.parse_args().scenario == "initial":
+    parser.add_argument("scenario", nargs="?", choices=("initial", "migration", "crash"), default="initial")
+    scenario = parser.parse_args().scenario
+    if scenario == "initial":
         initial()
+    elif scenario == "crash":
+        crash_before_cleanup()
     else:
         for outcome in ("ROLLBACK", "COMMIT"):
             migration(outcome)

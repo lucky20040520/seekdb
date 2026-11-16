@@ -166,6 +166,12 @@
       "role": "student",
       "source": "迁移前用户原话摘录",
       "content": "事务内（删除 1、插入 replacement 之后，未提交）\t(1,'replacement')、(2,'new')\t2\nROLLBACK 后重启\t(1,'old')、(2,'new')\t2\n另一次相同事务 COMMIT 后重启\t(1,'replacement')、(2,'new')\t2。\n事务内插入就报了 DUPLICATE\t查重看的是旧文件里那行还没删掉的 old，不是 “现在能看见什么”。说明删除没有进入查重视野"
+    },
+    {
+      "id": "mixed-keys-reflection",
+      "role": "student",
+      "source": "迁移实测后用户原话摘录",
+      "content": "原因：能否插入，取决于这条记录是否可见，与文件里是否还留有这行数据无关。\n其他事务并发：本次是单客户端单事务。若两个事务同时操作键 1（一个删一个插），可见性隔离会与判重冲突。题面不要求多客户端，所以这条不推广。\n崩溃时机：提交后、清理前被杀。重启必须仍读到 replacement；若重启时判重扫物理段，会出现“查得到 replacement、却插不进 1”的矛盾状态。\n第 4 条建议单独测一次，它是这条链唯一还没打到的点。"
     }
   ],
   "experiments": [
@@ -294,6 +300,12 @@
       "status": "executed",
       "source": "python -m tools.verify_mixed_keys migration；独立目录、关闭后重开数据库实例",
       "output": "重插两组只扫描到键 2。事务内读到 replacement；回滚重开读到 old 且旧文件保留；提交重开读到 replacement 且旧文件清理。\n{\"outcome\": \"ROLLBACK\", \"key_reads_on_reinsert\": [2], \"in_transaction\": [[1, \"replacement\"], [2, \"new\"]], \"after_reopen\": [[1, \"old\"], [2, \"new\"]], \"legacy_file_survives\": true, \"passed\": true}\n{\"outcome\": \"COMMIT\", \"key_reads_on_reinsert\": [2], \"in_transaction\": [[1, \"replacement\"], [2, \"new\"]], \"after_reopen\": [[1, \"replacement\"], [2, \"new\"]], \"legacy_file_survives\": false, \"passed\": true}"
+    },
+    {
+      "id": "mixed-keys-crash",
+      "source": "python -m tools.verify_mixed_keys crash",
+      "status": "executed",
+      "output": "清单已发布而旧段未清理时强杀，客户端未收到确认。恢复前旧文件仍在但已无清单引用；恢复后旧文件被清理，读到 replacement，拒绝直接重复插入，事务内删除后可重插。\n{\"commit_response\": null, \"legacy_exists_before_recovery\": true, \"legacy_referenced_by_published_catalog\": false, \"legacy_exists_after_recovery\": false, \"restarted_rows\": [[1, \"replacement\"], [2, \"new\"]], \"live_duplicate_rejected\": true, \"reinsert_after_delete\": true}"
     }
   ],
   "evidence_chains": [
@@ -548,7 +560,7 @@
     {
       "topic": "旧格式兼容与跨段主键判重",
       "dimension": "技术理解与迁移",
-      "context": "初测核对可见键集合、错误码和旧段及段尾的实际读键轨迹。批内重复作为对照，失败语句事务可见性另有独立实验。学生提出同时与批内和存量冲突的对照，并用仅与存量冲突的语句排除所有失败均不读键的解释。复测支持先完成批内检查，再扫描存量键。学生预测删除后重插在事务内和提交后可见 replacement，回滚恢复 old。实测支持预测；迁移后的学生解释待补。",
+      "context": "初测核对可见键集合、错误码和旧段及段尾的实际读键轨迹。批内重复作为对照，失败语句事务可见性另有独立实验。学生提出同时与批内和存量冲突的对照，并用仅与存量冲突的语句排除所有失败均不读键的解释。复测支持先完成批内检查，再扫描存量键。学生预测删除后重插在事务内和提交后可见 replacement，回滚恢复 old。实测支持预测；学生依据可见快照解释结果，指出并发、扫描代价和崩溃边界，并提出清理前强杀。实测通过。Agent 核查：DELETE 重写事务可见段，旧段由提交视图保留至清理；重启后仍有活的 replacement 时拒绝重复是正确行为，删除可见键后重插才用于检查陈旧键。",
       "student_evidence": [
         {
           "pointer": "/conversations/24/content",
@@ -561,6 +573,10 @@
         {
           "pointer": "/conversations/26/content",
           "quote": "事务内插入就报了 DUPLICATE\t查重看的是旧文件里那行还没删掉的 old，不是 “现在能看见什么”。说明删除没有进入查重视野"
+        },
+        {
+          "pointer": "/conversations/27/content",
+          "quote": "第 4 条建议单独测一次，它是这条链唯一还没打到的点。"
         }
       ],
       "result_evidence": [
@@ -575,6 +591,10 @@
         {
           "pointer": "/experiments/20/output",
           "quote": "重插两组只扫描到键 2。事务内读到 replacement；回滚重开读到 old 且旧文件保留；提交重开读到 replacement 且旧文件清理。"
+        },
+        {
+          "pointer": "/experiments/21/output",
+          "quote": "清单已发布而旧段未清理时强杀，客户端未收到确认。恢复前旧文件仍在但已无清单引用；恢复后旧文件被清理，读到 replacement，拒绝直接重复插入，事务内删除后可重插。"
         }
       ]
     }
