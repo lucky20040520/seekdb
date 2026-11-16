@@ -10,6 +10,8 @@ import sys
 import tempfile
 import threading
 
+from minivector.segments import Reader
+
 WORKER = r"""
 import os
 import runpy
@@ -96,6 +98,19 @@ class Session:
         self.close()
 
 
+def read_snapshot(root):
+    raw = (root / "catalog.json").read_bytes()
+    table = json.loads(raw)["t"]
+    names = table.get("files", [table["file"]] if table["file"] else [])
+    segments = []
+    for name in names:
+        path = root / name
+        with Reader(path, table["columns"]) as reader:
+            rows = [row for _, row in reader]
+        segments.append({"name": name, "rows": rows})
+    return {"catalog_sha256": hashlib.sha256(raw).hexdigest(), "segments": segments}
+
+
 def trial(cut):
     with tempfile.TemporaryDirectory() as temp:
         root = Path(temp)
@@ -119,14 +134,19 @@ def trial(cut):
                 response = None
             pid = session.process.pid
         committed = hashlib.sha256(catalog.read_bytes()).hexdigest()
+        pre_recovery = read_snapshot(root)
         with Session(root) as session:
             actual = session.request(1, "SELECT id FROM t ORDER BY id;")["rows"]
         expected = [[1], [2]] if cut == "before" else [[2], [3]]
+        post_recovery = read_snapshot(root)
+        disk_rows = sorted(row for segment in pre_recovery["segments"] for row in segment["rows"])
         result = {
             "cut": cut, "checkpoint": checkpoint, "killed_pid": pid,
             "commit_request_id": 4, "commit_response": response,
             "catalog_changed": previous != committed, "restarted_rows": actual,
-            "expected_rows": expected, "passed": actual == expected,
+            "expected_rows": expected, "pre_recovery": pre_recovery,
+            "post_recovery": post_recovery,
+            "passed": disk_rows == actual == expected and pre_recovery == post_recovery,
         }
         print(json.dumps(result), flush=True)
         assert result["passed"] and result["catalog_changed"] == (cut != "before")

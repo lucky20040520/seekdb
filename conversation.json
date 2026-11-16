@@ -130,6 +130,12 @@
       "role": "student",
       "source": "强杀执行前用户原话",
       "content": "A={1,2}，B={2,3}，C={2,3}；如果看到 A 里出现 3 或者 2 消失、B 里只出现 2 或只出现 3、C 里出现 1 或 2，我会修正 \"磁盘发布点 = catalog.json 原子替换、客户端确认点 = 收到 ok:true\" 这个模型。"
+    },
+    {
+      "id": "commit-cut-student-retest",
+      "role": "student",
+      "source": "初测后用户原话",
+      "content": "客户端只知道「没收到响应」时，区分不了 A 和 B，A 和 B 的区别不是「事务做没做」，而是「这次修改有没有落到被引用的那份持久结构上」—— 这个区别发生在服务端内部，客户端接口上根本没有对应的观测维度。下一次反例复测：先加「清单 — 段 — 记录三层一致」，而不是再重启 ，**集合是结果层，A/B 的分界在存储层。** 只看集合，会把「发布点其实在恢复期重放，只是结果碰巧正确」这种模型错误整个放过 —— 而这正是我现在这条模型最可能错的地方。你对我上一条的质疑是对的 。"
     }
   ],
   "experiments": [
@@ -228,6 +234,12 @@
       "status": "executed",
       "source": "本地 JSONL 子进程故障注入",
       "output": "A：清单未变，未收到提交响应，重启为 {1,2}。B：清单已变，未收到提交响应，重启为 {2,3}。C：已收到 ok:true，重启为 {2,3}。\n{\"cut\": \"before\", \"checkpoint\": \"CUT before\", \"killed_pid\": 34116, \"commit_request_id\": 4, \"commit_response\": null, \"catalog_changed\": false, \"restarted_rows\": [[1], [2]], \"expected_rows\": [[1], [2]], \"passed\": true}\n{\"cut\": \"after\", \"checkpoint\": \"CUT after\", \"killed_pid\": 10296, \"commit_request_id\": 4, \"commit_response\": null, \"catalog_changed\": true, \"restarted_rows\": [[2], [3]], \"expected_rows\": [[2], [3]], \"passed\": true}\n{\"cut\": \"ack\", \"checkpoint\": \"client received COMMIT success\", \"killed_pid\": 24276, \"commit_request_id\": 4, \"commit_response\": {\"id\": 4, \"ok\": true, \"affected_rows\": 0}, \"catalog_changed\": true, \"restarted_rows\": [[2], [3]], \"expected_rows\": [[2], [3]], \"passed\": true}"
+    },
+    {
+      "id": "commit-cut-layer-retest",
+      "status": "executed",
+      "source": "python -m tools.verify_commit_cut all；恢复前通过段 Reader 读取，无数据库实例",
+      "output": "恢复启动前，A 清单引用的段已经包含 {1,2}，B 和 C 清单引用的段已经包含 {2,3}。三组恢复后清单哈希及引用段记录保持一致，SQL 与段记录相符。\n{\"cut\": \"before\", \"checkpoint\": \"CUT before\", \"killed_pid\": 30460, \"commit_request_id\": 4, \"commit_response\": null, \"catalog_changed\": false, \"restarted_rows\": [[1], [2]], \"expected_rows\": [[1], [2]], \"pre_recovery\": {\"catalog_sha256\": \"2f1bd2978d869dd18c9b17cd108aa90c41d9575f2915c54952133d85070f5815\", \"segments\": [{\"name\": \"rows-54230b1fe80f4050a2c6bcd0e1051474.mvb\", \"rows\": [[1], [2]]}]}, \"post_recovery\": {\"catalog_sha256\": \"2f1bd2978d869dd18c9b17cd108aa90c41d9575f2915c54952133d85070f5815\", \"segments\": [{\"name\": \"rows-54230b1fe80f4050a2c6bcd0e1051474.mvb\", \"rows\": [[1], [2]]}]}, \"passed\": true}\n{\"cut\": \"after\", \"checkpoint\": \"CUT after\", \"killed_pid\": 32952, \"commit_request_id\": 4, \"commit_response\": null, \"catalog_changed\": true, \"restarted_rows\": [[2], [3]], \"expected_rows\": [[2], [3]], \"pre_recovery\": {\"catalog_sha256\": \"05b9bfad81b79ffbfcab3c14d5925f63d3085cc430ab7f8866c3320e491f8195\", \"segments\": [{\"name\": \"rows-08ac74a0396040fd819296b7eb28ff05.mvb\", \"rows\": [[2]]}, {\"name\": \"rows-58899e7a69234e298b66707a79e9f603.mvb\", \"rows\": [[3]]}]}, \"post_recovery\": {\"catalog_sha256\": \"05b9bfad81b79ffbfcab3c14d5925f63d3085cc430ab7f8866c3320e491f8195\", \"segments\": [{\"name\": \"rows-08ac74a0396040fd819296b7eb28ff05.mvb\", \"rows\": [[2]]}, {\"name\": \"rows-58899e7a69234e298b66707a79e9f603.mvb\", \"rows\": [[3]]}]}, \"passed\": true}\n{\"cut\": \"ack\", \"checkpoint\": \"client received COMMIT success\", \"killed_pid\": 27092, \"commit_request_id\": 4, \"commit_response\": {\"id\": 4, \"ok\": true, \"affected_rows\": 0}, \"catalog_changed\": true, \"restarted_rows\": [[2], [3]], \"expected_rows\": [[2], [3]], \"pre_recovery\": {\"catalog_sha256\": \"a3962d67f3d056efd9be62bffe1be9a76d86ede366a796f96a3a45b4a947bf4e\", \"segments\": [{\"name\": \"rows-0ba23b84068e45718531646b77335d76.mvb\", \"rows\": [[2]]}, {\"name\": \"rows-60de047a0cd34bd6b9362455a3da5dbf.mvb\", \"rows\": [[3]]}]}, \"post_recovery\": {\"catalog_sha256\": \"a3962d67f3d056efd9be62bffe1be9a76d86ede366a796f96a3a45b4a947bf4e\", \"segments\": [{\"name\": \"rows-0ba23b84068e45718531646b77335d76.mvb\", \"rows\": [[2]]}, {\"name\": \"rows-60de047a0cd34bd6b9362455a3da5dbf.mvb\", \"rows\": [[3]]}]}, \"passed\": true}"
     }
   ],
   "evidence_chains": [
@@ -445,17 +457,25 @@
     {
       "topic": "提交确认与崩溃恢复",
       "dimension": "实验与反馈迭代",
-      "context": "C 首次测试断言误拒合法 affected_rows 字段，修正测试后全过。学生解释、后续复测及场景迁移待补。仅验证进程强杀。",
+      "context": "C 初测脚本断言误拒合法 affected_rows，修正测试后通过。学生指出无响应无法区分 A/B，并提出在恢复前检查持久结构以排除恢复期重放的解释。按学生选择复测，读取清单、引用段和完整记录，再对照恢复后 SQL。双表和二次强杀迁移预测待补。仅验证进程强杀。",
       "student_evidence": [
         {
           "pointer": "/conversations/20/content",
           "quote": "A={1,2}，B={2,3}，C={2,3}；如果看到 A 里出现 3 或者 2 消失、B 里只出现 2 或只出现 3、C 里出现 1 或 2，我会修正 \"磁盘发布点 = catalog.json 原子替换、客户端确认点 = 收到 ok:true\" 这个模型。"
+        },
+        {
+          "pointer": "/conversations/21/content",
+          "quote": "集合是结果层，A/B 的分界在存储层。"
         }
       ],
       "result_evidence": [
         {
           "pointer": "/experiments/15/output",
           "quote": "A：清单未变，未收到提交响应，重启为 {1,2}。B：清单已变，未收到提交响应，重启为 {2,3}。C：已收到 ok:true，重启为 {2,3}。"
+        },
+        {
+          "pointer": "/experiments/16/output",
+          "quote": "恢复启动前，A 清单引用的段已经包含 {1,2}，B 和 C 清单引用的段已经包含 {2,3}。三组恢复后清单哈希及引用段记录保持一致，SQL 与段记录相符。"
         }
       ]
     }
