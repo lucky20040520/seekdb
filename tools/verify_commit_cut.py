@@ -10,6 +10,7 @@ import sys
 import tempfile
 import threading
 
+from minivector import flat_index
 from minivector.segments import Reader
 
 WORKER = r"""
@@ -33,6 +34,22 @@ def marked_replace(source, target):
         pause()
 
 os.replace = marked_replace
+if cut == 'rebuild':
+    from minivector import flat_index
+    fsync = os.fsync
+
+    def marked_fsync(fd):
+        pause()
+        fsync(fd)
+
+    build = flat_index.build
+    def marked_build(*args):
+        os.fsync = marked_fsync
+        try:
+            return build(*args)
+        finally:
+            os.fsync = fsync
+    flat_index.build = marked_build
 runpy.run_module('minivector', run_name='__main__')
 """
 
@@ -49,7 +66,7 @@ class Session:
             [sys.executable, "-u", "-c", WORKER, cut, "--data-dir", str(directory)],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             text=True, encoding="utf-8",
-            env=dict(os.environ, PYTHONIOENCODING="utf-8"),
+            env=dict(os.environ, PYTHONIOENCODING="utf-8", MINIVECTOR_NO_NUMPY="1"),
         )
         self.stdout, self.stderr = queue.Queue(), queue.Queue()
         self.threads = [
@@ -152,10 +169,77 @@ def trial(cut):
         assert result["passed"] and result["catalog_changed"] == (cut != "before")
 
 
+def migration():
+    with tempfile.TemporaryDirectory() as temp:
+        root = Path(temp)
+        with Session(root) as initial:
+            initial.request(1, "CREATE TABLE t(id BIGINT PRIMARY KEY,v VECTOR(2));")
+            initial.request(2, "INSERT INTO t VALUES (1,[1,0]),(2,[2,0]);")
+            initial.request(3, "CREATE VECTOR INDEX idx ON t(v);")
+            initial.request(4, "CREATE TABLE u(id BIGINT PRIMARY KEY);")
+            initial.request(5, "INSERT INTO u VALUES (7);")
+        with Session(root, "after") as writer:
+            statements = [
+                "BEGIN;", "DELETE FROM t WHERE id=1;",
+                "UPDATE t SET v=[0,0] WHERE id=2;",
+                "INSERT INTO t VALUES (3,[3,0]);",
+                "DELETE FROM u WHERE id=7;", "INSERT INTO u VALUES (8);",
+            ]
+            for ident, sql in enumerate(statements, 1):
+                writer.request(ident, sql)
+            writer.send(7, "COMMIT;")
+            assert writer.stderr.get(timeout=10) == "CUT after"
+            assert writer.stdout.empty()
+        catalog = root / "catalog.json"
+        published = catalog.read_bytes()
+        table = json.loads(published)["t"]
+        row_file, index_file = next(iter(table["indexes"]["idx"]["segments"].items()))
+        path = root / index_file
+        original_size = path.stat().st_size
+        with path.open("r+b") as stream:
+            stream.truncate(original_size - (flat_index.LOCATION.size + 8))
+        assert not flat_index.valid(root, row_file, index_file, table, "v")
+        before = set(root.glob("index-*.flat"))
+        recovery = Session(root, "rebuild")
+        try:
+            assert recovery.stderr.get(timeout=10) == "CUT rebuild"
+            assert recovery.stdout.empty()
+            rebuilt = set(root.glob("index-*.flat")) - before
+            assert len(rebuilt) == 1
+            assert catalog.read_bytes() == published
+        finally:
+            recovery.close()
+        assert catalog.read_bytes() == published
+        with Session(root) as final:
+            t = final.request(1, "SELECT * FROM t ORDER BY id;")["rows"]
+            u = final.request(2, "SELECT id FROM u ORDER BY id;")["rows"]
+            topk = final.request(
+                3, "SELECT id,L2_DISTANCE(v,[0,0]) AS d FROM t ORDER BY d LIMIT 2;"
+            )["rows"]
+        repaired = json.loads(catalog.read_bytes())["t"]
+        repaired_index = repaired["indexes"]["idx"]["segments"][row_file]
+        assert repaired_index != index_file
+        assert flat_index.valid(root, row_file, repaired_index, repaired, "v")
+        assert all(not path.exists() for path in rebuilt)
+        assert t == [[2, [0, 0]], [3, [3, 0]]] and u == [[8]]
+        assert topk == [[2, 0.0], [3, 3.0]]
+        print(json.dumps({
+            "commit_checkpoint": "CUT after", "commit_response": None,
+            "injected_index_fault": "truncate one whole Flat record",
+            "truncated_index_valid": False, "recovery_checkpoint": "CUT rebuild",
+            "ready_before_second_kill": False, "catalog_unchanged_after_second_kill": True,
+            "abandoned_index_removed": True, "repaired_index_valid": True,
+            "t": t, "u": u, "exact_disk_topk": topk, "passed": True,
+        }), flush=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("cut", choices=("before", "after", "ack", "all"))
+    parser.add_argument("cut", choices=("before", "after", "ack", "all", "migration"))
     args = parser.parse_args()
+    if args.cut == "migration":
+        migration()
+        return
     for cut in ("before", "after", "ack") if args.cut == "all" else (args.cut,):
         trial(cut)
 

@@ -136,6 +136,12 @@
       "role": "student",
       "source": "初测后用户原话",
       "content": "客户端只知道「没收到响应」时，区分不了 A 和 B，A 和 B 的区别不是「事务做没做」，而是「这次修改有没有落到被引用的那份持久结构上」—— 这个区别发生在服务端内部，客户端接口上根本没有对应的观测维度。下一次反例复测：先加「清单 — 段 — 记录三层一致」，而不是再重启 ，**集合是结果层，A/B 的分界在存储层。** 只看集合，会把「发布点其实在恢复期重放，只是结果碰巧正确」这种模型错误整个放过 —— 而这正是我现在这条模型最可能错的地方。你对我上一条的质疑是对的 。"
+    },
+    {
+      "id": "commit-cut-migration-prediction",
+      "role": "student",
+      "source": "迁移之前用户原话摘录",
+      "content": "第一次重启（清单已替换，无应答）\t{(2,[0,0]), (3,[3,0])}\t{8}\t[(2, 0.0), (3, 3.0)]\n第二次重启（恢复中被杀，未 ready）\t同上\t同上\t不应被服务；磁盘上可能留残缺索引\n第三次正常启动\t同上\t同上\t[(2, 0.0), (3, 3.0)]。\nTopK 条数 < SELECT 条数，且不报错\t违规且最隐蔽\t残缺索引被 valid() 误判为可用；flat_index.valid 只校验 size % width 和 keys 数量，写入恰好截在整记录边界上查不出来"
     }
   ],
   "experiments": [
@@ -240,6 +246,12 @@
       "status": "executed",
       "source": "python -m tools.verify_commit_cut all；恢复前通过段 Reader 读取，无数据库实例",
       "output": "恢复启动前，A 清单引用的段已经包含 {1,2}，B 和 C 清单引用的段已经包含 {2,3}。三组恢复后清单哈希及引用段记录保持一致，SQL 与段记录相符。\n{\"cut\": \"before\", \"checkpoint\": \"CUT before\", \"killed_pid\": 30460, \"commit_request_id\": 4, \"commit_response\": null, \"catalog_changed\": false, \"restarted_rows\": [[1], [2]], \"expected_rows\": [[1], [2]], \"pre_recovery\": {\"catalog_sha256\": \"2f1bd2978d869dd18c9b17cd108aa90c41d9575f2915c54952133d85070f5815\", \"segments\": [{\"name\": \"rows-54230b1fe80f4050a2c6bcd0e1051474.mvb\", \"rows\": [[1], [2]]}]}, \"post_recovery\": {\"catalog_sha256\": \"2f1bd2978d869dd18c9b17cd108aa90c41d9575f2915c54952133d85070f5815\", \"segments\": [{\"name\": \"rows-54230b1fe80f4050a2c6bcd0e1051474.mvb\", \"rows\": [[1], [2]]}]}, \"passed\": true}\n{\"cut\": \"after\", \"checkpoint\": \"CUT after\", \"killed_pid\": 32952, \"commit_request_id\": 4, \"commit_response\": null, \"catalog_changed\": true, \"restarted_rows\": [[2], [3]], \"expected_rows\": [[2], [3]], \"pre_recovery\": {\"catalog_sha256\": \"05b9bfad81b79ffbfcab3c14d5925f63d3085cc430ab7f8866c3320e491f8195\", \"segments\": [{\"name\": \"rows-08ac74a0396040fd819296b7eb28ff05.mvb\", \"rows\": [[2]]}, {\"name\": \"rows-58899e7a69234e298b66707a79e9f603.mvb\", \"rows\": [[3]]}]}, \"post_recovery\": {\"catalog_sha256\": \"05b9bfad81b79ffbfcab3c14d5925f63d3085cc430ab7f8866c3320e491f8195\", \"segments\": [{\"name\": \"rows-08ac74a0396040fd819296b7eb28ff05.mvb\", \"rows\": [[2]]}, {\"name\": \"rows-58899e7a69234e298b66707a79e9f603.mvb\", \"rows\": [[3]]}]}, \"passed\": true}\n{\"cut\": \"ack\", \"checkpoint\": \"client received COMMIT success\", \"killed_pid\": 27092, \"commit_request_id\": 4, \"commit_response\": {\"id\": 4, \"ok\": true, \"affected_rows\": 0}, \"catalog_changed\": true, \"restarted_rows\": [[2], [3]], \"expected_rows\": [[2], [3]], \"pre_recovery\": {\"catalog_sha256\": \"a3962d67f3d056efd9be62bffe1be9a76d86ede366a796f96a3a45b4a947bf4e\", \"segments\": [{\"name\": \"rows-0ba23b84068e45718531646b77335d76.mvb\", \"rows\": [[2]]}, {\"name\": \"rows-60de047a0cd34bd6b9362455a3da5dbf.mvb\", \"rows\": [[3]]}]}, \"post_recovery\": {\"catalog_sha256\": \"a3962d67f3d056efd9be62bffe1be9a76d86ede366a796f96a3a45b4a947bf4e\", \"segments\": [{\"name\": \"rows-0ba23b84068e45718531646b77335d76.mvb\", \"rows\": [[2]]}, {\"name\": \"rows-60de047a0cd34bd6b9362455a3da5dbf.mvb\", \"rows\": [[3]]}]}, \"passed\": true}"
+    },
+    {
+      "id": "commit-cut-migration-result",
+      "status": "executed",
+      "source": "python -m tools.verify_commit_cut migration；禁用向量缓存以实际使用磁盘 Flat",
+      "output": "截去一个完整索引记录后 valid() 返回 false。恢复重建 fsync 前被强杀且未输出 ready。最终 t 和 u 一致提交，磁盘 exact TopK 为 [(2,0.0),(3,3.0)]。\n{\"commit_checkpoint\": \"CUT after\", \"commit_response\": null, \"injected_index_fault\": \"truncate one whole Flat record\", \"truncated_index_valid\": false, \"recovery_checkpoint\": \"CUT rebuild\", \"ready_before_second_kill\": false, \"catalog_unchanged_after_second_kill\": true, \"abandoned_index_removed\": true, \"repaired_index_valid\": true, \"t\": [[2, [0.0, 0.0]], [3, [3.0, 0.0]]], \"u\": [[8]], \"exact_disk_topk\": [[2, 0.0], [3, 3.0]], \"passed\": true}"
     }
   ],
   "evidence_chains": [
@@ -457,7 +469,7 @@
     {
       "topic": "提交确认与崩溃恢复",
       "dimension": "实验与反馈迭代",
-      "context": "C 初测脚本断言误拒合法 affected_rows，修正测试后通过。学生指出无响应无法区分 A/B，并提出在恢复前检查持久结构以排除恢复期重放的解释。按学生选择复测，读取清单、引用段和完整记录，再对照恢复后 SQL。双表和二次强杀迁移预测待补。仅验证进程强杀。",
+      "context": "C 初测脚本断言误拒合法 affected_rows，修正测试后通过。学生指出无响应无法区分 A/B，并提出在恢复前检查持久结构以排除恢复期重放的解释。按学生选择复测，读取清单、引用段和完整记录，再对照恢复后 SQL。学生迁移前预测双表及 TopK 结果，并质疑整记录截断是否会被发现。故障注入验证二进制段计数检查能检测本例，重建被二次强杀后再次恢复通过。学生对迁移结果的解释待补。仅验证进程强杀。",
       "student_evidence": [
         {
           "pointer": "/conversations/20/content",
@@ -466,6 +478,10 @@
         {
           "pointer": "/conversations/21/content",
           "quote": "集合是结果层，A/B 的分界在存储层。"
+        },
+        {
+          "pointer": "/conversations/22/content",
+          "quote": "第三次正常启动\t同上\t同上\t[(2, 0.0), (3, 3.0)]。"
         }
       ],
       "result_evidence": [
@@ -476,6 +492,10 @@
         {
           "pointer": "/experiments/16/output",
           "quote": "恢复启动前，A 清单引用的段已经包含 {1,2}，B 和 C 清单引用的段已经包含 {2,3}。三组恢复后清单哈希及引用段记录保持一致，SQL 与段记录相符。"
+        },
+        {
+          "pointer": "/experiments/17/output",
+          "quote": "截去一个完整索引记录后 valid() 返回 false。恢复重建 fsync 前被强杀且未输出 ready。最终 t 和 u 一致提交，磁盘 exact TopK 为 [(2,0.0),(3,3.0)]。"
         }
       ]
     }
