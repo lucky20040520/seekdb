@@ -1,0 +1,43 @@
+name: Exact TopK block comparison
+on:
+  push:
+    branches: [codex/minivectordb-exact-profile]
+    paths: [.github/workflows/exact-block-comparison.yml]
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build identical sources except for block size
+        run: |
+          set -euo pipefail
+          base=8ec857e60bd63f345c9341038ffd37018a5f163e
+          git fetch --depth=1 origin "$base"
+          root=$(mktemp -d)
+          mkdir "$root/base" "$root/small" results
+          git archive "$base" Dockerfile requirements.txt minivector | tar -x -C "$root/base"
+          cp -R "$root/base/." "$root/small/"
+          sed -i 's/512/256/g' "$root/small/minivector/vector.py"
+          diff -u "$root/base/minivector/vector.py" "$root/small/minivector/vector.py" > results/block.diff || test "$?" = 1
+          grep -q '^+.*256' results/block.diff
+          for v in base small; do
+            docker build --platform linux/amd64 -t "block-$v" "$root/$v"
+          done
+          docker image inspect block-base block-small --format '{{.Id}} {{json .Config.Entrypoint}}' | tee results/images.txt
+      - name: Check the published protocol and fixtures
+        run: |
+          for v in base small; do
+            python3 protocol_check/run.py --image "block-$v" --output "results/public-$v"
+          done
+      - name: Alternate three independently verified rounds
+        run: |
+          python3 -m performance_checker.paired --images base=block-base small=block-small \
+            --oracle-cache /tmp/exact-block-oracle --output results/paired --allow-missing-resources
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: exact-block-comparison
+          path: results/
