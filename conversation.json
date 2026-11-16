@@ -154,6 +154,12 @@
       "role": "student",
       "source": "执行前用户原话",
       "content": "步骤\t结果\t行数\t依据\nINSERT 1\t失败，ok:false + 非空 code\t2\t唯一性真值必须是可见行数据，不是 .keys 侧车。侧车被刻意删掉，正是为了逼出这一点\nINSERT 2\t失败\t2\t同上，2 在二进制段里可见\nINSERT (3),(3) 同批\t失败，0 行落盘\t2\t整句原子：批内自重复必须在写入前整句判定，一条都不能落\nINSERT 3 单独\t成功\t3\t3 在任一段都不存在。"
+    },
+    {
+      "id": "mixed-keys-student-control",
+      "role": "student",
+      "source": "初测后用户原话摘录",
+      "content": "还需补一个测试：插 (1),(1)。 记录里有两个 1，数据里也有 1，两边都该报重。\n- 如果读 0 行 → 说明先查记录自身，我的解释对。\n- 如果读 1 行 → 说明先去翻数据，我的解释错，需要修改。\n同时加插 (1),(3)，作为对照。 记录内不重复，只有数据里有 1，这个一定读 1 行。有它作对照，才能证明 “读 0 行” 是特殊情况，不是 “所有失败都不读数据”。"
     }
   ],
   "experiments": [
@@ -270,6 +276,12 @@
       "status": "executed",
       "source": "python -m tools.verify_mixed_keys；核心 API 错误映射和 Reader.keys 跟踪",
       "output": "键 1 经旧 JSONL 读取后拒绝；键 2 经旧段后由二进制段尾找到并拒绝；批内重复不读旧键。三次失败的清单和文件列表未变，成功后主键为 [1,2,3]。\n{\"values\": \"(1)\", \"response\": {\"ok\": false, \"error\": {\"code\": \"DUPLICATE\", \"message\": \"duplicate primary key\"}}, \"ids\": [1, 2], \"catalog_and_file_list_unchanged\": true, \"key_reads\": [{\"key\": 1, \"path\": \"legacy_jsonl\"}]}\n{\"values\": \"(2)\", \"response\": {\"ok\": false, \"error\": {\"code\": \"DUPLICATE\", \"message\": \"duplicate primary key\"}}, \"ids\": [1, 2], \"catalog_and_file_list_unchanged\": true, \"key_reads\": [{\"key\": 1, \"path\": \"legacy_jsonl\"}, {\"key\": 2, \"path\": \"binary_footer\"}]}\n{\"values\": \"(3),(3)\", \"response\": {\"ok\": false, \"error\": {\"code\": \"DUPLICATE\", \"message\": \"duplicate primary key\"}}, \"ids\": [1, 2], \"catalog_and_file_list_unchanged\": true, \"key_reads\": []}\n{\"values\": \"(3)\", \"response\": {\"ok\": true, \"affected_rows\": 1}, \"ids\": [1, 2, 3], \"catalog_and_file_list_unchanged\": false, \"key_reads\": [{\"key\": 1, \"path\": \"legacy_jsonl\"}, {\"key\": 2, \"path\": \"binary_footer\"}]}"
+    },
+    {
+      "id": "mixed-keys-order-retest",
+      "status": "executed",
+      "source": "本地混合段核心 API 受控对照",
+      "output": "同一初始快照：(1),(1) 返回 DUPLICATE，Reader.keys 轨迹为空；(1),(3) 返回 DUPLICATE，轨迹只读出旧段键 1。两次照常读取到 [1,2]，清单和文件列表未变。\n[{\"values\": \"(1),(1)\", \"response\": {\"ok\": false, \"error\": {\"code\": \"DUPLICATE\", \"message\": \"duplicate primary key\"}}, \"ids\": [1, 2], \"catalog_and_file_list_unchanged\": true, \"key_reads\": []}, {\"values\": \"(1),(3)\", \"response\": {\"ok\": false, \"error\": {\"code\": \"DUPLICATE\", \"message\": \"duplicate primary key\"}}, \"ids\": [1, 2], \"catalog_and_file_list_unchanged\": true, \"key_reads\": [{\"key\": 1, \"path\": \"legacy_jsonl\"}]}]"
     }
   ],
   "evidence_chains": [
@@ -524,17 +536,25 @@
     {
       "topic": "旧格式兼容与跨段主键判重",
       "dimension": "技术理解与迁移",
-      "context": "初测核对可见键集合、错误码和旧段及段尾的实际读键轨迹。批内重复作为对照，失败语句事务可见性另有独立实验。学生解释、复测及迁移待补。",
+      "context": "初测核对可见键集合、错误码和旧段及段尾的实际读键轨迹。批内重复作为对照，失败语句事务可见性另有独立实验。学生提出同时与批内和存量冲突的对照，并用仅与存量冲突的语句排除所有失败均不读键的解释。复测支持先完成批内检查，再扫描存量键。删除后重插迁移预测待补。",
       "student_evidence": [
         {
           "pointer": "/conversations/24/content",
           "quote": "整句原子：批内自重复必须在写入前整句判定，一条都不能落"
+        },
+        {
+          "pointer": "/conversations/25/content",
+          "quote": "有它作对照，才能证明 “读 0 行” 是特殊情况，不是 “所有失败都不读数据”。"
         }
       ],
       "result_evidence": [
         {
           "pointer": "/experiments/18/output",
           "quote": "键 1 经旧 JSONL 读取后拒绝；键 2 经旧段后由二进制段尾找到并拒绝；批内重复不读旧键。三次失败的清单和文件列表未变，成功后主键为 [1,2,3]。"
+        },
+        {
+          "pointer": "/experiments/19/output",
+          "quote": "同一初始快照：(1),(1) 返回 DUPLICATE，Reader.keys 轨迹为空；(1),(3) 返回 DUPLICATE，轨迹只读出旧段键 1。两次照常读取到 [1,2]，清单和文件列表未变。"
         }
       ]
     }
