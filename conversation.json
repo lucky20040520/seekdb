@@ -213,6 +213,12 @@
       "role": "student",
       "source": "带索引宽表迁移完成后用户完整原话",
       "content": "数据库建了索引之后，仍要读整张表，是因为索引里只存了主键和向量，没存 tag。要判断哪一行满足 tag=3，只能回头读原来的行，一行一行解析，一万行都得过一遍。索引帮的是算距离，不是帮过滤。\n如果改进，我会把 tag 这种又短又常用作过滤条件的字段单独存一份，或直接放进索引那条记录里；这样过滤时就不用读两千多字的长字符串了。代价是索引变宽、重建变慢、每次更新还要同步修改，事务成本会上去；而把长字符串也塞进去就不划算，它正是撑爆预算的东西。所以取舍的关键是：多存一字节能省下多少次解析。\n这个例子不能推广成“不用缓存就不容易出错”。它只说明没有副本就没有副本过期的问题，回滚正确是因为数据路径本身对，不是因为没有缓存；有缓存只要失效逻辑对也一样对。而且这次只有一个表、一个客户端、正常回滚，崩溃时序和别的缓存都没测。准确说：少一份副本少一个可能对不上的地方，代价是更慢。"
+    },
+    {
+      "id": "lazy-output-prediction",
+      "role": "student",
+      "source": "执行前用户原话摘录",
+      "content": "我猜第一种查询在 stdout 上不会出现任何内容，只会出现一行报错；第二种也应当一样：那 256 KiB 只是它先在磁盘上暂存，暂存的内容不应该出现在输出里。下一条合法查询应当照常成功，因为一次请求本来就应当只对应一行回复。\n这里最容易漏判的是“半条”的两种形式：一种是断掉的一行，它会把下一条回复吞进去、连在一起变成一行乱码；另一种更隐蔽，就是写出了一行看起来成功、其实只包含一半行的内容，紧接着又跟一行报错；这时一次请求出现了两行，下一条查询还照样成功，光看“下一条是否成功”根本发现不了问题。"
     }
   ],
   "experiments": [
@@ -395,6 +401,12 @@
       "source": "本轮实际执行，Python a2bdfa9 引擎",
       "status": "executed",
       "output": "python -m unittest discover -s tests -q：Ran 81 tests in 12.798s，OK。python -m tools.run_public：20/20 cases，95 SQL。公开样例经本地核心API回放，本轮未执行平台正式用例。"
+    },
+    {
+      "id": "lazy-output-initial",
+      "status": "executed",
+      "source": "python -m tools.verify_lazy_response --run；调用真实serve和emit_query，StringIO代替标准流，测试注入惰性DBError",
+      "output": "小结果及300000字符宽行两组通过。stdout均为ready、bad错误、good成功、bye成功共4行，逐行可解析且最后有换行。宽行观测到rollover且文件句柄打开，错误不含生成的行数据。关闭后数据目录无临时文件。\n{\"wide\": false, \"events\": [\"row_yielded\", \"closed\", \"closed\"], \"stdout\": [\"{\\\"type\\\":\\\"ready\\\"}\", \"{\\\"id\\\":\\\"bad\\\",\\\"ok\\\":false,\\\"error\\\":{\\\"code\\\":\\\"TEST_LAZY\\\",\\\"message\\\":\\\"injected after first row\\\"}}\", \"{\\\"id\\\":\\\"good\\\",\\\"ok\\\":true,\\\"columns\\\":[\\\"value\\\"],\\\"rows\\\":[[7]]}\", \"{\\\"id\\\":\\\"bye\\\",\\\"ok\\\":true}\"], \"data_temporary_files_after_close\": 0, \"passed\": true}\n{\"wide\": true, \"events\": [{\"event\": \"rollover\", \"rolled\": true, \"fd_open\": true}, \"row_yielded\", \"closed\", \"closed\"], \"stdout\": [\"{\\\"type\\\":\\\"ready\\\"}\", \"{\\\"id\\\":\\\"bad\\\",\\\"ok\\\":false,\\\"error\\\":{\\\"code\\\":\\\"TEST_LAZY\\\",\\\"message\\\":\\\"injected after first row\\\"}}\", \"{\\\"id\\\":\\\"good\\\",\\\"ok\\\":true,\\\"columns\\\":[\\\"value\\\"],\\\"rows\\\":[[7]]}\", \"{\\\"id\\\":\\\"bye\\\",\\\"ok\\\":true}\"], \"data_temporary_files_after_close\": 0, \"passed\": true}"
     }
   ],
   "evidence_chains": [
@@ -758,6 +770,23 @@
         {
           "pointer": "/experiments/28/output",
           "quote": "已建索引宽表：四阶段都拒绝缓存。每查解码10000行作过滤，计算1000个候选距离，最终取10行，共10010次Reader.at。更新键3为零向量排第一，立即回滚和重开均恢复原TopK，全数核对独立真值。"
+        }
+      ]
+    },
+    {
+      "topic": "惰性查询失败与响应原子性",
+      "dimension": "独立验证与质疑",
+      "context": "学生区分断行污染和完整但不完整结果的成功响应泄漏，要求核对行数、JSON及ID。初测用真实协议适配器，内存标准流而非操作系统管道；ready独立于请求响应计数。临时文件可能无命名路径，已观测rollover及打开句柄。复测和迁移待补。",
+      "student_evidence": [
+        {
+          "pointer": "/conversations/35/content",
+          "quote": "这时一次请求出现了两行，下一条查询还照样成功，光看“下一条是否成功”根本发现不了问题。"
+        }
+      ],
+      "result_evidence": [
+        {
+          "pointer": "/experiments/30/output",
+          "quote": "小结果及300000字符宽行两组通过。stdout均为ready、bad错误、good成功、bye成功共4行，逐行可解析且最后有换行。宽行观测到rollover且文件句柄打开，错误不含生成的行数据。关闭后数据目录无临时文件。"
         }
       ]
     }
