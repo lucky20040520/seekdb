@@ -225,6 +225,12 @@
       "role": "student",
       "source": "初测后真实回复摘录",
       "content": "第一行必须是 ready，而且只出现一次；它只是开场通知，不算对某条请求的回复。从第二行起，每行对应一条请求。\n下一项我选“同一进程连续两次失败后再成功”，因为单次失败看起来干净说明不了什么，可能只是还没轮到暴露；真正容易暴露残留的是第二次。第一次的缓冲区、临时文件偏移和计数如果没有复位，第二次才会露出来。\n第一次只生成一行就失败，第二次生成很多行，并跨过 256 KiB rollover 之后才失败。"
+    },
+    {
+      "id": "lazy-pipe-prediction",
+      "role": "student",
+      "source": "真实管道迁移前用户原话摘录",
+      "content": "我猜仍然是 5 行，进程也能正常退出，因为这五行加起来才几百字节，管道再小也装得下，怎么写都不会卡住。不过我得提醒自己：这次能通过是因为输出较小，并不能说明“先写完再读”这个做法安全——只要有一条成功响应大到超过管道的那点缓冲，子进程就会卡在写这一步，父进程还在等自己写完，两边互等，直接死锁。\n为了证明“这次通过是因为运气”，我可以在同一套“先写后读”做法下故意放一条超大的成功响应作对照；如果这条导致阻塞，就说明前面通过是因为数据太小。"
     }
   ],
   "experiments": [
@@ -418,7 +424,13 @@
       "id": "lazy-repeat-result",
       "status": "executed",
       "source": "python -m tools.verify_lazy_response --run --repeat；内存标准流",
-      "output": "组合复测5行：ready、bad1错误、bad2错误、good成功、bye成功。四请求顺序正确，无空行，最终换行。三个暂存文件初始偏移均0，仅第二个溢写，两次失败共生成1行及100行，数据均未泄漏，全部文件关闭无残留。\n{\"test\": \"repeated_failures\", \"stdout\": [\"{\\\"type\\\":\\\"ready\\\"}\", \"{\\\"id\\\":\\\"bad1\\\",\\\"ok\\\":false,\\\"error\\\":{\\\"code\\\":\\\"TEST_1\\\",\\\"message\\\":\\\"injected 1\\\"}}\", \"{\\\"id\\\":\\\"bad2\\\",\\\"ok\\\":false,\\\"error\\\":{\\\"code\\\":\\\"TEST_2\\\",\\\"message\\\":\\\"injected 2\\\"}}\", \"{\\\"id\\\":\\\"good\\\",\\\"ok\\\":true,\\\"columns\\\":[\\\"value\\\"],\\\"rows\\\":[[7]]}\", \"{\\\"id\\\":\\\"bye\\\",\\\"ok\\\":true}\"], \"events\": [{\"file\": 0, \"initial_offset\": 0}, {\"failure\": 1, \"generated_rows\": 1}, {\"file\": 1, \"initial_offset\": 0}, {\"file\": 1, \"rollover\": true}, {\"failure\": 2, \"generated_rows\": 100}, {\"file\": 2, \"initial_offset\": 0}], \"all_spools_closed\": true, \"temporary_files_remaining\": 0, \"passed\": true}"
+      "output": "组合复测5行：ready、bad1错误、bad2错误、good成功、bye成功。四请求顺序正确，无空行，最终换行。三个暂存文件初始偏移均0，仅第二个溢写，两次失败共生成1行及100行，数据均未泄漏，全部文件关闭无残留。\n{\"test\":\"repeated_failures\",\"stdout\":[\"{\\\"type\\\":\\\"ready\\\"}\",\"{\\\"id\\\":\\\"bad1\\\",\\\"ok\\\":false,\\\"error\\\":{\\\"code\\\":\\\"TEST_1\\\",\\\"message\\\":\\\"injected 1\\\"}}\",\"{\\\"id\\\":\\\"bad2\\\",\\\"ok\\\":false,\\\"error\\\":{\\\"code\\\":\\\"TEST_2\\\",\\\"message\\\":\\\"injected 2\\\"}}\",\"{\\\"id\\\":\\\"good\\\",\\\"ok\\\":true,\\\"columns\\\":[\\\"value\\\"],\\\"rows\\\":[[7]]}\",\"{\\\"id\\\":\\\"bye\\\",\\\"ok\\\":true}\"],\"events\":[{\"file\":0,\"initial_offset\":0},{\"failure\":1,\"generated_rows\":1},{\"file\":1,\"initial_offset\":0},{\"file\":1,\"rollover\":true},{\"failure\":2,\"generated_rows\":100},{\"file\":2,\"initial_offset\":0}],\"all_spools_closed\":true,\"temporary_files_remaining\":0,\"passed\":true}"
+    },
+    {
+      "id": "lazy-pipe-result",
+      "status": "executed",
+      "source": "python -m tools.verify_lazy_pipe；Windows本地真实标准输入输出管道；超时/等待不代表系统调用栈证明",
+      "output": "真实子进程管道迁移：小响应241字节，未读输出已退出。大响应1000244字节，四条短请求都先写完，1秒未退出；开始读取后返回5行且退出码0。两组请求顺序正确，结果完整，无临时文件。未观察到不可恢复的双向死锁。\n{\"large\": false, \"input_requests_written_before_read\": 4, \"exited_before_read_after_1s\": true, \"stdout_bytes\": 241, \"lines\": 5, \"ids\": [\"bad1\", \"bad2\", \"good\", \"bye\"], \"exit_after_read\": 0, \"temporary_files\": 0, \"passed\": true}\n{\"large\": true, \"input_requests_written_before_read\": 4, \"exited_before_read_after_1s\": false, \"stdout_bytes\": 1000244, \"lines\": 5, \"ids\": [\"bad1\", \"bad2\", \"good\", \"bye\"], \"exit_after_read\": 0, \"temporary_files\": 0, \"passed\": true}"
     }
   ],
   "evidence_chains": [
@@ -788,7 +800,7 @@
     {
       "topic": "惰性查询失败与响应原子性",
       "dimension": "独立验证与质疑",
-      "context": "学生区分断行污染和完整但不完整结果的成功响应泄漏，要求核对行数、JSON及ID。初测用真实协议适配器，内存标准流而非操作系统管道；ready独立于请求响应计数。临时文件可能无命名路径，已观测rollover及打开句柄。复测和迁移待补。 学生选择连续两次不同位置的失败，观察状态清理和多行溢写。实测5行而非4行，因为现在有四个请求及ready。真实管道迁移预测待补。",
+      "context": "学生区分断行污染和完整但不完整结果的成功响应泄漏，要求核对行数、JSON及ID。初测用真实协议适配器，内存标准流而非操作系统管道；ready独立于请求响应计数。临时文件可能无命名路径，已观测rollover及打开句柄。复测和迁移待补。 学生选择连续两次不同位置的失败，观察状态清理和多行溢写。实测5行而非4行，因为现在有四个请求及ready。真实管道迁移预测待补。 学生迁移前提出大成功响应对照以检查管道背压。实测短输入已写完，大输出延迟读取时未退出，读取后完成。1秒未退出与背压解释一致，未采集线程栈以证明阻塞调用点；用户对迁移结果的解释待补。脚本初版换行转义语法错误，修复后实际运行通过。",
       "student_evidence": [
         {
           "pointer": "/conversations/35/content",
@@ -797,6 +809,10 @@
         {
           "pointer": "/conversations/36/content",
           "quote": "第一次的缓冲区、临时文件偏移和计数如果没有复位，第二次才会露出来。"
+        },
+        {
+          "pointer": "/conversations/37/content",
+          "quote": "为了证明“这次通过是因为运气”，我可以在同一套“先写后读”做法下故意放一条超大的成功响应作对照；如果这条导致阻塞，就说明前面通过是因为数据太小。"
         }
       ],
       "result_evidence": [
@@ -807,6 +823,10 @@
         {
           "pointer": "/experiments/31/output",
           "quote": "组合复测5行：ready、bad1错误、bad2错误、good成功、bye成功。四请求顺序正确，无空行，最终换行。三个暂存文件初始偏移均0，仅第二个溢写，两次失败共生成1行及100行，数据均未泄漏，全部文件关闭无残留。"
+        },
+        {
+          "pointer": "/experiments/32/output",
+          "quote": "真实子进程管道迁移：小响应241字节，未读输出已退出。大响应1000244字节，四条短请求都先写完，1秒未退出；开始读取后返回5行且退出码0。两组请求顺序正确，结果完整，无临时文件。未观察到不可恢复的双向死锁。"
         }
       ]
     }
