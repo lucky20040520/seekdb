@@ -195,6 +195,12 @@
       "role": "student",
       "source": "迁移结果后的用户原话摘录",
       "content": "现在不重启就返回 1.0，说明缓存要么跟着回滚一起失效了，要么这条路根本没走缓存——不管哪种，都不存在“必须等重启才对齐”的副本。这个担心可以撤回。\n所以要补一个“缓存确实被用过”的证据——先做几次热查询让缓存真正装进数据，看命中计数，再回滚查一次。\n结论只能限定在这条路上：别的缓存是另一个东西，比如等值过滤用的那个候选缓存，它按条件做键，回滚后会不会残留没测过；数据量到几千上万行缓存才真正启用，那时的行为也算未知；这次是正常回滚，如果换成“回滚做到一半被强杀”，重启后还得再验一遍。"
+    },
+    {
+      "id": "wide-cache-student-prediction",
+      "role": "student",
+      "source": "本实验执行前用户原话摘录",
+      "content": "我猜如果缓存是按整行大小算的，窄行能进、宽行进不去——宽行光字符串就差不多 19.5 MiB，加上向量 4.88 一共 24 MiB 左右，超过 16 MiB 预算；窄行才 5 MiB 出头，放得下。\n要是宽行确实更慢，我拿两组对照把它拆开：宽行不动，只把预算提到 64 MiB，如果追上窄行的速度，就说明慢在每次都重读向量；没追上，剩下的就是解析那两千多个字的成本。\n结论我只写在这一个配置上：一万行、128 维、16 MiB、这一个过滤条件。数据量换了、预算换了、过滤列换了，都算没测。"
     }
   ],
   "experiments": [
@@ -359,6 +365,12 @@
       "status": "executed",
       "source": "python -m tools.verify_vector_failure --observe-cache；同引擎核心 API 的测试包装器，不修改生产实现",
       "output": "测试专用包装器观测：事务内三次 TopK 都实际调用 VectorCache.topk，首次构建后命中两次。回滚后缓存条目为零，随后重建并实际走缓存 TopK，立即结果为 [(1,1.0)]。\n{\"test\":\"observed_cache\",\"before_rollback\":[{\"kind\":\"lookup\",\"hit\":false,\"available\":true},{\"kind\":\"topk\"},{\"kind\":\"lookup\",\"hit\":true,\"available\":true},{\"kind\":\"topk\"},{\"kind\":\"lookup\",\"hit\":true,\"available\":true},{\"kind\":\"topk\"}],\"cache_entries_after_rollback\":0,\"after_rollback_events\":[{\"kind\":\"lookup\",\"hit\":false,\"available\":true},{\"kind\":\"topk\"}],\"immediate_result\":[[1,1.0]],\"passed\":true}"
+    },
+    {
+      "id": "wide-cache-initial-controls",
+      "status": "executed",
+      "source": "tools.verify_wide_cache；诊断观测，单次冷热查询，不是正式性能统计；设备I/O与内存峰值未测",
+      "output": "窄行16字节缓存可用约7.69MB，宽行2048字节在16MiB预算下拒绝。宽行预算改64MiB后缓存约28.02MB，第二查解码从10000行变为0行。去掉tag整数过滤后，16MiB组第二查由约242ms变483ms；所有结果与独立真值一致。\n[{\"width\":16,\"rows\":10000,\"dimension\":128,\"cache_budget\":16777216,\"cache_observations\":[{\"available\":true,\"bytes\":7686804},{\"available\":true,\"bytes\":7695406}],\"first_rows_decoded\":10000,\"second_rows_decoded\":0,\"first_seconds\":0.41782549999999996,\"second_seconds\":0.0014412000000001424,\"verified\":true},{\"width\":2048,\"rows\":10000,\"dimension\":128,\"cache_budget\":16777216,\"cache_observations\":[{\"available\":false,\"bytes\":0},{\"available\":false,\"bytes\":0}],\"first_rows_decoded\":10000,\"second_rows_decoded\":10000,\"first_seconds\":0.2420845000000007,\"second_seconds\":0.2371888000000002,\"verified\":true},{\"width\":2048,\"rows\":10000,\"dimension\":128,\"cache_budget\":16777216,\"filtered\":true,\"cache_observations\":[{\"available\":false,\"bytes\":0},{\"available\":false,\"bytes\":0}],\"first_rows_decoded\":10000,\"second_rows_decoded\":10000,\"first_seconds\":0.2420116000000001,\"second_seconds\":0.24155440000000006,\"verified\":true},{\"width\":2048,\"rows\":10000,\"dimension\":128,\"cache_budget\":67108864,\"filtered\":true,\"cache_observations\":[{\"available\":true,\"bytes\":28006804},{\"available\":true,\"bytes\":28015406}],\"first_rows_decoded\":10000,\"second_rows_decoded\":0,\"first_seconds\":0.43014750000000035,\"second_seconds\":0.0013380999999998977,\"verified\":true},{\"width\":2048,\"rows\":10000,\"dimension\":128,\"cache_budget\":16777216,\"filtered\":false,\"cache_observations\":[{\"available\":false,\"bytes\":0},{\"available\":false,\"bytes\":0}],\"first_rows_decoded\":10000,\"second_rows_decoded\":10000,\"first_seconds\":0.49958049999999865,\"second_seconds\":0.4828967000000013,\"verified\":true},{\"width\":2048,\"rows\":10000,\"dimension\":128,\"cache_budget\":67108864,\"filtered\":false,\"cache_observations\":[{\"available\":true,\"bytes\":28006804},{\"available\":true,\"bytes\":28006804}],\"first_rows_decoded\":10000,\"second_rows_decoded\":0,\"first_seconds\":0.27820529999999977,\"second_seconds\":0.001565600000001055,\"verified\":true}]"
     }
   ],
   "evidence_chains": [
@@ -693,6 +705,23 @@
         {
           "pointer": "/experiments/26/output",
           "quote": "测试专用包装器观测：事务内三次 TopK 都实际调用 VectorCache.topk，首次构建后命中两次。回滚后缓存条目为零，随后重建并实际走缓存 TopK，立即结果为 [(1,1.0)]。"
+        }
+      ]
+    },
+    {
+      "topic": "宽行缓存准入与磁盘回退",
+      "dimension": "问题理解与自主拆解",
+      "context": "学生按标量与向量体积预测预算边界，并指定宽行64MiB及移除过滤的对照。实际首次构建和第二次复用分开记录。无过滤需计算更多行的距离，不能只归因于长字符串。学生实测后解释和带索引迁移待补。",
+      "student_evidence": [
+        {
+          "pointer": "/conversations/32/content",
+          "quote": "结论我只写在这一个配置上：一万行、128 维、16 MiB、这一个过滤条件。数据量换了、预算换了、过滤列换了，都算没测。"
+        }
+      ],
+      "result_evidence": [
+        {
+          "pointer": "/experiments/27/output",
+          "quote": "窄行16字节缓存可用约7.69MB，宽行2048字节在16MiB预算下拒绝。宽行预算改64MiB后缓存约28.02MB，第二查解码从10000行变为0行。去掉tag整数过滤后，16MiB组第二查由约242ms变483ms；所有结果与独立真值一致。"
         }
       ]
     }
