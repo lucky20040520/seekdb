@@ -15,19 +15,23 @@ from minivector.sql import execute
 SELECT_KEYS = "SELECT id FROM t ORDER BY id;"
 
 
-def jsonl_session(root, statements, *, ensure_ascii=True):
+def jsonl_session(root, statements, *, ensure_ascii=True, wire_trace=None):
     """Use the production entry in a fresh process, with no fault hooks."""
     requests = [{"id": name, "op": "execute", "sql": sql} for name, sql in statements]
     requests.append({"id": "bye", "op": "shutdown"})
+    lines = [json.dumps(item, ensure_ascii=ensure_ascii).encode("utf-8") for item in requests]
     result = subprocess.run(
         [sys.executable, "-m", "minivector", "--data-dir", root],
-        input="".join(json.dumps(item, ensure_ascii=ensure_ascii) + "\n" for item in requests),
-        capture_output=True, encoding="utf-8", timeout=30, check=True,
+        input=b"\n".join(lines) + b"\n", capture_output=True, timeout=30, check=True,
     )
-    messages = [json.loads(line) for line in result.stdout.splitlines()]
+    response_lines = result.stdout.splitlines()
+    messages = [json.loads(line) for line in response_lines]
     assert messages[0] == {"type": "ready"}, messages
     assert [item["id"] for item in messages[1:]] == [item["id"] for item in requests], messages
     assert messages[-1]["ok"] is True, messages[-1]
+    if wire_trace is not None:
+        for request, sent, received in zip(requests, lines, response_lines[1:]):
+            wire_trace[request["id"]] = (sent, received)
     return {item["id"]: item for item in messages[1:-1]}
 
 
