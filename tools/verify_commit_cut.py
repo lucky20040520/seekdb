@@ -61,12 +61,12 @@ def pump(stream, events):
 
 
 class Session:
-    def __init__(self, directory, cut="none"):
+    def __init__(self, directory, cut="none", numpy_enabled=False):
         self.process = subprocess.Popen(
             [sys.executable, "-u", "-c", WORKER, cut, "--data-dir", str(directory)],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             text=True, encoding="utf-8",
-            env=dict(os.environ, PYTHONIOENCODING="utf-8", MINIVECTOR_NO_NUMPY="1"),
+            env=dict(os.environ, PYTHONIOENCODING="utf-8", MINIVECTOR_NO_NUMPY="0" if numpy_enabled else "1"),
         )
         self.stdout, self.stderr = queue.Queue(), queue.Queue()
         self.threads = [

@@ -183,6 +183,12 @@
       "role": "student",
       "source": "本次对照执行前用户完整原话",
       "content": "我猜插 (3,'after') 应该能成功，因为刚才报错的只是那一条插入语句，不是整个事务，前面改 1 都还成功着，事务本身没被弄坏。提交后重新打开，能看到 (1,'edited') 和 (3,'after') 两条；回滚后重新打开，就只剩 (1,'old') 一条，2 和 3 都没有。\n光看提交成功其实说明不了什么，那只证明最后能正常收尾，证明不了报错之后还能不能接着写东西。插了 3 就不一样了：如果回滚之后 3 还留着，说明没撤干净；如果留下了 2、反而没有 3，那就是撤错了，把该留的撤掉、该撤的留下了，这种错不插 3 根本看不出来。而且后面又写过一次，如果 2 是\"晚一点才冒出来\"的，这一步也能发现。"
+    },
+    {
+      "id": "statement-vector-prediction",
+      "role": "student",
+      "source": "向量迁移执行前学生原话摘录",
+      "content": "我猜批量插入失败以后，只能看到 (1,[0,0]) 这一条，连那条合法的 (2,[2,0]) 也不会进去，因为整句是一起失败的。接着插入 4 成功之后，事务里能看到 (1,[0,0]) 和 (4,[4,0]) 两条，按到 [0,0] 的距离排，1 的距离是 0、4 的距离是 4；提交后重开也是这两条。但回滚后重开就只剩 (1,[1,0])，距离应该是 1.0。如果这时候还算出 0.0，就说明索引里存的还是改过的那个值，没跟回滚一起退回去。\n我自己还有点不确定：回滚以后如果没有重启就直接查，内存里那份缓存的向量会不会还是改过的那个？这一条我想再单独测一次。"
     }
   ],
   "experiments": [
@@ -335,6 +341,12 @@
       "status": "executed",
       "source": "a2bdfa9 引擎；python -m tools.verify_statement_failure；JSONL 和新进程重开",
       "output": "两组失败批量 INSERT 返回 DUPLICATE，失败后事务内只有 edited。继续插入键 3 成功，事务内为 edited 和 after。COMMIT 后新进程重开仍是这两行，ROLLBACK 后新进程重开只有 old，键 2 始终没有出现。\n{\"outcome\": \"COMMIT\", \"failed_statement\": {\"id\": 5, \"ok\": false, \"error\": {\"code\": \"DUPLICATE\", \"message\": \"duplicate primary key\"}}, \"inside\": [[1, \"edited\"]], \"followup\": {\"id\": 7, \"ok\": true, \"affected_rows\": 1}, \"after_followup\": [[1, \"edited\"], [3, \"after\"]], \"transaction_end\": {\"id\": 9, \"ok\": true, \"affected_rows\": 0}, \"reopened\": [[1, \"edited\"], [3, \"after\"]]}\n{\"outcome\": \"ROLLBACK\", \"failed_statement\": {\"id\": 5, \"ok\": false, \"error\": {\"code\": \"DUPLICATE\", \"message\": \"duplicate primary key\"}}, \"inside\": [[1, \"edited\"]], \"followup\": {\"id\": 7, \"ok\": true, \"affected_rows\": 1}, \"after_followup\": [[1, \"edited\"], [3, \"after\"]], \"transaction_end\": {\"id\": 9, \"ok\": true, \"affected_rows\": 0}, \"reopened\": [[1, \"old\"]]}"
+    },
+    {
+      "id": "statement-vector-result",
+      "source": "python -m tools.verify_vector_failure；独立数据目录和 JSONL 子进程",
+      "status": "executed",
+      "output": "四组向量迁移通过。维度错误返回 TYPE，合法首行也未插入；后续插入键4成功。回滚后不重启立即返回 [(1,1.0)]，重开相同；提交前后均 [(1,0.0),(4,4.0)]。两组默认缓存配置、两组关闭 NumPy 且建磁盘索引。\n{\"outcome\": \"COMMIT\", \"path\": \"default_cache\", \"warmed_transaction\": [[1, 0.0]], \"error\": {\"id\": 7, \"ok\": false, \"error\": {\"code\": \"TYPE\", \"message\": \"VECTOR dimension mismatch\"}}, \"select_after_failure\": [[1, [0.0, 0.0]]], \"topk_before_end\": [[1, 0.0], [4, 4.0]], \"immediate_after_end\": [[1, 0.0], [4, 4.0]], \"after_restart\": [[1, 0.0], [4, 4.0]], \"passed\": true}\n{\"outcome\": \"ROLLBACK\", \"path\": \"default_cache\", \"warmed_transaction\": [[1, 0.0]], \"error\": {\"id\": 7, \"ok\": false, \"error\": {\"code\": \"TYPE\", \"message\": \"VECTOR dimension mismatch\"}}, \"select_after_failure\": [[1, [0.0, 0.0]]], \"topk_before_end\": [[1, 0.0], [4, 4.0]], \"immediate_after_end\": [[1, 1.0]], \"after_restart\": [[1, 1.0]], \"passed\": true}\n{\"outcome\": \"COMMIT\", \"path\": \"disk_index\", \"warmed_transaction\": [[1, 0.0]], \"error\": {\"id\": 7, \"ok\": false, \"error\": {\"code\": \"TYPE\", \"message\": \"VECTOR dimension mismatch\"}}, \"select_after_failure\": [[1, [0.0, 0.0]]], \"topk_before_end\": [[1, 0.0], [4, 4.0]], \"immediate_after_end\": [[1, 0.0], [4, 4.0]], \"after_restart\": [[1, 0.0], [4, 4.0]], \"passed\": true}\n{\"outcome\": \"ROLLBACK\", \"path\": \"disk_index\", \"warmed_transaction\": [[1, 0.0]], \"error\": {\"id\": 7, \"ok\": false, \"error\": {\"code\": \"TYPE\", \"message\": \"VECTOR dimension mismatch\"}}, \"select_after_failure\": [[1, [0.0, 0.0]]], \"topk_before_end\": [[1, 0.0], [4, 4.0]], \"immediate_after_end\": [[1, 1.0]], \"after_restart\": [[1, 1.0]], \"passed\": true}"
     }
   ],
   "evidence_chains": [
@@ -630,7 +642,7 @@
     {
       "topic": "失败语句与事务可见性",
       "dimension": "独立验证与质疑",
-      "context": "学生分别用键 2 追踪失败语句的部分写入、用键 1 的值追踪成功修改是否被连带撤销，并指定先查事务内再结束事务。对照两组独立目录。复测和非法向量迁移待补。 以已获12分的 a2bdfa9 为引擎复测。学生预测错误后仍可插入键3并解释它能检验后续可写性和迟发部分写入。实测支持，非法向量迁移待补。",
+      "context": "学生分别用键 2 追踪失败语句的部分写入、用键 1 的值追踪成功修改是否被连带撤销，并指定先查事务内再结束事务。对照两组独立目录。复测和非法向量迁移待补。 以已获12分的 a2bdfa9 为引擎复测。学生预测错误后仍可插入键3并解释它能检验后续可写性和迟发部分写入。实测支持，非法向量迁移待补。 用户预测迁移到非法向量，并提出回滚后不重启查询以排查内存状态。四组结果符合预测，学生对迁移结果的最终解释待补。默认缓存配置与实际磁盘索引路径分组；本次未新增生产代码。",
       "student_evidence": [
         {
           "pointer": "/conversations/28/content",
@@ -643,6 +655,10 @@
         {
           "pointer": "/conversations/29/content",
           "quote": "光看提交成功其实说明不了什么，那只证明最后能正常收尾，证明不了报错之后还能不能接着写东西。"
+        },
+        {
+          "pointer": "/conversations/30/content",
+          "quote": "我自己还有点不确定：回滚以后如果没有重启就直接查，内存里那份缓存的向量会不会还是改过的那个？这一条我想再单独测一次。"
         }
       ],
       "result_evidence": [
@@ -653,6 +669,10 @@
         {
           "pointer": "/experiments/24/output",
           "quote": "两组失败批量 INSERT 返回 DUPLICATE，失败后事务内只有 edited。继续插入键 3 成功，事务内为 edited 和 after。COMMIT 后新进程重开仍是这两行，ROLLBACK 后新进程重开只有 old，键 2 始终没有出现。"
+        },
+        {
+          "pointer": "/experiments/25/output",
+          "quote": "四组向量迁移通过。维度错误返回 TYPE，合法首行也未插入；后续插入键4成功。回滚后不重启立即返回 [(1,1.0)]，重开相同；提交前后均 [(1,0.0),(4,4.0)]。两组默认缓存配置、两组关闭 NumPy 且建磁盘索引。"
         }
       ]
     }
