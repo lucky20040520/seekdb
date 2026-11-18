@@ -15,13 +15,13 @@ from minivector.sql import execute
 SELECT_KEYS = "SELECT id FROM t ORDER BY id;"
 
 
-def jsonl_session(root, statements):
+def jsonl_session(root, statements, *, ensure_ascii=True):
     """Use the production entry in a fresh process, with no fault hooks."""
     requests = [{"id": name, "op": "execute", "sql": sql} for name, sql in statements]
     requests.append({"id": "bye", "op": "shutdown"})
     result = subprocess.run(
         [sys.executable, "-m", "minivector", "--data-dir", root],
-        input="".join(json.dumps(item) + "\n" for item in requests),
+        input="".join(json.dumps(item, ensure_ascii=ensure_ascii) + "\n" for item in requests),
         capture_output=True, encoding="utf-8", timeout=30, check=True,
     )
     messages = [json.loads(line) for line in result.stdout.splitlines()]
