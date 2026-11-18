@@ -1,851 +1,861 @@
 {
-  "rule_version": "agent-learning-evidence-v3-unbounded",
-  "summary": "记录以正式通过准入的 Python e1561a7 为起点的协议验证、exact 路线、等值过滤候选缓存解释与受控复测。2026-11-16 再以当前目录 8ec857e 为基线，完成 Python 主键范围缓存、单条查询向量复用和保守误差边界扫描优化。新增结果均为本地实验，当前候选的正式隐藏准入尚未执行。",
-  "scope": "Agent 说明、工具实验和平台反馈沿用最新文件中的记录。引用通过 JSON Pointer 定位，评审分档与复核仍由平台产生。",
-  "engine_baseline": "e1561a7292443e4945b580cb23a24e399c2c18a5",
-  "conversations": [
+ "rule_version": "agent-learning-evidence-v3-unbounded",
+ "summary": "记录以正式通过准入的 Python e1561a7 为起点的协议验证、exact 路线、等值过滤候选缓存解释与受控复测。2026-11-16 再以当前目录 8ec857e 为基线，完成 Python 主键范围缓存、单条查询向量复用和保守误差边界扫描优化。新增结果均为本地实验，当前候选的正式隐藏准入尚未执行。",
+ "scope": "Agent 说明、工具实验和平台反馈沿用最新文件中的记录。引用通过 JSON Pointer 定位，评审分档与复核仍由平台产生。",
+ "engine_baseline": "e1561a7292443e4945b580cb23a24e399c2c18a5",
+ "conversations": [
+  {
+   "id": "student-001",
+   "role": "student",
+   "source": "项目目标与必测项拆解",
+   "content": "我想按“先保证功能准入，再寻找性能瓶颈”的顺序完成这道 MiniVectorDB 题目。我的理解是，协议交互、SQL 语义、向量查询、事务和持久化共同决定系统能否交付，单项查询跑得快并不足以说明方案可用。\n\n请先根据比赛题包整理一张要求对照表：每项约束对应哪个实现入口、已有哪类测试、还有什么边界没有验证。优先覆盖必测项，尤其是进程启动与交互、重复主键、精确 TopK、事务回滚、提交后重启和异常退出恢复，再安排性能优化。\n\n可以参考上次 powercontext 项目中固定版本、保存复现命令和用实验检验假设的做法，但先确认这些经验适用于本题。请把官方要求、当前代码行为和待验证假设分别说明，让后续每次修改都有明确的依据和验收条件。"
+  },
+  {
+   "id": "student-012",
+   "role": "student",
+   "source": "stdin/stdout 与 JSONL 协议的区别",
+   "content": "你前面说接口不能使用，我想先确认问题究竟发生在哪一层。题目允许通过 stdin/stdout 执行 SQL，我理解这说明通信通道可用，但通道可用还不代表消息格式符合驱动的约定。\n\n请对照协议检查：启动时的 ready、逐行 JSON 请求、请求 id 的回传、响应换行与刷新、错误响应，以及 shutdown 的处理。stdout 如果混入调试日志，即使 SQL 执行正确，也可能让驱动解析失败。\n\n请用实际 Docker 入口启动进程，保留首行输出和最小请求的实际响应，再说明是握手格式、消息字段还是执行逻辑的问题。不要仅凭 stdin/stdout 这个接口名称判断兼容性，也不要把单条握手通过当成全部功能通过。"
+  },
+  {
+   "id": "student-013",
+   "role": "student",
+   "source": "核对比赛分支与驱动版本",
+   "content": "请重新核对 [官方仓库](https://github.com/oceanbase/seekdb) 中的 `2026-competition-round2` 分支，确认比赛对应的题包、配套驱动和协议文档。\n\n我认为接口结论需要绑定具体版本：默认分支、旧题包和比赛分支可能不一致，继续沿用旧假设会把版本差异误判为实现缺陷。请记录实际读取的提交 SHA，检查 STDIO_PROTOCOL.md、protocol_check 和示例入口，并与当前 Dockerfile、JSONL 服务入口逐项对照。\n\n先列出已确认的差异和仍缺少依据的部分，再用配套驱动复现问题。若官方分支发生更新，请说明哪些要求有变化、现有测试需要补哪些覆盖，不要直接把旧测试结果套用到新协议。"
+  },
+  {
+   "id": "student-python-plan-001",
+   "role": "student",
+   "source": "Python exact 优化方案与实验顺序",
+   "content": "我希望把优化建立在可复现的基线之上，并沿用 Python 与 exact 的实现路线。可以参考 C++ 分支中减少重复工作和改善数据布局的思路，但实现和验收都以 Python 版本为对象。我的方案分为四步：\n\n1. 先把计量边界确定下来。\n   我关注 tools/benchmark_jsonl.py 中正确性核验与资源采样的先后关系。如果查询前的全表核验预热了页缓存，或被计入资源窗口，后续耗时、I/O 和峰值内存就难以比较。请先检查当前脚本，把独立真值核验与性能计量分开。写入和查询使用隔离的容器、数据目录与统计范围，明确启动、装载、建索引、预热和写回分别是否计入 T、B、M，并对所有版本采用同一口径。\n\n2. 优先消除查询链路中的重复工作。\n   请检查 minivector/vector.py 与 minivector/engine.py 中的向量转换、候选过滤、距离计算和结果投影。我倾向于先评估连续 float32 数组、可复用的候选行号和单次查询内的距离复用。TopK 阶段尽量保留距离、主键和行位置，确定结果后再读取需要投影的字段。缓存必须匹配查询条件与可见数据版本，更新、删除、回滚后不能继续使用失效结果；容量上限还应考虑中间数组带来的额外内存。\n\n3. 根据负载选择 exact 执行路径。\n   索引存在并不意味着索引路径一定更快。请比较预算内的连续数组扫描与分块或磁盘 Flat 路径，观察数据规模、过滤选择率和重复查询对成本的影响。所有路径都应先过滤再确定 TopK，按照题目要求处理并列距离、数值精度和不足 K 的结果。预算不足时应能回退，不能为了速度改变查询语义。\n\n4. 查询优化稳定后，再评估存储布局。\n   对 10,000 行、128 维 float32 向量，单看向量本体约为 4.88 MiB，但这不包括主键、元数据和运行时对象。若当前版本仍存在向量文本与重复序列化开销，再研究不可变二进制段；若已采用该布局，就先验证现状，避免重复改造。文件变小不直接等于设备 I/O 同比例下降。请分别测量逻辑容量和设备读写量，并保留提交持久化、清单原子发布、旧格式兼容及强杀恢复的验证。\n\n各阶段使用固定种子和相同负载：10,000 行、128 维、1,000 次查询、K=10，一半带等值过滤，每批 100 行提交。每次只引入一个主要变化，诊断 profiling 与正式计时分开，交替重复基线和候选，保存每轮写入与查询的 T、B、M。只有指标完整且正确性、资源检查通过时才计算完整 E_local；没有官方冻结基线时不推算平台分数。\n\n请先完成基线测试，再根据数据调整以上优先级。收益需要同时考虑稳定性、内存代价、适用负载和恢复风险；如果改动效果落在测量波动内，应继续验证或撤回。"
+  },
+  {
+   "id": "student-test-before-change-001",
+   "role": "student",
+   "source": "先测基线再实施",
+   "content": "请先固定当前源码版本、实际启动入口、依赖版本和资源限制，完成公开用例与已有回归，再执行上面的优化方案。我希望先区分已有缺陷和改动引入的问题，否则后续即使跑得更快，也无法判断是否牺牲了正确性。\n\n性能基线使用固定种子、相同 SQL 顺序和明确的缓存初始状态，保存逐轮耗时、I/O 与峰值内存。独立真值核验放在计量窗口之外，同时检查查询结果和重启后的持久化数据。\n\n测试结束后，请用数据重新审视方案：指出最主要的成本在哪一步、准备改变哪个因素，以及如何判断修改有效。若基线有失败项，先给出最小复现并定位，再继续优化。"
+  },
+  {
+   "id": "student-cpp-admission-001",
+   "role": "student",
+   "source": "根据功能准入反馈调整路线",
+   "content": "C++ 分支目前没有通过 MySQL case 功能准入，我认为这应当改变实现路线的优先级。数据库的接口、事务和持久化语义是前提，不能只凭查询速度就把这个分支作为可交付基线。\n\n请保留实际失败用例、构建版本和输出，区分协议、SQL 语义、事务恢复等问题；没有平台细节时不要猜测根因。后续将优化对象收敛到 Python 版本，先核对它的功能验证状态，再复用有价值的算法与数据布局思路。\n\n对比报告中请标明每条结果属于本地回归、公开用例还是正式准入，并绑定对应提交，避免用一个版本的通过记录替另一个版本作证明。"
+  },
+  {
+   "id": "student-python-only-001",
+   "role": "student",
+   "source": "限定 Python 实现并定位热点",
+   "content": "我希望最终交付继续使用 Python 引擎。我的优化方向是减少解释器层的重复循环、数据转换与对象创建，并评估 NumPy 批量计算和连续内存布局的收益。\n\n请把一次查询拆成输入解析、候选过滤、距离计算、TopK 选择和结果投影，先用诊断数据判断成本分布。若过滤条件重复，可以评估候选行号复用；若时间主要耗在距离或投影上，就优先检查向量转换、计算结果复用和延迟读取。\n\n不要预设缓存或向量化一定更快。请同时测低复用、不同过滤选择率和超缓存预算的情况，把缓存维护、临时数组和峰值内存计入取舍。每次仅改一个主要因素，并用独立真值与回归验证 Python 版本的行为。"
+  },
+  {
+   "id": "student-exact-only-001",
+   "role": "student",
+   "source": "明确 exact 检索语义与正确性边界",
+   "content": "这里需要的是 exact 检索，优化应保持精确结果，不能用 ANN 的召回率来替代正确性验收。\n\n我的理解是，先确定满足过滤条件且对当前事务可见的候选集合，再依照题目的距离定义选出 TopK；并列距离按主键规则排序，不足 K 时返回全部。缓存、索引或分块可以改变计算方式，但不能遗漏本应进入结果的记录。\n\n请逐条核对主键、距离、过滤条件、排序和返回数量，真值计算要独立于被测实现。重点检查距离接近或相同、float32 舍入、空候选和事务更新后的场景。如果使用近似算术进行预筛，必须说明保守误差边界如何保证不漏选，并精确复核可能影响 TopK 的候选。"
+  },
+  {
+   "id": "student-cache-prediction",
+   "role": "student",
+   "source": "缓存收益假设与可区分的成本来源",
+   "content": "我想验证缓存路径为什么更快。一个假设是：向量或过滤候选被复用后，减少了重复读取、解析和构造；另一个假设是 NumPy 批量距离计算降低了 Python 循环成本。这些因素可能同时存在。\n\n文件读取调用可能命中操作系统页缓存，因此读取调用减少不能直接证明物理磁盘读取减少。请固定同一份数据、查询与资源限制，分别观察应用缓存命中率、候选构造耗时、读取调用和设备读取字节，尽量一次只切换一个因素。\n\n我还想比较重复过滤、低复用过滤和超预算回退三种场景：前者可能摊薄准备成本，后两者可能暴露维护开销或旁路行为。设备读取字节为零时，请如实说明缓存条件，把耗时观察与尚未验证的原因分开。"
+  },
+  {
+   "id": "agent-002",
+   "role": "agent",
+   "source": "Agent对此问题的实际回复摘录，属于Agent纠正表述，不作为学生理解",
+   "content": "我之前把这个格式核对问题说成整个接口都不能使用，表述不准确，给你造成了困惑。"
+  },
+  {
+   "id": "agent-python-completion-explanation-001",
+   "role": "agent",
+   "source": "2026-11-14 补齐材料时，Agent依据已存在源码、逐轮报告与日志所作的结果说明；这是整理说明，不伪称此前逐字聊天，也不归为学生解释",
+   "content": "落实用户的最终约束：默认 Dockerfile 运行 Python 3.12.8 + NumPy 1.26.4，性能测量均为 exact，未使用 C++ 引擎或 ANN 结果。先固定原始 Python 基线，再优化连续数组、过滤行号缓存、精确距离复用和小表选路；随后优化输入转换，最后改为 Python 标准库实现的不可变二进制段。原有 SQL/事务/持久化语义与公开测试保持。最终 60 项 Python 回归、20 项官方公开用例、两种索引配置各三轮共 6000 条 exact 查询通过。无索引 E_local 从固定基线 0.505123 到 0.635468，有索引从 0.498887 到 0.779541；这些是同场景本地指标，不能换算平台排名。已补做旧 JSONL 读取、混合段、索引维护、回滚、六处强杀和超缓存容量检查。历史平台反馈不能证明本次改动正式准入。"
+  },
+  {
+   "id": "agent-cache-response-001",
+   "role": "agent",
+   "source": "Agent对该疑问的解释，不能作为学生理解证据",
+   "content": "缓存路径先把向量载入内存，后续查询可复用；磁盘Flat路径每次扫描索引，过滤可能回查原始行。NumPy批量计算与Python逐条运算也是差异来源。文件读取可能命中OS页缓存，读取调用次数不等于物理磁盘读取次数；当前耗时实验不能分离各因素贡献。"
+  },
+  {
+   "role": "student",
+   "id": "student-filter-experiment-prompt",
+   "content": "请作为我的 MiniVectorDB 开发搭档，以已记录正式准入通过的 Python 提交 e1561a7292443e4945b580cb23a24e399c2c18a5 为这轮实验的基线，在独立工作分支完成一次可解释的性能优化，继续使用 Python 和 exact。最终交付代码、逐轮实验结果和分析材料，正式提测由我操作。\n\n我理解基线已经存在候选行号缓存，因此这次要研究的是它在不同复用程度下是否划算，以及如何改善实际热点。不能仅凭增加缓存就预期收益，也不能把基线的准入结论沿用到候选版本。\n\n一、核对实现与约束\n\n先阅读题包、Dockerfile、JSONL 入口、SQL 执行器、向量查询、存储及相关测试。确认实际运行的源码 SHA、镜像与依赖，并列出实现入口、已有验证和未验证边界。协议侧关注 ready、请求 id、逐行响应、刷新、错误与 shutdown；数据库侧关注重复主键、Unicode、固定向量维度、有限 float32、语句原子性、事务可见性及持久化恢复。\n\nexact 查询必须先过滤再排名，遵守距离与并列主键排序规则，候选不足 K 时返回全部。请检查缓存键能否区分表、条件与数据版本，更新和回滚后如何失效，总预算如何计算，以及超预算时是否确实进入回退路径。旧 JSONL 与二进制段的兼容也应有验证入口。公开用例、本地回归与正式隐藏准入分别报告。\n\n二、建立基线并检验假设\n\n先运行公开用例与现有回归。性能负载固定为 10,000 行、128 维、1,000 次 TopK、K=10，其中一半带等值过滤，每批 100 行提交。记录数据与查询种子，用独立实现核对主键、距离、过滤、排序和数量，并在重启后核验持久化数据。真值检查与性能计量隔离，明确写入与查询各自的 T、B、M 统计边界。\n\n我的假设是：重复过滤能够摊薄候选集合构造成本，低复用过滤则可能付出查找、写入和淘汰开销；超过预算后，收益还取决于缓存是否被旁路。请分别设计重复等值过滤、低复用过滤和超预算三个场景，在相同数据、SQL、环境与资源限制下，只切换候选复用行为。\n\n每轮使用隔离的数据目录和明确的缓存初始状态，同时记录命中、写入、淘汰、缓存路径调用与内存占用。候选构造的细粒度诊断和端到端计时分开进行，避免插桩影响被误当成性能变化。设备读取为零或不可测时，分别报告观察值或缺失项，不把查询耗时差直接归因于物理磁盘读取。\n\n执行前写下假设、控制变量与判定依据。初测后向我提出一个具体的结果解释或方案选择问题，保留需要我回答的部分，同时继续完成不依赖该回答的验证。\n\n三、选择一个热点并成对复测\n\n请根据诊断决定主要改动：如果成本集中在未命中的候选构造，研究构造过程；如果集中在缓存维护、距离复算、投影或回退路径，先解释依据再调整方向。一次只改变一个主要因素，便于判断收益来源。\n\n使用同一 runner 交替执行基线与候选，各至少三轮，保存每轮写入和查询耗时、I/O 与峰值内存，比较中位数及波动。对直接受影响的边界补充最小验证，包括空候选、距离并列、事务更新与回滚、缓存失效及超预算回退。若结果不一致或恢复失败，先保存最小复现与实际输出，再修复复测。\n\n候选构造更快不自动意味着整体查询更快；请同时检查端到端收益、内存代价和超时余量。若改善落在轮间波动内，就报告证据不足。仅在计量完整且正确性、资源检查通过时计算本地 E_local，不据此预测平台分数或排名。\n\n四、解释结果并整理交付\n\n请说明改动减少了什么成本、增加了什么准备或维护开销、在哪些负载下适用、何时回退，以及保留或撤回的依据。提供完整基线与候选 SHA、修改范围、复现命令、逐轮数据、正确性结果和待平台确认事项。未执行的检查应列为计划。\n\n整理 UTF-8 的 conversation.json 时，区分学生提示词、Agent 分析、工具输出和平台反馈的来源。引用使用 RFC6901 JSON Pointer，摘录与对应内容精确匹配且不超过 240 字；同一问题的诊断、修改与复测归入同一条证据链。校验 JSON、引用和文件大小，不补造实验、平台结论或评审分数。",
+   "source": "等值过滤候选缓存的受控实验与交付要求"
+  },
+  {
+   "role": "agent",
+   "id": "agent-filter-initial-question",
+   "content": "初测中，重复过滤的候选构造开启缓存后约为 1.4 ms，关闭时为 16.1 ms；500 个不同条件则是 19.9 ms 对 16.5 ms。超过缓存预算时，两组都约为 2.52 秒。你怎么解释低复用场景的结果，或者你想先复测哪个判断？",
+   "source": "本次实际提问"
+  },
+  {
+   "role": "student",
+   "id": "student-filter-miss-analysis",
+   "content": "我想先验证低复用场景中的额外耗时是否主要来自缓存维护。初测为 19.9 ms 对 16.5 ms，相差 3.4 ms，约增加 20.6%；如果 500 个条件各执行一次，平均每次多约 6.8 µs。这只是候选构造阶段的差值，暂时不能据此断言端到端查询变慢。\n\n我的解释是假设性的：不同条件很少命中，每次仍要生成候选，还额外做了缓存键处理、查找、写入或淘汰。重复过滤从 16.1 ms 降到 1.4 ms，符合命中后复用候选的预期，但仍需要命中计数来验证机制。\n\n请固定输入、条件顺序和缓存预算，让 500 个不同条件从空缓存开始，交替重复以下三组：\n- A：关闭候选缓存，直接构造候选。\n- B：保留缓存键处理和查找，未命中后构造候选，但不写入。\n- C：执行完整的查找、构造、写入和淘汰流程。\n\n在三组均未命中且其他路径一致时，B 与 A 的差值可估计键处理及查找开销，C 与 B 的差值可估计写入及淘汰等维护开销。请记录每轮命中、写入、淘汰次数及候选构造耗时，再通过独立计时比较端到端查询。只有差异稳定超过轮间波动时，才进一步归因；三组对照也不能单独拆出写入与淘汰各自的贡献。\n\n超预算时两组都约 2.52 秒，单看总时间还不能判断是否旁路。请检查实际缓存路径调用次数和执行路径，再决定是否需要为回退部分单独设计实验。如果主要成本不在候选构造，就据此调整优化重点。",
+   "source": "解释低复用初测并设计三组对照"
+  },
+  {
+   "id": "block-student-0",
+   "role": "student",
+   "source": "本次用户实际回复摘录",
+   "content": "预测：扩大分块几乎不会带来提速，反而可能是负收益。"
+  },
+  {
+   "id": "block-student-1",
+   "role": "student",
+   "source": "本次用户实际回复摘录",
+   "content": "现在 p50 = p95 = max = 10，且 K=10——意思是每条查询恰好把答案集里的 10 条全部重算一遍，候选数已经是最小值，没有\"收窄容差\"的空间。"
+  },
+  {
+   "id": "block-tie-student",
+   "role": "student",
+   "source": "本次实际回复摘录，测前预测和决策条件",
+   "content": "一、高并列负载下，我预测「精确候选生成（fsum 精算）」段增幅最大\n普通负载 高并列负载 我的结论    +X%（可归因） ≈0（±2% 内） 保留。分块本就只该影响 einsum；高并列下主导是精算，它没有收益是正常的，不算缺点   +X%（可归因） 也 +Z% 保留，更稳   +X%（可归因） −Y%（负收益） 撤回。题包不承诺并列比例，收益符号相反等于在赌数据分布"
+  },
+  {
+   "id": "block-final-student-decision",
+   "role": "student",
+   "source": "本次用户看过高并列结果后的原话摘录",
+   "content": "撤回不是因为「3.1% 太小」，而是因为两次测量的符号相反，而正式负载的并列比例不在我们手里。\n普通负载那 −9.3%，可能本来就不是真的。\n让两版在普通负载下交错跑 3 个来回（A/B/A/B/A/B）。"
+  },
+  {
+   "id": "block-mechanism-source-review",
+   "role": "agent",
+   "source": "正式基线 vector.py 源码核查",
+   "content": "分块循环写入各自的距离切片。循环结束后才执行一次 partition、一次 flatnonzero，并将候选交给精算和 nsmallest。当前实现没有逐块判定或合并全局候选带。每条普通查询的 10 个候选与高并列的 500 个候选说明精算工作量不同，实际阶段耗时未单独测量。"
+  },
+  {
+   "id": "commit-cut-prediction",
+   "role": "student",
+   "source": "强杀执行前用户原话",
+   "content": "A={1,2}，B={2,3}，C={2,3}；如果看到 A 里出现 3 或者 2 消失、B 里只出现 2 或只出现 3、C 里出现 1 或 2，我会修正 \"磁盘发布点 = catalog.json 原子替换、客户端确认点 = 收到 ok:true\" 这个模型。"
+  },
+  {
+   "id": "commit-cut-student-retest",
+   "role": "student",
+   "source": "初测后用户原话",
+   "content": "客户端只知道「没收到响应」时，区分不了 A 和 B，A 和 B 的区别不是「事务做没做」，而是「这次修改有没有落到被引用的那份持久结构上」—— 这个区别发生在服务端内部，客户端接口上根本没有对应的观测维度。下一次反例复测：先加「清单 — 段 — 记录三层一致」，而不是再重启 ，**集合是结果层，A/B 的分界在存储层。** 只看集合，会把「发布点其实在恢复期重放，只是结果碰巧正确」这种模型错误整个放过 —— 而这正是我现在这条模型最可能错的地方。你对我上一条的质疑是对的 。"
+  },
+  {
+   "id": "commit-cut-migration-prediction",
+   "role": "student",
+   "source": "迁移之前用户原话摘录",
+   "content": "第一次重启（清单已替换，无应答）\t{(2,[0,0]), (3,[3,0])}\t{8}\t[(2, 0.0), (3, 3.0)]\n第二次重启（恢复中被杀，未 ready）\t同上\t同上\t不应被服务；磁盘上可能留残缺索引\n第三次正常启动\t同上\t同上\t[(2, 0.0), (3, 3.0)]。\nTopK 条数 < SELECT 条数，且不报错\t违规且最隐蔽\t残缺索引被 valid() 误判为可用；flat_index.valid 只校验 size % width 和 keys 数量，写入恰好截在整记录边界上查不出来"
+  },
+  {
+   "id": "commit-cut-migration-reflection",
+   "role": "student",
+   "source": "迁移实测后学生原话摘录",
+   "content": "我那句话自相矛盾，两因子守卫其实是有效的  。\n清单哈希可以变，被引用的数据代必须一致\t索引文件名是随机 uuid，重建必换名；所以哈希不能当数据一致性证据\n现在只是 \"一个点通过\""
+  },
+  {
+   "id": "mixed-keys-prediction",
+   "role": "student",
+   "source": "执行前用户原话",
+   "content": "步骤\t结果\t行数\t依据\nINSERT 1\t失败，ok:false + 非空 code\t2\t唯一性真值必须是可见行数据，不是 .keys 侧车。侧车被刻意删掉，正是为了逼出这一点\nINSERT 2\t失败\t2\t同上，2 在二进制段里可见\nINSERT (3),(3) 同批\t失败，0 行落盘\t2\t整句原子：批内自重复必须在写入前整句判定，一条都不能落\nINSERT 3 单独\t成功\t3\t3 在任一段都不存在。"
+  },
+  {
+   "id": "mixed-keys-student-control",
+   "role": "student",
+   "source": "初测后用户原话摘录",
+   "content": "还需补一个测试：插 (1),(1)。 记录里有两个 1，数据里也有 1，两边都该报重。\n- 如果读 0 行 → 说明先查记录自身，我的解释对。\n- 如果读 1 行 → 说明先去翻数据，我的解释错，需要修改。\n同时加插 (1),(3)，作为对照。 记录内不重复，只有数据里有 1，这个一定读 1 行。有它作对照，才能证明 “读 0 行” 是特殊情况，不是 “所有失败都不读数据”。"
+  },
+  {
+   "id": "mixed-keys-migration-prediction",
+   "role": "student",
+   "source": "迁移前用户原话摘录",
+   "content": "事务内（删除 1、插入 replacement 之后，未提交）\t(1,'replacement')、(2,'new')\t2\nROLLBACK 后重启\t(1,'old')、(2,'new')\t2\n另一次相同事务 COMMIT 后重启\t(1,'replacement')、(2,'new')\t2。\n事务内插入就报了 DUPLICATE\t查重看的是旧文件里那行还没删掉的 old，不是 “现在能看见什么”。说明删除没有进入查重视野"
+  },
+  {
+   "id": "mixed-keys-reflection",
+   "role": "student",
+   "source": "迁移实测后用户原话摘录",
+   "content": "原因：能否插入，取决于这条记录是否可见，与文件里是否还留有这行数据无关。\n其他事务并发：本次是单客户端单事务。若两个事务同时操作键 1（一个删一个插），可见性隔离会与判重冲突。题面不要求多客户端，所以这条不推广。\n崩溃时机：提交后、清理前被杀。重启必须仍读到 replacement；若重启时判重扫物理段，会出现“查得到 replacement、却插不进 1”的矛盾状态。\n第 4 条建议单独测一次，它是这条链唯一还没打到的点。"
+  },
+  {
+   "id": "statement-failure-prediction",
+   "role": "student",
+   "source": "测前用户原话摘录",
+   "content": "事务内（插入失败之后） (1,'edited') 1   COMMIT 后重启 (1,'edited') 1   ROLLBACK 后重启 (1,'old') 1\n失败的是那条插入语句，它一行都不该留下，所以 (2,'new') 查不到；但前一条 UPDATE 是独立成功的语句，它的效果要保留，所以事务内仍是 edited。回滚才把整笔事务退回原样。\n所以顺序是：失败 → 查事务内 → 提交 → 重启查 → 再复现一遍走回滚。"
+  },
+  {
+   "id": "statement-followup-student",
+   "role": "student",
+   "source": "本次对照执行前用户完整原话",
+   "content": "我猜插 (3,'after') 应该能成功，因为刚才报错的只是那一条插入语句，不是整个事务，前面改 1 都还成功着，事务本身没被弄坏。提交后重新打开，能看到 (1,'edited') 和 (3,'after') 两条；回滚后重新打开，就只剩 (1,'old') 一条，2 和 3 都没有。\n光看提交成功其实说明不了什么，那只证明最后能正常收尾，证明不了报错之后还能不能接着写东西。插了 3 就不一样了：如果回滚之后 3 还留着，说明没撤干净；如果留下了 2、反而没有 3，那就是撤错了，把该留的撤掉、该撤的留下了，这种错不插 3 根本看不出来。而且后面又写过一次，如果 2 是\"晚一点才冒出来\"的，这一步也能发现。"
+  },
+  {
+   "id": "statement-vector-prediction",
+   "role": "student",
+   "source": "向量迁移执行前学生原话摘录",
+   "content": "我猜批量插入失败以后，只能看到 (1,[0,0]) 这一条，连那条合法的 (2,[2,0]) 也不会进去，因为整句是一起失败的。接着插入 4 成功之后，事务里能看到 (1,[0,0]) 和 (4,[4,0]) 两条，按到 [0,0] 的距离排，1 的距离是 0、4 的距离是 4；提交后重开也是这两条。但回滚后重开就只剩 (1,[1,0])，距离应该是 1.0。如果这时候还算出 0.0，就说明索引里存的还是改过的那个值，没跟回滚一起退回去。\n我自己还有点不确定：回滚以后如果没有重启就直接查，内存里那份缓存的向量会不会还是改过的那个？这一条我想再单独测一次。"
+  },
+  {
+   "id": "statement-vector-reflection",
+   "role": "student",
+   "source": "迁移结果后的用户原话摘录",
+   "content": "现在不重启就返回 1.0，说明缓存要么跟着回滚一起失效了，要么这条路根本没走缓存——不管哪种，都不存在“必须等重启才对齐”的副本。这个担心可以撤回。\n所以要补一个“缓存确实被用过”的证据——先做几次热查询让缓存真正装进数据，看命中计数，再回滚查一次。\n结论只能限定在这条路上：别的缓存是另一个东西，比如等值过滤用的那个候选缓存，它按条件做键，回滚后会不会残留没测过；数据量到几千上万行缓存才真正启用，那时的行为也算未知；这次是正常回滚，如果换成“回滚做到一半被强杀”，重启后还得再验一遍。"
+  },
+  {
+   "id": "wide-cache-student-prediction",
+   "role": "student",
+   "source": "本实验执行前用户原话摘录",
+   "content": "我猜如果缓存是按整行大小算的，窄行能进、宽行进不去——宽行光字符串就差不多 19.5 MiB，加上向量 4.88 一共 24 MiB 左右，超过 16 MiB 预算；窄行才 5 MiB 出头，放得下。\n要是宽行确实更慢，我拿两组对照把它拆开：宽行不动，只把预算提到 64 MiB，如果追上窄行的速度，就说明慢在每次都重读向量；没追上，剩下的就是解析那两千多个字的成本。\n结论我只写在这一个配置上：一万行、128 维、16 MiB、这一个过滤条件。数据量换了、预算换了、过滤列换了，都算没测。"
+  },
+  {
+   "id": "wide-cache-student-revision",
+   "role": "student",
+   "source": "初测后用户原话摘录",
+   "content": "我原来猜把 WHERE 去掉会变快，结果实测反了，237 毫秒变成 483 毫秒，慢了快一倍。我错在把过滤当成“费钱”的一步，其实过滤是“省钱”的一步：它把要算距离的行从一万行砍到只剩命中的那些，而解析那两千多个字两组都躲不掉。\n迁移过来看，16 MiB 那组在已建索引的宽表上还是走磁盘索引那条路，先按 tag 过滤再只对命中的行算距离，解析还是一万行；事务改向量、回滚之后，因为它没有内存缓存，每次查读的都是当前那份，所以不重启也马上是对的，TopK 要和普通查询、真值保持一致。"
+  },
+  {
+   "id": "wide-cache-student-reflection",
+   "role": "student",
+   "source": "带索引宽表迁移完成后用户完整原话",
+   "content": "数据库建了索引之后，仍要读整张表，是因为索引里只存了主键和向量，没存 tag。要判断哪一行满足 tag=3，只能回头读原来的行，一行一行解析，一万行都得过一遍。索引帮的是算距离，不是帮过滤。\n如果改进，我会把 tag 这种又短又常用作过滤条件的字段单独存一份，或直接放进索引那条记录里；这样过滤时就不用读两千多字的长字符串了。代价是索引变宽、重建变慢、每次更新还要同步修改，事务成本会上去；而把长字符串也塞进去就不划算，它正是撑爆预算的东西。所以取舍的关键是：多存一字节能省下多少次解析。\n这个例子不能推广成“不用缓存就不容易出错”。它只说明没有副本就没有副本过期的问题，回滚正确是因为数据路径本身对，不是因为没有缓存；有缓存只要失效逻辑对也一样对。而且这次只有一个表、一个客户端、正常回滚，崩溃时序和别的缓存都没测。准确说：少一份副本少一个可能对不上的地方，代价是更慢。"
+  },
+  {
+   "id": "lazy-output-prediction",
+   "role": "student",
+   "source": "执行前用户原话摘录",
+   "content": "我猜第一种查询在 stdout 上不会出现任何内容，只会出现一行报错；第二种也应当一样：那 256 KiB 只是它先在磁盘上暂存，暂存的内容不应该出现在输出里。下一条合法查询应当照常成功，因为一次请求本来就应当只对应一行回复。\n这里最容易漏判的是“半条”的两种形式：一种是断掉的一行，它会把下一条回复吞进去、连在一起变成一行乱码；另一种更隐蔽，就是写出了一行看起来成功、其实只包含一半行的内容，紧接着又跟一行报错；这时一次请求出现了两行，下一条查询还照样成功，光看“下一条是否成功”根本发现不了问题。"
+  },
+  {
+   "id": "lazy-repeat-student",
+   "role": "student",
+   "source": "初测后真实回复摘录",
+   "content": "第一行必须是 ready，而且只出现一次；它只是开场通知，不算对某条请求的回复。从第二行起，每行对应一条请求。\n下一项我选“同一进程连续两次失败后再成功”，因为单次失败看起来干净说明不了什么，可能只是还没轮到暴露；真正容易暴露残留的是第二次。第一次的缓冲区、临时文件偏移和计数如果没有复位，第二次才会露出来。\n第一次只生成一行就失败，第二次生成很多行，并跨过 256 KiB rollover 之后才失败。"
+  },
+  {
+   "id": "lazy-pipe-prediction",
+   "role": "student",
+   "source": "真实管道迁移前用户原话摘录",
+   "content": "我猜仍然是 5 行，进程也能正常退出，因为这五行加起来才几百字节，管道再小也装得下，怎么写都不会卡住。不过我得提醒自己：这次能通过是因为输出较小，并不能说明“先写完再读”这个做法安全——只要有一条成功响应大到超过管道的那点缓冲，子进程就会卡在写这一步，父进程还在等自己写完，两边互等，直接死锁。\n为了证明“这次通过是因为运气”，我可以在同一套“先写后读”做法下故意放一条超大的成功响应作对照；如果这条导致阻塞，就说明前面通过是因为数据太小。"
+  },
+  {
+   "id": "lazy-pipe-student-reflection",
+   "role": "student",
+   "source": "真实管道迁移后用户完整原话",
+   "content": "这次是子进程输出被堵住，并非双方死锁。真正死锁时，双方都卡在写入、谁也无法去读，进程会一直停住；这次只有子进程一侧受阻：四条请求都很短，父进程早已写完，只是没有去读。子进程写完响应，主管道满了，就停下来等待。父进程一开始读，它立刻接着写完并正常退出。判断方法是：看谁在等谁；读一下管道，如果进程能继续，就是阻塞；如果读一下也不动、双方都卡在写，才是死锁。\n所以“先写后读总会死锁”要改成：只有双方同时卡在写、谁都没法去读，才会死锁。这需要两个条件同时成立：请求大到父进程写不进去，同时响应大到子进程写不进去。这次只满足后一个条件，所以只是暂时阻塞，代价是多等一会儿，并非出错。\n结论只适用于这套测试：本地 Windows、单条 1 MB 响应、请求都很短。管道容量没测准，Linux 容器里的容量和时序也还没验证；请求侧很大的情况没测，那才可能双方互卡；“1 秒没退”只是看起来像卡，不能作为判据，需要配合固定超时和“读一下试试”来判断。"
+  }
+ ],
+ "experiments": [
+  {
+   "id": "official-jsonl-discovery-001",
+   "source": "既有实验记录 official-jsonl-discovery-001 的 output 字段。结构化结果转为 JSON 字符串便于引用。",
+   "status": "executed",
+   "output": "Official round2 advanced from9f6df2ba5acf871376e22b64a3d0724e4b575044 to f4d4e26653af823a7601668802f80e374ad6643c (upload stdin/stdout protocol and one demo py to double check). Added STDIO_PROTOCOL.md and protocol_check. Protocol is JSONL:ready={type:ready},execute(id,sql,search_mode),shutdown. Config:startup120s,request60s,case600s,max_response16777216,2CPU,2GiB,128PIDs,abs/rel tolerance1e-5,error_codes empty. Before implementation new actual-process JSONL test failed JSONDecodeError on LOCAL_READY. After implementation both JSONL tests pass;prior full53-test regression passed before adding second JSONL error-spill test. Official Docker before/after checker CI queued,not yet observed."
+  },
+  {
+   "id": "official-jsonl-docker-result-001",
+   "source": "既有实验记录 official-jsonl-docker-result-001 的 output 字段。结构化结果转为 JSON 字符串便于引用。",
+   "status": "executed",
+   "output": "{\"official_source\": \"f4d4e26653af823a7601668802f80e374ad6643c\", \"checked_submission\": \"54875caff8bd4c28f2280c13d9653faef578f565\", \"reports\": {\"before/result.json\": {\"scope\": \"public-protocol-check\", \"passed\": false, \"cases\": [{\"id\": \"handshake\", \"status\": \"FAIL\", \"message\": \"invalid JSON response: Expecting value: line 1 column 1 (char 0); stdout line (first 240 bytes)=b'LOCAL_READY'\", \"duration_ms\": 286}], \"note\": \"Local diagnostic only; no performance/Agent scores or platform callbacks.\"}, \"handshake/result.json\": {\"scope\": \"public-protocol-check\", \"passed\": true, \"cases\": [{\"id\": \"handshake\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 242}], \"note\": \"Local diagnostic only; no performance/Agent scores or platform callbacks.\"}, \"public/result.json\": {\"scope\": \"public-protocol-check\", \"passed\": true, \"cases\": [{\"id\": \"sql_crud\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 283}, {\"id\": \"sql_comparisons\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 248}, {\"id\": \"sql_ordering\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 244}, {\"id\": \"sql_empty\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 275}, {\"id\": \"sql_primary_key\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 275}, {\"id\": \"sql_unicode\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 291}, {\"id\": \"sql_bigint\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 307}, {\"id\": \"sql_unsupported\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 239}, {\"id\": \"storage_restart\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 500}, {\"id\": \"vector_euclidean\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 306}, {\"id\": \"transaction_commit\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 276}, {\"id\": \"transaction_rollback\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 266}, {\"id\": \"storage_mutations\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 535}, {\"id\": \"storage_multiple_tables\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 499}, {\"id\": \"vector_ties_and_filter\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 381}, {\"id\": \"vector_float32\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 564}, {\"id\": \"vector_index_maintenance\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 564}, {\"id\": \"transaction_failed_insert\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 460}, {\"id\": \"transaction_autocommit_atomic\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 483}, {\"id\": \"transaction_shutdown_rollback\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 443}], \"note\": \"Local diagnostic only; no performance/Agent scores or platform callbacks.\"}}, \"protocol_ci\": {\"run\": {\"id\": 42804310574, \"head_sha\": \"54875caff8bd4c28f2280c13d9653faef578f565\", \"status\": \"completed\", \"conclusion\": \"success\", \"html_url\": \"https://github.com/lucky20040520/seekdb/actions/runs/42804310574\"}, \"jobs\": [{\"id\": 129789450084, \"conclusion\": \"success\", \"steps\": [{\"name\": \"Set up job\", \"conclusion\": \"success\"}, {\"name\": \"Run actions/checkout@v4\", \"conclusion\": \"success\"}, {\"name\": \"Reproduce previous diagnostic entry failure using official checker\", \"conclusion\": \"success\"}, {\"name\": \"Build actual submission default entry\", \"conclusion\": \"success\"}, {\"name\": \"Official interactive handshake and shutdown\", \"conclusion\": \"success\"}, {\"name\": \"Official public SQL suite with restart and live search mode\", \"conclusion\": \"success\"}, {\"name\": \"Preserve official checker reports\", \"conclusion\": \"success\"}, {\"name\": \"Post Run actions/checkout@v4\", \"conclusion\": \"success\"}, {\"name\": \"Complete job\", \"conclusion\": \"success\"}]}], \"artifacts\": [{\"id\": 13757756069, \"name\": \"minivector-official-protocol\", \"digest\": \"sha256:292a31a2799cb0d1fc10f0b6baa520b03e8e43cd81b3aa43e3d5112e5ba436f1\", \"size_in_bytes\": 5891}]}, \"regression_ci\": {\"run\": {\"id\": 42804309900, \"head_sha\": \"54875caff8bd4c28f2280c13d9653faef578f565\", \"status\": \"completed\", \"conclusion\": \"success\", \"html_url\": \"https://github.com/lucky20040520/seekdb/actions/runs/42804309900\"}, \"jobs\": [{\"id\": 129789447561, \"conclusion\": \"success\", \"steps\": [{\"name\": \"Set up job\", \"conclusion\": \"success\"}, {\"name\": \"Run actions/checkout@v4\", \"conclusion\": \"success\"}, {\"name\": \"Validate learning material\", \"conclusion\": \"success\"}, {\"name\": \"Build from source with locked dependencies\", \"conclusion\": \"success\"}, {\"name\": \"Check delivered versions examples and runtime file scope\", \"conclusion\": \"success\"}, {\"name\": \"Run self-tests offline in Linux container\", \"conclusion\": \"success\"}, {\"name\": \"Check published SQL assertions through core API\", \"conclusion\": \"success\"}, {\"name\": \"Explain scope\", \"conclusion\": \"success\"}, {\"name\": \"Check public assertions through diagnostic stdin stdout pipes\", \"conclusion\": \"success\"}, {\"name\": \"Verify data larger than process memory with transactions\", \"conclusion\": \"success\"}, {\"name\": \"Post Run actions/checkout@v4\", \"conclusion\": \"success\"}, {\"name\": \"Complete job\", \"conclusion\": \"success\"}]}], \"artifacts\": []}, \"jsonl_examples\": [{\"example\": \"first-run\", \"stdout\": \"{\\\"type\\\":\\\"ready\\\"}\\n{\\\"id\\\":1,\\\"ok\\\":true,\\\"affected_rows\\\":0}\\n{\\\"id\\\":2,\\\"ok\\\":true,\\\"affected_rows\\\":2}\\n{\\\"id\\\":3,\\\"ok\\\":true,\\\"columns\\\":[\\\"id\\\",\\\"title\\\"],\\\"rows\\\":[[1,\\\"alpha\\\"],[2,\\\"beta\\\"]]}\\n{\\\"id\\\":4,\\\"ok\\\":true,\\\"columns\\\":[\\\"id\\\",\\\"distance\\\"],\\\"rows\\\":[[2,1.0],[1,5.0]]}\\n{\\\"id\\\":5,\\\"ok\\\":true,\\\"affected_rows\\\":0}\\n{\\\"id\\\":6,\\\"ok\\\":true,\\\"affected_rows\\\":1}\\n{\\\"id\\\":7,\\\"ok\\\":true,\\\"affected_rows\\\":0}\\n{\\\"id\\\":8,\\\"ok\\\":true,\\\"affected_rows\\\":0}\\n{\\\"id\\\":9,\\\"ok\\\":true,\\\"affected_rows\\\":1}\\n{\\\"id\\\":10,\\\"ok\\\":true,\\\"affected_rows\\\":0}\\n{\\\"id\\\":11,\\\"ok\\\":true,\\\"affected_rows\\\":0}\\n{\\\"id\\\":12,\\\"ok\\\":true,\\\"affected_rows\\\":1}\\n{\\\"id\\\":\\\"shutdown\\\",\\\"ok\\\":true}\\n\"}, {\"example\": \"after-restart\", \"stdout\": \"{\\\"type\\\":\\\"ready\\\"}\\n{\\\"id\\\":1,\\\"ok\\\":true,\\\"columns\\\":[\\\"id\\\",\\\"title\\\",\\\"embedding\\\"],\\\"rows\\\":[[1,\\\"alpha\\\",[3.0,4.0]]]}\\n{\\\"id\\\":2,\\\"ok\\\":true,\\\"columns\\\":[\\\"id\\\",\\\"distance\\\"],\\\"rows\\\":[[1,5.0]]}\\n{\\\"id\\\":3,\\\"ok\\\":true,\\\"columns\\\":[\\\"id\\\"],\\\"rows\\\":[]}\\n{\\\"id\\\":\\\"shutdown\\\",\\\"ok\\\":true}\\n\"}], \"scope\": \"Unmodified official public protocol checker and20 public cases,not formal29-case admission,platform performance or learning score\"}"
+  },
+  {
+   "id": "python-measurement-correction-20261114",
+   "source": "既有实验记录 python-measurement-correction-20261114 的 output 字段。结构化结果转为 JSON 字符串便于引用。",
+   "status": "executed",
+   "output": "{\"workload\":{\"rows\":10000,\"dimensions\":128,\"queries\":1000,\"k\":10,\"mode\":\"exact\",\"unfiltered_queries\":500,\"equality_filtered_queries\":500,\"commit_batch_rows\":100,\"data_seeds\":[19017,19018,19019],\"query_seeds\":[29017,29018,29019]},\"isolation\":\"写入与查询各自独立容器、空数据卷、空父 cgroup v2；2 CPU、2 GiB、禁止 swap、128 PIDs；采样器在数据库父 cgroup 外。\",\"time_scope\":\"写入 T 为 100 次 BEGIN/100 行 INSERT/COMMIT；查询 T 为 1000 请求。启动、装载、建索引、一次无过滤预热不计查询 T，但均计查询 B/M。\",\"resource_scope\":\"数据卷 st_dev 与 8:48 计量设备对应；读取父 cgroup io.stat 与 memory.peak（含页缓存）。数据库结束后保留父 cgroup，执行 syncfs，dirty/writeback 归零、I/O 连续三次 0.1 秒采样稳定才结束。\",\"correctness_scope\":\"资源采样结束后，在独立重启容器逐条核验持久化记录；全部查询由容器外独立 math.fsum 真值核对 ID、距离、过滤、数量和主键破并列。\",\"score_policy\":\"缺失物理 I/O 或正确性/资源检查失败时不计算完整 E；无官方冻结基线只报 E_local；每轮完整六项指标计算 E 后取三轮中位数。\",\"measurement_tests\":{\"tests\":29,\"passed\":true},\"cache_policy\":\"每阶段空数据卷，镜像执行层预热一次，未驱逐宿主全局缓存；实测 rbytes 均为 0，B 主要是物理写入，不能解读为冷盘读性能。\"}"
+  },
+  {
+   "id": "python-query-and-routing-20261114",
+   "source": "既有实验记录 python-query-and-routing-20261114 的 output 字段。结构化结果转为 JSON 字符串便于引用。",
+   "status": "executed",
+   "output": "{\"runtime\":\"Python 3.12.8 / NumPy 1.26.4\",\"entrypoint\":[\"python\",\"-m\",\"minivector\",\"--data-dir\",\"/data\"],\"image_id\":\"sha256:172822af58aa898dd83b5f6c956c4652850fce445abf738edd52564cd5e46136\",\"source_archive_sha256\":\"21adc2f9d38cc877d26d828ac89adc1f60a696f9ca5f81239190a373e42f7f5d\",\"changes\":[\"在 Python 中复用连续 float32 数组；无过滤直接切片，不再为全表构造布尔掩码与 gather 拷贝。\",\"完整等值条件缓存行号，按当前不可变段签名/可见数据版本失效；共享 16 MiB 总预算，过滤缓存另限 1 MiB、32 项。\",\"分块复用至多 512 行的 float64 临时缓冲和 NumPy out=。批量距离用于保守候选筛选，边界仍由 math.fsum 标量精算，保持 exact。\",\"缓存路径 TopK 只保存距离、主键和行号；投影复用距离，需要向量输出或其他距离表达式时才重建列表。\",\"小表即使已建 Flat 索引，也尝试预算内的 NumPy 精确扫描；超预算保持磁盘 Flat 或有界流式路径，索引仍同步维护。\"],\"unit_tests_passed\":56,\"public_cases_passed\":20,\"exact_queries_verified\":6000,\"paired_no_index_E_local\":{\"before_median\":0.507375,\"after_median\":0.528784},\"with_index_E_local_against_frozen_baseline\":0.685841}"
+  },
+  {
+   "id": "python-final-validation-20261114",
+   "source": "既有实验记录 python-final-validation-20261114 的 output 字段。结构化结果转为 JSON 字符串便于引用。",
+   "status": "executed",
+   "output": "{\"regression\":{\"tests\":60,\"passed\":true,\"log_excerpt\":\"Ran 60 tests in 11.273s; OK\"},\"public\":{\"official_source_unchanged\":true,\"passed\":true,\"cases\":[{\"id\":\"sql_crud\",\"status\":\"PASS\"},{\"id\":\"sql_comparisons\",\"status\":\"PASS\"},{\"id\":\"sql_ordering\",\"status\":\"PASS\"},{\"id\":\"sql_empty\",\"status\":\"PASS\"},{\"id\":\"sql_primary_key\",\"status\":\"PASS\"},{\"id\":\"sql_unicode\",\"status\":\"PASS\"},{\"id\":\"sql_bigint\",\"status\":\"PASS\"},{\"id\":\"sql_unsupported\",\"status\":\"PASS\"},{\"id\":\"storage_restart\",\"status\":\"PASS\"},{\"id\":\"vector_euclidean\",\"status\":\"PASS\"},{\"id\":\"transaction_commit\",\"status\":\"PASS\"},{\"id\":\"transaction_rollback\",\"status\":\"PASS\"},{\"id\":\"storage_mutations\",\"status\":\"PASS\"},{\"id\":\"storage_multiple_tables\",\"status\":\"PASS\"},{\"id\":\"vector_ties_and_filter\",\"status\":\"PASS\"},{\"id\":\"vector_float32\",\"status\":\"PASS\"},{\"id\":\"vector_index_maintenance\",\"status\":\"PASS\"},{\"id\":\"transaction_failed_insert\",\"status\":\"PASS\"},{\"id\":\"transaction_autocommit_atomic\",\"status\":\"PASS\"},{\"id\":\"transaction_shutdown_rollback\",\"status\":\"PASS\"}]},\"final_exact_workload\":{\"profiles\":2,\"rounds_per_profile\":3,\"verified_queries\":6000,\"unfiltered_recall_each_round\":1.0,\"filtered_recall_each_round\":1.0},\"legacy_compatibility\":{\"image\":\"minivector-python:binary-20261114\",\"legacy_image\":\"minivector-baseline:python-20261114-175804\",\"passed\":true,\"checks\":[\"legacy JSONL/index recovery, mixed append, duplicate keys, rollback, binary rewrite, restart\",\"17000-row footer spill, exact full contents, restart, duplicate keys, empty segment and reinsertion\"],\"seconds\":6.299862843006849,\"requests\":53},\"crash_recovery\":{\"passed\":6,\"asserted_requests\":128,\"cases\":[{\"phase\":\"before-rows-sync\",\"passed\":true,\"expected_state\":\"all old\",\"second_recovery_crash\":false,\"response_received_before_kill\":false},{\"phase\":\"before-index-sync\",\"passed\":true,\"expected_state\":\"all old\",\"second_recovery_crash\":false,\"response_received_before_kill\":false},{\"phase\":\"before-catalog-sync\",\"passed\":true,\"expected_state\":\"all old\",\"second_recovery_crash\":false,\"response_received_before_kill\":false},{\"phase\":\"before-catalog-rename\",\"passed\":true,\"expected_state\":\"all old\",\"second_recovery_crash\":false,\"response_received_before_kill\":false},{\"phase\":\"after-catalog-rename\",\"passed\":true,\"expected_state\":\"all committed\",\"second_recovery_crash\":true,\"response_received_before_kill\":false},{\"phase\":\"before-collect-unlink\",\"passed\":true,\"expected_state\":\"all committed\",\"second_recovery_crash\":false,\"response_received_before_kill\":false}],\"isolation\":\"真实 SIGKILL，系统调用暂停钩子只放独立测试镜像；计分镜像不含 LD_PRELOAD 或 profiling。两表/索引同时验证提交全有或全无，恢复中再杀一次。\"},\"over_memory\":{\"rows\":20000,\"payload_bytes\":163840000,\"memory_limit_bytes\":134217728,\"memory_peak_bytes\":134217728,\"OOMKilled\":false,\"max_request_seconds\":3.4644478999980493,\"passed\":true,\"coverage\":\"20000 行、每行 8192 字符标量、8 维向量；外排序、超缓存容量扫描/磁盘 Flat、事务读己之写、回滚、提交、重启、两次强杀。\",\"scope\":\"Reduced-memory boundary probe, not the official 2 GiB full-scale workload\",\"mode_note\":\"压力检查还测试协议 ann 请求的兼容性，底层仍执行精确算法；它不是 ANN 性能实验，不混入本轮 exact 性能比分。\"},\"delivery\":{\"status\":\"PASS\",\"architecture\":\"amd64\",\"versions\":[\"3.12.8\",\"1.26.4\"],\"verified\":\"empty volume,documented examples,EOF rollback,restart persistence,no network sockets,no writes outside data volume\"},\"source_identity\":{\"final_source_matches_measured_archive\":true,\"production_file_sha256\":{\"minivector/__init__.py\":\"63e0e4daa7f4ed54aa06ca998a929efdca3c5e57c18884b8539d004107d4790e\",\"minivector/__main__.py\":\"6dd0642d3c910f4c5a768e79b5548d9ebd0974c12e7e30b0bf4d38b9419832c6\",\"minivector/engine.py\":\"ff71fc533e7763ce1d680ee753007f1faa855624c99321a87b328489d6acdc0c\",\"minivector/flat_index.py\":\"6bce06f85fbf7138b2e74ef8dcb1786cfa69acc3b8014187333c41531446f9dc\",\"minivector/jsonl.py\":\"6767d4bd4e23a996ea02552ac76813fd79106612a30babd5aa8b1aa8a2742107\",\"minivector/segments.py\":\"6a3eb8c5a88b55173d338f48960f0c512c7da1b71e588a648417ea45219e572c\",\"minivector/sql.py\":\"0cd2fee1dca14593770679c757ad913a6b5a9d736dacfad4e0555fdf4ffd70ac\",\"minivector/vector.py\":\"174a4cd62503f0f16c4ab7d2adda44efb38e82d01a1d9c5c61d5069824644541\",\"requirements.txt\":\"aba6405e5d8c6a3d7bb5104d28e823afb56305ef2f9d3e707d888f63993dfbd4\"}},\"formal_admission\":\"not rerun; public tests do not establish formal admission\"}"
+  },
+  {
+   "id": "python-platform-20261114",
+   "source": "用户提供的截图、准入确认及后续 Prompt 反馈",
+   "status": "executed",
+   "output": "2026-11-14 22:31，2026-competition-round2，e1561a7292443e4945b580cb23a24e399c2c18a5。提测列表执行成功，成功 1、失败 0。用户确认 MySQL 正式准入通过，随后反馈 Agent Prompt 仍没有分数。"
+  },
+  {
+   "id": "python-binary-storage-20261114",
+   "source": "既有实验记录 python-binary-storage-20261114 的 output 字段。结构化结果转为 JSON 字符串便于引用。",
+   "status": "executed",
+   "output": "{\"image\":\"minivector-python:binary-20261114\",\"image_id\":\"sha256:16123d3a333378e80508ca7f48695b9e23830179508c360bf2dc2c7c0cc78378\",\"source_archive_sha256\":\"632296043f17faf5aa2537362aa0a547458326e707433e6cac66ac16993966b8\",\"changes\":[\"新增 minivector/segments.py，以 Python struct/标准文件接口写不可变 .mvb 段，存储类型化 BIGINT、UTF-8 VARCHAR、float32 VECTOR。\",\"将主键和行位置合并在段尾；段尾缓冲超过 256 KiB 时写数据目录内临时文件，限制常驻内存。\",\"保留数据/索引同步、清单原子替换与目录同步，成功响应前完成必要持久化；索引可恢复、回滚可见集合不变。\",\"仍可读取旧 JSONL/主键侧文件以及新旧混合段；宽行在解码前做缓存预算检查，超过预算走流式扫描或磁盘 Flat。\"],\"vector_body_bytes\":5120000,\"query_directory_results\":{\"no_index\":{\"frozen\":{\"logical_data_bytes\":25546504,\"data_files\":201},\"binary\":{\"logical_data_bytes\":5567828,\"data_files\":101}},\"with_index\":{\"frozen\":{\"logical_data_bytes\":30837365,\"data_files\":301},\"binary\":{\"logical_data_bytes\":10858489,\"data_files\":201}}},\"paired_improvement\":[{\"stage\":\"binary\",\"profile\":\"no_index\",\"round_E_gains\":[0.09918263332580146,0.08703023488704864,0.09585204544630965],\"before_median\":0.540627,\"after_median\":0.635468},{\"stage\":\"binary\",\"profile\":\"with_index\",\"round_E_gains\":[0.09142007275624398,0.08701343294204822,0.0869270954579432],\"before_median\":0.692528,\"after_median\":0.779541}]}"
+  },
+  {
+   "id": "python-six-metrics-comparison-20261114",
+   "source": "既有实验记录 python-six-metrics-comparison-20261114 的 output 字段。结构化结果转为 JSON 字符串便于引用。",
+   "status": "executed",
+   "output": "{\"scope\":\"Python + exact / E_local only；所有数值从已完成报告直接抽取，非本次编辑材料时重跑\",\"units\":{\"time\":\"ms\",\"io\":\"bytes, rbytes+wbytes\",\"memory\":\"bytes, cgroup memory.peak\"},\"normalization\":\"f=(base+epsilon)/(base+actual+2*epsilon); E_phase=0.6*f(T)+0.2*f(B)+0.2*f(M); E=(E_write+2*E_query)/3\",\"epsilon\":{\"time_ms\":1,\"io_bytes\":1048576,\"memory_bytes\":1048576},\"baseline_policy\":\"各索引场景分别冻结原始 Python 的三轮各项中位数；每轮候选用该固定基线计算，再取三轮 E 中位数并保留六位小数。固定基线自身逐轮 E 中位数可略偏离 0.5。\",\"round_columns\":[\"round\",\"write_time_ms\",\"write_io_bytes\",\"write_memory_bytes\",\"query_time_ms\",\"query_io_bytes\",\"query_memory_bytes\",\"E_local\"],\"variants\":[{\"variant\":\"no_index/frozen\",\"rounds\":[[1,8699.281641995185,26693632,37298176,5690.56206800451,26693632,56373248,0.5051227193105045],[2,9640.631076996215,26693632,37552128,6444.745996996062,26693632,56356864,0.48746245688135675],[3,9640.797868996742,26693632,37269504,4733.265664006467,26693632,55930880,0.5186238172027426]],\"median_E_local\":0.505123,\"evidence\":{\"path\":\".artifacts/baseline-20261114-175804/performance/python.json\",\"sha256\":\"4810352749216cbb3ccb42ee458daf36e969bf5b292ccc4f3a3bbf562b57ea29\"}},{\"variant\":\"no_index/baseline_paired\",\"rounds\":[[1,9993.056599996635,26697728,37756928,5427.200548001565,26693632,55906304,0.5030039903237561],[2,9214.64963600738,26693632,37359616,5416.3341199891875,26693632,56004608,0.5073745531431832],[3,9811.514440996689,26693632,37527552,5157.932182002696,26693632,56143872,0.508963735061808]],\"median_E_local\":0.507375,\"evidence\":{\"path\":\".artifacts/python-optimization-20261114/query-paired/baseline.json\",\"sha256\":\"f9cb25d6d1a679db5585787f9826d011c8192d841ee992109cd79015e24dba26\"}},{\"variant\":\"no_index/query\",\"rounds\":[[1,9456.69471200381,26693632,37380096,4329.697263994603,26693632,55164928,0.5287837077583105],[2,9306.365003998508,26693632,37928960,4854.329241003143,26693632,55402496,0.5179083499606962],[3,9502.630980990943,26693632,37900288,4126.501060003648,26693632,55263232,0.5329599312565257]],\"median_E_local\":0.528784,\"evidence\":{\"path\":\".artifacts/python-optimization-20261114/query-paired/query.json\",\"sha256\":\"95308017bd18c76ad6d8d0df7b52d1bd1e8f52b33381ef0ed458c6d6b95b4722\"}},{\"variant\":\"no_index/query_repeated\",\"rounds\":[[1,9889.500689008855,26693632,37347328,4320.9385280060815,26693632,55218176,0.5267278547642581],[2,9765.841496991925,26693632,37453824,4886.953449007706,26693632,55631872,0.5149027924872954],[3,9566.689609011519,26693632,37580800,4443.013880998478,26693632,55201792,0.5255572787945848]],\"median_E_local\":0.525557,\"evidence\":{\"path\":\".artifacts/python-optimization-20261114/input-paired/query.json\",\"sha256\":\"46fd20ab7f795576d2ba1f819c7408900fb9634cc85d9081e382559ad14c8cae\"}},{\"variant\":\"no_index/input\",\"rounds\":[[1,7460.382422999828,26693632,37523456,4834.939702006523,26693632,55091200,0.529648231305337],[2,8322.971550005605,26693632,37527552,4464.780442998745,26693632,55435264,0.5319102938027431],[3,8424.484482995467,26693632,37355520,4609.679468994727,26693632,55369728,0.5282679781665084]],\"median_E_local\":0.529648,\"evidence\":{\"path\":\".artifacts/python-optimization-20261114/input-paired/input.json\",\"sha256\":\"db84f6845a320902dd92e9f98f7e1bbd57305587eba028f79969b758415346bb\"}},{\"variant\":\"no_index/input_repeated\",\"rounds\":[[1,9047.666000988102,26693632,37302272,4099.566801000037,26693632,55300096,0.5362855217730669],[2,8278.694276988972,26693632,37384192,4105.573788998299,26693632,55144448,0.5406265634471571],[3,7941.378085990436,26693632,37269504,4004.90764999995,26693632,55209984,0.5451135954161538]],\"median_E_local\":0.540627,\"evidence\":{\"path\":\".artifacts/python-optimization-20261114/binary-paired/input.json\",\"sha256\":\"9aa541836f5cdeec86d5f0beb2126f9aa1f8e66f73cbdfb0dfb745e336536538\"}},{\"variant\":\"no_index/binary\",\"rounds\":[[1,6844.314677000511,6201344,16134144,4142.140593990916,6201344,34414592,0.6354681550988683],[2,6226.113804994384,6201344,16338944,4686.473024004954,6201344,34480128,0.6276567983342057],[3,6262.657123996178,6201344,16236544,4089.303356013261,6201344,34353152,0.6409656408624634]],\"median_E_local\":0.635468,\"evidence\":{\"path\":\".artifacts/python-optimization-20261114/binary-paired/binary.json\",\"sha256\":\"e69a36719679176a8ba5cfcfad7ade31c19e369866fb1e9b869e3ff61c2bbf4b\"}},{\"variant\":\"with_index/frozen\",\"rounds\":[[1,9562.335891998373,26693632,37257216,481701.98643898766,32034816,43356160,0.5009161175255076],[2,9546.749606000958,26693632,37683200,489017.5608510035,32034816,43917312,0.4988874911423285],[3,9852.51033399254,26693632,37752832,484763.52302099986,32034816,43487232,0.4984756167456059]],\"median_E_local\":0.498887,\"evidence\":{\"path\":\".artifacts/optimization-20261114/step3-indexed/python.json\",\"sha256\":\"aba9f0b227f982ca515cdbb15e93cbb7fa551ba38636531c1fca6452179fb9db\"}},{\"variant\":\"with_index/query\",\"rounds\":[[1,9485.22332200082,26693632,37728256,4164.11922199768,32034816,60821504,0.6861174105380426],[2,9434.381540995673,26693632,37654528,4662.43071599456,32034816,61153280,0.6858405642936539],[3,9686.338265993982,26693632,37302272,4342.357229994377,32034816,61001728,0.6850136836150363]],\"median_E_local\":0.685841,\"evidence\":{\"path\":\".artifacts/python-optimization-20261114/query-indexed/query.json\",\"sha256\":\"2d2a4e4d43f687c498c3ce26211f48cea34a5bbc46ebeba01326f5e7f2458fe1\"}},{\"variant\":\"with_index/input\",\"rounds\":[[1,8535.582562006311,26693632,37597184,4100.506311006029,32034816,61243392,0.6912729522987225],[2,8507.378800000879,26693632,37158912,3961.7306019936223,32034816,61145088,0.6917917863153958],[3,8660.351605998585,26693632,37335040,4062.8905839985237,32034816,60665856,0.6909956044079353]],\"median_E_local\":0.691273,\"evidence\":{\"path\":\".artifacts/python-optimization-20261114/input-indexed/input.json\",\"sha256\":\"6e8db4a378c1e0bb905bcaa5cd340cd6004a9096467aec1b3c3f2fa810cd956d\"}},{\"variant\":\"with_index/input_repeated\",\"rounds\":[[1,8047.191263001878,26693632,37580800,4271.446270999149,32034816,61022208,0.694187148547004],[2,8348.197706000064,26693632,37400576,4274.367914986215,32034816,60850176,0.6925277567717272],[3,8462.552231998416,26693632,37605376,4042.0539189944975,32034816,60932096,0.6919074014604747]],\"median_E_local\":0.692528,\"evidence\":{\"path\":\".artifacts/python-optimization-20261114/binary-indexed/input.json\",\"sha256\":\"eaf6d347e1803a221e6ae65bf1d362c27d9dc05ed6c1654e83843e812b5eb1b8\"}},{\"variant\":\"with_index/binary\",\"rounds\":[[1,5809.629388997564,6201344,16273408,4268.086996002239,11542528,40235008,0.785607221303248],[2,6587.815963008325,6201344,16502784,4056.4598490018398,11542528,40304640,0.7795411897137754],[3,6738.062898002681,6201344,16089088,4168.005140003515,11542528,40136704,0.7788344969184179]],\"median_E_local\":0.779541,\"evidence\":{\"path\":\".artifacts/python-optimization-20261114/binary-indexed/binary.json\",\"sha256\":\"1ca06bdd652eccc5f1ead863cea186b77c8dd1fa9f1de174d25eabc283b94696\"}}],\"correctness_for_every_listed_round\":{\"write_correct\":true,\"query_correct\":true,\"resources_ok\":true,\"recall_unfiltered\":1.0,\"recall_filtered\":1.0,\"query_counts\":{\"unfiltered\":500,\"filtered\":500}},\"paired_gates\":[{\"stage\":\"query\",\"profile\":\"no_index\",\"round_E_gains\":[0.025779717434554428,0.010533796817512986,0.02399619619471771],\"before_median\":0.507375,\"after_median\":0.528784},{\"stage\":\"input\",\"profile\":\"no_index\",\"round_E_gains\":[0.002920376541078906,0.017007501315447704,0.002710699371923586],\"before_median\":0.525557,\"after_median\":0.529648},{\"stage\":\"binary\",\"profile\":\"no_index\",\"round_E_gains\":[0.09918263332580146,0.08703023488704864,0.09585204544630965],\"before_median\":0.540627,\"after_median\":0.635468},{\"stage\":\"binary\",\"profile\":\"with_index\",\"round_E_gains\":[0.09142007275624398,0.08701343294204822,0.0869270954579432],\"before_median\":0.692528,\"after_median\":0.779541}],\"order_and_limits\":\"无索引逐阶段交替成对；查询/输入阶段带索引仅与冻结原始 Python 对比，没有每阶段重复约 485 秒原始查询。最终二进制存储的两种场景都与前一版交替复测。不同批次的对照波动不混为同轮结果。\"}"
+  },
+  {
+   "id": "filter-three-way-observed",
+   "status": "executed",
+   "source": "本次 Windows/Python 3.8.8/NumPy 1.20.1 三轮诊断",
+   "output": "关闭缓存、只查找、完整缓存三组的候选构造中位数分别为 13.36、13.19、17.91 ms。每轮完整缓存 0 次命中、500 次写入、468 次淘汰。超预算时基线和候选的缓存路径调用均为 0。"
+  },
+  {
+   "id": "filter-three-way-raw",
+   "status": "executed",
+   "source": "本次诊断工具的逐轮 JSON 输出",
+   "output": "[{\"scenario\":\"low-reuse\",\"postings\":\"off\",\"queries\":500,\"seconds\":0.22593799999999487,\"filter_seconds\":0.0131115,\"cache_calls\":500,\"cache_bytes\":7460468,\"hits\":0,\"writes\":0,\"evictions\":0,\"round\":1},{\"scenario\":\"low-reuse\",\"postings\":\"lookup-only\",\"queries\":500,\"seconds\":0.21635139999999708,\"filter_seconds\":0.0131687,\"cache_calls\":500,\"cache_bytes\":7460468,\"hits\":0,\"writes\":0,\"evictions\":0,\"round\":1},{\"scenario\":\"low-reuse\",\"postings\":\"on\",\"queries\":500,\"seconds\":0.2234746000000074,\"filter_seconds\":0.017908,\"cache_calls\":500,\"cache_bytes\":7484852,\"hits\":0,\"writes\":500,\"evictions\":468,\"round\":1},{\"scenario\":\"low-reuse\",\"postings\":\"lookup-only\",\"queries\":500,\"seconds\":0.21564199999999722,\"filter_seconds\":0.0131925,\"cache_calls\":500,\"cache_bytes\":7460468,\"hits\":0,\"writes\":0,\"evictions\":0,\"round\":2},{\"scenario\":\"low-reuse\",\"postings\":\"on\",\"queries\":500,\"seconds\":0.21870669999999848,\"filter_seconds\":0.0173416,\"cache_calls\":500,\"cache_bytes\":7484852,\"hits\":0,\"writes\":500,\"evictions\":468,\"round\":2},{\"scenario\":\"low-reuse\",\"postings\":\"off\",\"queries\":500,\"seconds\":0.24646539999999106,\"filter_seconds\":0.0143052,\"cache_calls\":500,\"cache_bytes\":7460468,\"hits\":0,\"writes\":0,\"evictions\":0,\"round\":2},{\"scenario\":\"low-reuse\",\"postings\":\"on\",\"queries\":500,\"seconds\":0.23221639999999866,\"filter_seconds\":0.018243,\"cache_calls\":500,\"cache_bytes\":7484852,\"hits\":0,\"writes\":500,\"evictions\":468,\"round\":3},{\"scenario\":\"low-reuse\",\"postings\":\"off\",\"queries\":500,\"seconds\":0.23050939999999365,\"filter_seconds\":0.0133645,\"cache_calls\":500,\"cache_bytes\":7460468,\"hits\":0,\"writes\":0,\"evictions\":0,\"round\":3},{\"scenario\":\"low-reuse\",\"postings\":\"lookup-only\",\"queries\":500,\"seconds\":0.230106899999992,\"filter_seconds\":0.0140362,\"cache_calls\":500,\"cache_bytes\":7460468,\"hits\":0,\"writes\":0,\"evictions\":0,\"round\":3},{\"scenario\":\"repeated\",\"postings\":\"on\",\"queries\":500,\"seconds\":0.22131150000000854,\"filter_seconds\":0.002709,\"cache_calls\":500,\"cache_bytes\":7461230,\"hits\":499,\"writes\":500,\"evictions\":0,\"variant\":\"baseline\"},{\"scenario\":\"low-reuse\",\"postings\":\"on\",\"queries\":500,\"seconds\":0.24638039999999872,\"filter_seconds\":0.0195415,\"cache_calls\":500,\"cache_bytes\":7484852,\"hits\":0,\"writes\":500,\"evictions\":468,\"variant\":\"baseline\"},{\"scenario\":\"over-budget\",\"postings\":\"on\",\"queries\":12,\"seconds\":2.5028571999999984,\"filter_seconds\":0.0,\"cache_calls\":0,\"cache_bytes\":0,\"hits\":0,\"writes\":0,\"evictions\":0,\"variant\":\"baseline\"},{\"scenario\":\"repeated\",\"postings\":\"on\",\"queries\":500,\"seconds\":0.2216949999999951,\"filter_seconds\":0.0026131,\"cache_calls\":500,\"cache_bytes\":7461230,\"hits\":499,\"writes\":500,\"evictions\":0,\"variant\":\"candidate\"},{\"scenario\":\"low-reuse\",\"postings\":\"on\",\"queries\":500,\"seconds\":0.24314660000000998,\"filter_seconds\":0.0160771,\"cache_calls\":500,\"cache_bytes\":7484852,\"hits\":0,\"writes\":500,\"evictions\":468,\"variant\":\"candidate\"},{\"scenario\":\"over-budget\",\"postings\":\"on\",\"queries\":12,\"seconds\":2.4763842999999994,\"filter_seconds\":0.0,\"cache_calls\":0,\"cache_bytes\":0,\"hits\":0,\"writes\":0,\"evictions\":0,\"variant\":\"candidate\"}]"
+  },
+  {
+   "id": "filter-regression",
+   "status": "executed",
+   "source": "本轮实际命令输出",
+   "output": "基线：60 项回归通过，20/20 公开样例、95 条 SQL 通过。候选：60 项回归通过，20/20 公开样例、95 条 SQL 通过。公开样例通过本地核心 API 执行。"
+  },
+  {
+   "id": "python-exact-screen-20261116",
+   "status": "executed",
+   "source": "docs/python-performance-20261116.json；原始输出在 .artifacts/python-optimization-20261116",
+   "output": "{\"baseline_sha\":\"8ec857e60bd63f345c9341038ffd37018a5f163e\",\"changes\":[\"64 KiB immutable-segment primary-key ranges; scan on overlap or saturation\",\"reuse validated vectors only within the same parsed SELECT expression\",\"float32 scan with conservative error envelope and exact math.fsum refinement; float64 overflow/high-dimension fallback\"],\"summary\":{\"no_index\":{\"baseline\":{\"write\":{\"time_ms\":5204.594399999991,\"io_bytes\":6201344,\"memory_bytes\":16617472},\"query\":{\"time_ms\":2817.232700000005,\"io_bytes\":6201344,\"memory_bytes\":34512896}},\"candidate\":{\"write\":{\"time_ms\":4971.3451000000005,\"io_bytes\":6201344,\"memory_bytes\":16142336},\"query\":{\"time_ms\":2275.593299999997,\"io_bytes\":6201344,\"memory_bytes\":34029568}},\"baseline_E_local\":0.499981,\"candidate_E_local\":0.524395,\"E_relative_gain_percent\":4.882985553451014,\"round_E_gains\":[0.021656216238746584,0.029182599956295407,0.029167790321101894],\"time_reduction_percent\":{\"write\":4.481603792218481,\"query\":19.225937566321992}},\"with_index\":{\"baseline\":{\"write\":{\"time_ms\":5166.8994999999995,\"io_bytes\":6201344,\"memory_bytes\":16539648},\"query\":{\"time_ms\":2941.6487000000016,\"io_bytes\":11542528,\"memory_bytes\":40710144}},\"candidate\":{\"write\":{\"time_ms\":4900.960699999999,\"io_bytes\":6201344,\"memory_bytes\":16322560},\"query\":{\"time_ms\":2239.748200000001,\"io_bytes\":11542528,\"memory_bytes\":39489536}},\"baseline_E_local\":0.499906,\"candidate_E_local\":0.529833,\"E_relative_gain_percent\":5.986525466787751,\"round_E_gains\":[0.03215422125181655,0.02992618673928643,0.03697901200314646],\"time_reduction_percent\":{\"write\":5.14697063490398,\"query\":23.860785959927856}}},\"engine_tests_passed\":68,\"measurement_tests_passed\":34,\"public_cases_passed\":20,\"final_exact_queries_verified\":12000,\"over_memory_checks_passed\":222,\"over_memory_docker_sigkills\":2,\"runtime_source_matches_image\":true,\"scope\":\"local E_local; no official hidden admission or platform score\"}"
+  },
+  {
+   "id": "block-matrix",
+   "source": "本次实际工具输出",
+   "status": "executed",
+   "output": "边界候选 p50/p95/max 均为 10，fsum 总调用 10000 次。\n{\"scope\":\"local topk kernel, exact returned rows and distances vs baseline\",\"rows\":10000,\"queries\":1000,\"fsum_total\":10000,\"candidate_p50\":10.0,\"candidate_p95\":10,\"candidate_max\":10,\"rounds\":[[1,256,false,2.2219922999999993],[1,256,true,1.7030730999999992],[1,512,true,2.0258942000000015],[1,1024,true,1.8109753999999985],[1,2048,true,2.005452400000001],[1,4096,true,2.3743465000000015],[2,4096,true,2.2179353999999982],[2,2048,true,1.9541168000000013],[2,1024,true,1.8404001999999977],[2,512,true,1.9531975999999993],[2,256,true,1.905104999999999],[2,256,false,2.0336295],[3,256,false,2.0595414000000005],[3,256,true,1.8423040999999998],[3,512,true,1.920228999999999],[3,1024,true,1.8881378000000026],[3,2048,true,1.9606864000000002],[3,4096,true,2.219417]]}"
+  },
+  {
+   "id": "block-paired",
+   "source": "本次实际工具输出",
+   "status": "executed",
+   "output": "本地 JSONL 三轮。512 行基线查询中位数 3.002188 秒，256 行候选 2.722095 秒。六组共 6000 条独立真值核对与重启检查通过。\n{\"baseline_sha\":\"8ec857e60bd63f345c9341038ffd37018a5f163e\",\"python\":\"3.8.8 (default, Apr 13 2021, 15:08:03) [MSC v.1916 64 bit (AMD64)]\",\"rounds\":[{\"round\":1,\"variant\":\"baseline\",\"write_seconds\":4.921150200000001,\"query_seconds\":3.002187599999999,\"verified_queries\":1000,\"persisted\":true,\"io_bytes\":null,\"memory_bytes\":null},{\"round\":1,\"variant\":\"candidate\",\"write_seconds\":4.6645629,\"query_seconds\":2.722095000000003,\"verified_queries\":1000,\"persisted\":true,\"io_bytes\":null,\"memory_bytes\":null},{\"round\":2,\"variant\":\"candidate\",\"write_seconds\":4.724395099999995,\"query_seconds\":2.86754719999999,\"verified_queries\":1000,\"persisted\":true,\"io_bytes\":null,\"memory_bytes\":null},{\"round\":2,\"variant\":\"baseline\",\"write_seconds\":4.771867200000003,\"query_seconds\":2.920915699999995,\"verified_queries\":1000,\"persisted\":true,\"io_bytes\":null,\"memory_bytes\":null},{\"round\":3,\"variant\":\"baseline\",\"write_seconds\":4.638017200000007,\"query_seconds\":3.006259099999994,\"verified_queries\":1000,\"persisted\":true,\"io_bytes\":null,\"memory_bytes\":null},{\"round\":3,\"variant\":\"candidate\",\"write_seconds\":4.71049579999999,\"query_seconds\":2.7167910999999947,\"verified_queries\":1000,\"persisted\":true,\"io_bytes\":null,\"memory_bytes\":null}],\"numpy\":\"1.20.1\"}"
+  },
+  {
+   "id": "block-counterexample",
+   "source": "本次实际工具输出",
+   "status": "executed",
+   "output": "10000 组随机距离中 5273 组不同，383 组超过 1 ULP，最大 2 ULP。并列场景中，批量归约会选主键 10，实际 SQL 返回 [[3, 218.299801775181]]。\n{\"vectors\":[[0.0078125,2.0,128.0,5.960464477539063e-08,9.313225746154785e-10,2.9802322387695312e-08,3.725290298461914e-09,0.0625,16.0,2.3283064365386963e-10,1.0,16.0,1.862645149230957e-09,0.00390625,5.960464477539063e-08,0.0078125,0.25,0.000244140625,0.125,0.00048828125,0.000244140625,0.015625,9.5367431640625e-07,5.960464477539063e-08,5.960464477539063e-08,4.0,0.5,6.103515625e-05,0.00048828125,9.313225746154785e-10,0.0078125,16.0,64.0,0.0625,1.4901161193847656e-08,1.0,3.814697265625e-06,2.384185791015625e-07,1.1920928955078125e-07,0.0009765625,0.25,64.0,0.00048828125,0.0001220703125,0.00390625,1.52587890625e-05,0.0001220703125,7.62939453125e-06,3.725290298461914e-09,6.103515625e-05,0.0001220703125,0.001953125,0.0001220703125,0.000244140625,0.00048828125,8.0,2.3283064365386963e-10,0.125,2.9802322387695312e-08,5.960464477539063e-08,1.0,3.0517578125e-05,2.3283064365386963e-10,1.0,0.25,8.0,6.103515625e-05,8.0,2.3283064365386963e-10,1.862645149230957e-09,0.125,2.384185791015625e-07,0.015625,9.5367431640625e-07,1.9073486328125e-06,5.960464477539063e-08,6.103515625e-05,6.103515625e-05,1.0,4.0,0.000244140625,64.0,0.0625,2.384185791015625e-07,0.0625,0.03125,4.0,2.0,4.656612873077393e-10,0.0009765625,0.0625,4.76837158203125e-07,32.0,0.001953125,0.000244140625,6.103515625e-05,2.3283064365386963e-10,9.313225746154785e-10,6.103515625e-05,1.1920928955078125e-07,0.000244140625,128.0,2.0,1.0,1.4901161193847656e-08,0.00048828125,0.125,1.52587890625e-05,7.450580596923828e-09,3.814697265625e-06,16.0,16.0,4.0,9.5367431640625e-07,2.0,7.62939453125e-06,4.656612873077393e-10,0.001953125,0.125,3.0517578125e-05,0.5,5.960464477539063e-08,0.125,0.03125,1.4901161193847656e-08,0.001953125,4.0,1.862645149230957e-09],[2.3283064365386963e-10,0.0001220703125,0.25,4.76837158203125e-07,1.4901161193847656e-08,5.960464477539063e-08,6.103515625e-05,0.000244140625,16.0,0.015625,0.001953125,6.103515625e-05,0.000244140625,4.0,6.103515625e-05,16.0,0.125,64.0,0.03125,3.0517578125e-05,1.52587890625e-05,1.0,0.0078125,9.5367431640625e-07,0.00048828125,2.3283064365386963e-10,0.0001220703125,5.960464477539063e-08,1.1920928955078125e-07,2.9802322387695312e-08,0.125,2.9802322387695312e-08,0.0001220703125,0.000244140625,0.0078125,8.0,0.0001220703125,9.5367431640625e-07,1.0,5.960464477539063e-08,0.125,9.313225746154785e-10,1.0,3.814697265625e-06,0.03125,0.000244140625,4.0,0.0009765625,8.0,0.125,7.450580596923828e-09,9.313225746154785e-10,0.25,5.960464477539063e-08,1.0,0.00390625,1.862645149230957e-09,1.1920928955078125e-07,4.0,2.384185791015625e-07,128.0,1.52587890625e-05,0.001953125,1.9073486328125e-06,0.0625,6.103515625e-05,2.384185791015625e-07,5.960464477539063e-08,2.0,1.4901161193847656e-08,2.0,0.0625,0.00048828125,0.0009765625,0.00048828125,1.862645149230957e-09,32.0,4.656612873077393e-10,3.0517578125e-05,64.0,6.103515625e-05,0.001953125,64.0,16.0,3.725290298461914e-09,2.384185791015625e-07,0.5,2.3283064365386963e-10,0.000244140625,0.0078125,0.00048828125,5.960464477539063e-08,0.00048828125,0.25,0.0625,16.0,6.103515625e-05,4.656612873077393e-10,16.0,0.001953125,7.62939453125e-06,128.0,2.0,0.000244140625,8.0,9.313225746154785e-10,2.3283064365386963e-10,0.5,0.00390625,1.4901161193847656e-08,5.960464477539063e-08,1.862645149230957e-09,0.015625,4.0,0.0625,1.0,6.103515625e-05,9.5367431640625e-07,3.725290298461914e-09,0.125,4.0,1.0,0.125,2.0,0.0625,2.3283064365386963e-10,7.62939453125e-06,3.814697265625e-06]],\"scalar\":[218.299801775181,218.299801775181],\"batch\":[218.29980177518098,218.299801775181]}"
+  },
+  {
+   "id": "block-boundary-migration",
+   "source": "本次工具实际结果；arrays 依查询顺序",
+   "status": "executed",
+   "output": "本地诊断：两版均通过 20 组同距与 20 组 float32 近邻；1000 条查询共 600 万个批量距离平方，最大 0 ULP。500 个同距候选压力下，256 行三轮均更慢。保留版 60 个回归通过。\n{\"array_columns\":[\"max_ulp\",\"over_1_ulp\",\"pairs\"],\"queries\":1000,\"strict_tie_groups\":20,\"near_groups\":20,\"high_tie\":{\"rows\":10000,\"boundary_rows\":500,\"queries_per_round\":100,\"seed\":\"deterministic constant vectors, no RNG\",\"rounds\":[[1,512,1.3840224999999995],[1,256,1.4266753999999997],[2,256,1.433224599999999],[2,512,1.4259640999999998],[3,512,1.3905013000000004],[3,256,1.4420713000000003]]},\"arrays_lossless_encoding\":{\"order\":\"queries 0..999\",\"repeat_count\":500,\"repeated_pattern\":[[0,0,10000],[0,0,2000]],\"columns\":[\"max_ulp\",\"over_1_ulp\",\"pairs\"],\"explanation\":\"原数组每两行重复一次，共500次；可按此模式完整还原1000条查询记录。\"},\"verified_pairs_total\":6000000,\"max_ulp\":0,\"over_1_ulp_total\":0}"
+  },
+  {
+   "id": "commit-cut-initial-results",
+   "status": "executed",
+   "source": "本地 JSONL 子进程故障注入",
+   "output": "A：清单未变，未收到提交响应，重启为 {1,2}。B：清单已变，未收到提交响应，重启为 {2,3}。C：已收到 ok:true，重启为 {2,3}。\n{\"cut\": \"before\", \"checkpoint\": \"CUT before\", \"killed_pid\": 34116, \"commit_request_id\": 4, \"commit_response\": null, \"catalog_changed\": false, \"restarted_rows\": [[1], [2]], \"expected_rows\": [[1], [2]], \"passed\": true}\n{\"cut\": \"after\", \"checkpoint\": \"CUT after\", \"killed_pid\": 10296, \"commit_request_id\": 4, \"commit_response\": null, \"catalog_changed\": true, \"restarted_rows\": [[2], [3]], \"expected_rows\": [[2], [3]], \"passed\": true}\n{\"cut\": \"ack\", \"checkpoint\": \"client received COMMIT success\", \"killed_pid\": 24276, \"commit_request_id\": 4, \"commit_response\": {\"id\": 4, \"ok\": true, \"affected_rows\": 0}, \"catalog_changed\": true, \"restarted_rows\": [[2], [3]], \"expected_rows\": [[2], [3]], \"passed\": true}"
+  },
+  {
+   "id": "commit-cut-layer-retest",
+   "status": "executed",
+   "source": "python -m tools.verify_commit_cut all；恢复前通过段 Reader 读取，无数据库实例",
+   "output": "恢复启动前，A 清单引用的段已经包含 {1,2}，B 和 C 清单引用的段已经包含 {2,3}。三组恢复后清单哈希及引用段记录保持一致，SQL 与段记录相符。\n{\"cut\": \"before\", \"checkpoint\": \"CUT before\", \"killed_pid\": 30460, \"commit_request_id\": 4, \"commit_response\": null, \"catalog_changed\": false, \"restarted_rows\": [[1], [2]], \"expected_rows\": [[1], [2]], \"pre_recovery\": {\"catalog_sha256\": \"2f1bd2978d869dd18c9b17cd108aa90c41d9575f2915c54952133d85070f5815\", \"segments\": [{\"name\": \"rows-54230b1fe80f4050a2c6bcd0e1051474.mvb\", \"rows\": [[1], [2]]}]}, \"post_recovery\": {\"catalog_sha256\": \"2f1bd2978d869dd18c9b17cd108aa90c41d9575f2915c54952133d85070f5815\", \"segments\": [{\"name\": \"rows-54230b1fe80f4050a2c6bcd0e1051474.mvb\", \"rows\": [[1], [2]]}]}, \"passed\": true}\n{\"cut\": \"after\", \"checkpoint\": \"CUT after\", \"killed_pid\": 32952, \"commit_request_id\": 4, \"commit_response\": null, \"catalog_changed\": true, \"restarted_rows\": [[2], [3]], \"expected_rows\": [[2], [3]], \"pre_recovery\": {\"catalog_sha256\": \"05b9bfad81b79ffbfcab3c14d5925f63d3085cc430ab7f8866c3320e491f8195\", \"segments\": [{\"name\": \"rows-08ac74a0396040fd819296b7eb28ff05.mvb\", \"rows\": [[2]]}, {\"name\": \"rows-58899e7a69234e298b66707a79e9f603.mvb\", \"rows\": [[3]]}]}, \"post_recovery\": {\"catalog_sha256\": \"05b9bfad81b79ffbfcab3c14d5925f63d3085cc430ab7f8866c3320e491f8195\", \"segments\": [{\"name\": \"rows-08ac74a0396040fd819296b7eb28ff05.mvb\", \"rows\": [[2]]}, {\"name\": \"rows-58899e7a69234e298b66707a79e9f603.mvb\", \"rows\": [[3]]}]}, \"passed\": true}\n{\"cut\": \"ack\", \"checkpoint\": \"client received COMMIT success\", \"killed_pid\": 27092, \"commit_request_id\": 4, \"commit_response\": {\"id\": 4, \"ok\": true, \"affected_rows\": 0}, \"catalog_changed\": true, \"restarted_rows\": [[2], [3]], \"expected_rows\": [[2], [3]], \"pre_recovery\": {\"catalog_sha256\": \"a3962d67f3d056efd9be62bffe1be9a76d86ede366a796f96a3a45b4a947bf4e\", \"segments\": [{\"name\": \"rows-0ba23b84068e45718531646b77335d76.mvb\", \"rows\": [[2]]}, {\"name\": \"rows-60de047a0cd34bd6b9362455a3da5dbf.mvb\", \"rows\": [[3]]}]}, \"post_recovery\": {\"catalog_sha256\": \"a3962d67f3d056efd9be62bffe1be9a76d86ede366a796f96a3a45b4a947bf4e\", \"segments\": [{\"name\": \"rows-0ba23b84068e45718531646b77335d76.mvb\", \"rows\": [[2]]}, {\"name\": \"rows-60de047a0cd34bd6b9362455a3da5dbf.mvb\", \"rows\": [[3]]}]}, \"passed\": true}"
+  },
+  {
+   "id": "commit-cut-migration-result",
+   "status": "executed",
+   "source": "python -m tools.verify_commit_cut migration；禁用向量缓存以实际使用磁盘 Flat",
+   "output": "截去一个完整索引记录后 valid() 返回 false。恢复重建 fsync 前被强杀且未输出 ready。最终 t 和 u 一致提交，磁盘 exact TopK 为 [(2,0.0),(3,3.0)]。\n{\"commit_checkpoint\":\"CUT after\",\"commit_response\":null,\"injected_index_fault\":\"truncate one whole Flat record\",\"truncated_index_valid\":false,\"recovery_checkpoint\":\"CUT rebuild\",\"ready_before_second_kill\":false,\"catalog_unchanged_after_second_kill\":true,\"abandoned_index_removed\":true,\"repaired_index_valid\":true,\"t\":[[2,[0.0,0.0]],[3,[3.0,0.0]]],\"u\":[[8]],\"exact_disk_topk\":[[2,0.0],[3,3.0]],\"passed\":true}"
+  },
+  {
+   "id": "mixed-keys-initial",
+   "status": "executed",
+   "source": "python -m tools.verify_mixed_keys；核心 API 错误映射和 Reader.keys 跟踪",
+   "output": "键 1 经旧 JSONL 读取后拒绝；键 2 经旧段后由二进制段尾找到并拒绝；批内重复不读旧键。三次失败的清单和文件列表未变，成功后主键为 [1,2,3]。\n{\"values\": \"(1)\", \"response\": {\"ok\": false, \"error\": {\"code\": \"DUPLICATE\", \"message\": \"duplicate primary key\"}}, \"ids\": [1, 2], \"catalog_and_file_list_unchanged\": true, \"key_reads\": [{\"key\": 1, \"path\": \"legacy_jsonl\"}]}\n{\"values\": \"(2)\", \"response\": {\"ok\": false, \"error\": {\"code\": \"DUPLICATE\", \"message\": \"duplicate primary key\"}}, \"ids\": [1, 2], \"catalog_and_file_list_unchanged\": true, \"key_reads\": [{\"key\": 1, \"path\": \"legacy_jsonl\"}, {\"key\": 2, \"path\": \"binary_footer\"}]}\n{\"values\": \"(3),(3)\", \"response\": {\"ok\": false, \"error\": {\"code\": \"DUPLICATE\", \"message\": \"duplicate primary key\"}}, \"ids\": [1, 2], \"catalog_and_file_list_unchanged\": true, \"key_reads\": []}\n{\"values\": \"(3)\", \"response\": {\"ok\": true, \"affected_rows\": 1}, \"ids\": [1, 2, 3], \"catalog_and_file_list_unchanged\": false, \"key_reads\": [{\"key\": 1, \"path\": \"legacy_jsonl\"}, {\"key\": 2, \"path\": \"binary_footer\"}]}"
+  },
+  {
+   "id": "mixed-keys-order-retest",
+   "status": "executed",
+   "source": "本地混合段核心 API 受控对照",
+   "output": "同一初始快照：(1),(1) 返回 DUPLICATE，Reader.keys 轨迹为空；(1),(3) 返回 DUPLICATE，轨迹只读出旧段键 1。两次照常读取到 [1,2]，清单和文件列表未变。\n[{\"values\":\"(1),(1)\",\"response\":{\"ok\":false,\"error\":{\"code\":\"DUPLICATE\",\"message\":\"duplicate primary key\"}},\"ids\":[1,2],\"catalog_and_file_list_unchanged\":true,\"key_reads\":[]},{\"values\":\"(1),(3)\",\"response\":{\"ok\":false,\"error\":{\"code\":\"DUPLICATE\",\"message\":\"duplicate primary key\"}},\"ids\":[1,2],\"catalog_and_file_list_unchanged\":true,\"key_reads\":[{\"key\":1,\"path\":\"legacy_jsonl\"}]}]"
+  },
+  {
+   "id": "mixed-keys-migration",
+   "status": "executed",
+   "source": "python -m tools.verify_mixed_keys migration；独立目录、关闭后重开数据库实例",
+   "output": "重插两组只扫描到键 2。事务内读到 replacement；回滚重开读到 old 且旧文件保留；提交重开读到 replacement 且旧文件清理。\n{\"outcome\": \"ROLLBACK\", \"key_reads_on_reinsert\": [2], \"in_transaction\": [[1, \"replacement\"], [2, \"new\"]], \"after_reopen\": [[1, \"old\"], [2, \"new\"]], \"legacy_file_survives\": true, \"passed\": true}\n{\"outcome\": \"COMMIT\", \"key_reads_on_reinsert\": [2], \"in_transaction\": [[1, \"replacement\"], [2, \"new\"]], \"after_reopen\": [[1, \"replacement\"], [2, \"new\"]], \"legacy_file_survives\": false, \"passed\": true}"
+  },
+  {
+   "id": "mixed-keys-crash",
+   "source": "python -m tools.verify_mixed_keys crash",
+   "status": "executed",
+   "output": "清单已发布而旧段未清理时强杀，客户端未收到确认。恢复前旧文件仍在但已无清单引用；恢复后旧文件被清理，读到 replacement，拒绝直接重复插入，事务内删除后可重插。\n{\"commit_response\":null,\"legacy_exists_before_recovery\":true,\"legacy_referenced_by_published_catalog\":false,\"legacy_exists_after_recovery\":false,\"restarted_rows\":[[1,\"replacement\"],[2,\"new\"]],\"live_duplicate_rejected\":true,\"reinsert_after_delete\":true}"
+  },
+  {
+   "id": "statement-failure-initial",
+   "source": "python -m tools.verify_statement_failure，真实 JSONL 响应及进程重开",
+   "status": "executed",
+   "output": "两组批量 INSERT 均实际返回 DUPLICATE。失败后事务内只见 (1,'edited')。COMMIT 成功后重开仍为 edited，ROLLBACK 成功后重开为 old。\n{\"outcome\": \"COMMIT\", \"failed_statement\": {\"id\": 5, \"ok\": false, \"error\": {\"code\": \"DUPLICATE\", \"message\": \"duplicate primary key\"}}, \"inside\": [[1, \"edited\"]], \"transaction_end\": {\"id\": 7, \"ok\": true, \"affected_rows\": 0}, \"reopened\": [[1, \"edited\"]]}\n{\"outcome\": \"ROLLBACK\", \"failed_statement\": {\"id\": 5, \"ok\": false, \"error\": {\"code\": \"DUPLICATE\", \"message\": \"duplicate primary key\"}}, \"inside\": [[1, \"edited\"]], \"transaction_end\": {\"id\": 7, \"ok\": true, \"affected_rows\": 0}, \"reopened\": [[1, \"old\"]]}"
+  },
+  {
+   "id": "statement-followup-result",
+   "status": "executed",
+   "source": "a2bdfa9 引擎；python -m tools.verify_statement_failure；JSONL 和新进程重开",
+   "output": "两组失败批量 INSERT 返回 DUPLICATE，失败后事务内只有 edited。继续插入键 3 成功，事务内为 edited 和 after。COMMIT 后新进程重开仍是这两行，ROLLBACK 后新进程重开只有 old，键 2 始终没有出现。\n{\"outcome\": \"COMMIT\", \"failed_statement\": {\"id\": 5, \"ok\": false, \"error\": {\"code\": \"DUPLICATE\", \"message\": \"duplicate primary key\"}}, \"inside\": [[1, \"edited\"]], \"followup\": {\"id\": 7, \"ok\": true, \"affected_rows\": 1}, \"after_followup\": [[1, \"edited\"], [3, \"after\"]], \"transaction_end\": {\"id\": 9, \"ok\": true, \"affected_rows\": 0}, \"reopened\": [[1, \"edited\"], [3, \"after\"]]}\n{\"outcome\": \"ROLLBACK\", \"failed_statement\": {\"id\": 5, \"ok\": false, \"error\": {\"code\": \"DUPLICATE\", \"message\": \"duplicate primary key\"}}, \"inside\": [[1, \"edited\"]], \"followup\": {\"id\": 7, \"ok\": true, \"affected_rows\": 1}, \"after_followup\": [[1, \"edited\"], [3, \"after\"]], \"transaction_end\": {\"id\": 9, \"ok\": true, \"affected_rows\": 0}, \"reopened\": [[1, \"old\"]]}"
+  },
+  {
+   "id": "statement-vector-result",
+   "source": "python -m tools.verify_vector_failure；独立数据目录和 JSONL 子进程",
+   "status": "executed",
+   "output": "四组向量迁移通过。维度错误返回 TYPE，合法首行也未插入；后续插入键4成功。回滚后不重启立即返回 [(1,1.0)]，重开相同；提交前后均 [(1,0.0),(4,4.0)]。两组默认缓存配置、两组关闭 NumPy 且建磁盘索引。\n{\"outcome\": \"COMMIT\", \"path\": \"default_cache\", \"warmed_transaction\": [[1, 0.0]], \"error\": {\"id\": 7, \"ok\": false, \"error\": {\"code\": \"TYPE\", \"message\": \"VECTOR dimension mismatch\"}}, \"select_after_failure\": [[1, [0.0, 0.0]]], \"topk_before_end\": [[1, 0.0], [4, 4.0]], \"immediate_after_end\": [[1, 0.0], [4, 4.0]], \"after_restart\": [[1, 0.0], [4, 4.0]], \"passed\": true}\n{\"outcome\": \"ROLLBACK\", \"path\": \"default_cache\", \"warmed_transaction\": [[1, 0.0]], \"error\": {\"id\": 7, \"ok\": false, \"error\": {\"code\": \"TYPE\", \"message\": \"VECTOR dimension mismatch\"}}, \"select_after_failure\": [[1, [0.0, 0.0]]], \"topk_before_end\": [[1, 0.0], [4, 4.0]], \"immediate_after_end\": [[1, 1.0]], \"after_restart\": [[1, 1.0]], \"passed\": true}\n{\"outcome\": \"COMMIT\", \"path\": \"disk_index\", \"warmed_transaction\": [[1, 0.0]], \"error\": {\"id\": 7, \"ok\": false, \"error\": {\"code\": \"TYPE\", \"message\": \"VECTOR dimension mismatch\"}}, \"select_after_failure\": [[1, [0.0, 0.0]]], \"topk_before_end\": [[1, 0.0], [4, 4.0]], \"immediate_after_end\": [[1, 0.0], [4, 4.0]], \"after_restart\": [[1, 0.0], [4, 4.0]], \"passed\": true}\n{\"outcome\": \"ROLLBACK\", \"path\": \"disk_index\", \"warmed_transaction\": [[1, 0.0]], \"error\": {\"id\": 7, \"ok\": false, \"error\": {\"code\": \"TYPE\", \"message\": \"VECTOR dimension mismatch\"}}, \"select_after_failure\": [[1, [0.0, 0.0]]], \"topk_before_end\": [[1, 0.0], [4, 4.0]], \"immediate_after_end\": [[1, 1.0]], \"after_restart\": [[1, 1.0]], \"passed\": true}"
+  },
+  {
+   "id": "statement-cache-path-observed",
+   "status": "executed",
+   "source": "python -m tools.verify_vector_failure --observe-cache；同引擎核心 API 的测试包装器，不修改生产实现",
+   "output": "测试专用包装器观测：事务内三次 TopK 都实际调用 VectorCache.topk，首次构建后命中两次。回滚后缓存条目为零，随后重建并实际走缓存 TopK，立即结果为 [(1,1.0)]。\n{\"test\":\"observed_cache\",\"before_rollback\":[{\"kind\":\"lookup\",\"hit\":false,\"available\":true},{\"kind\":\"topk\"},{\"kind\":\"lookup\",\"hit\":true,\"available\":true},{\"kind\":\"topk\"},{\"kind\":\"lookup\",\"hit\":true,\"available\":true},{\"kind\":\"topk\"}],\"cache_entries_after_rollback\":0,\"after_rollback_events\":[{\"kind\":\"lookup\",\"hit\":false,\"available\":true},{\"kind\":\"topk\"}],\"immediate_result\":[[1,1.0]],\"passed\":true}"
+  },
+  {
+   "id": "wide-cache-initial-controls",
+   "status": "executed",
+   "source": "tools.verify_wide_cache；诊断观测，单次冷热查询，不是正式性能统计；设备I/O与内存峰值未测",
+   "output": "窄行16字节缓存可用约7.69MB，宽行2048字节在16MiB预算下拒绝。宽行预算改64MiB后缓存约28.02MB，第二查解码从10000行变为0行。去掉tag整数过滤后，16MiB组第二查由约242ms变483ms；所有结果与独立真值一致。\n[{\"width\":16,\"rows\":10000,\"dimension\":128,\"cache_budget\":16777216,\"cache_observations\":[{\"available\":true,\"bytes\":7686804},{\"available\":true,\"bytes\":7695406}],\"first_rows_decoded\":10000,\"second_rows_decoded\":0,\"first_seconds\":0.41782549999999996,\"second_seconds\":0.0014412000000001424,\"verified\":true},{\"width\":2048,\"rows\":10000,\"dimension\":128,\"cache_budget\":16777216,\"cache_observations\":[{\"available\":false,\"bytes\":0},{\"available\":false,\"bytes\":0}],\"first_rows_decoded\":10000,\"second_rows_decoded\":10000,\"first_seconds\":0.2420845000000007,\"second_seconds\":0.2371888000000002,\"verified\":true},{\"width\":2048,\"rows\":10000,\"dimension\":128,\"cache_budget\":16777216,\"filtered\":true,\"cache_observations\":[{\"available\":false,\"bytes\":0},{\"available\":false,\"bytes\":0}],\"first_rows_decoded\":10000,\"second_rows_decoded\":10000,\"first_seconds\":0.2420116000000001,\"second_seconds\":0.24155440000000006,\"verified\":true},{\"width\":2048,\"rows\":10000,\"dimension\":128,\"cache_budget\":67108864,\"filtered\":true,\"cache_observations\":[{\"available\":true,\"bytes\":28006804},{\"available\":true,\"bytes\":28015406}],\"first_rows_decoded\":10000,\"second_rows_decoded\":0,\"first_seconds\":0.43014750000000035,\"second_seconds\":0.0013380999999998977,\"verified\":true},{\"width\":2048,\"rows\":10000,\"dimension\":128,\"cache_budget\":16777216,\"filtered\":false,\"cache_observations\":[{\"available\":false,\"bytes\":0},{\"available\":false,\"bytes\":0}],\"first_rows_decoded\":10000,\"second_rows_decoded\":10000,\"first_seconds\":0.49958049999999865,\"second_seconds\":0.4828967000000013,\"verified\":true},{\"width\":2048,\"rows\":10000,\"dimension\":128,\"cache_budget\":67108864,\"filtered\":false,\"cache_observations\":[{\"available\":true,\"bytes\":28006804},{\"available\":true,\"bytes\":28006804}],\"first_rows_decoded\":10000,\"second_rows_decoded\":0,\"first_seconds\":0.27820529999999977,\"second_seconds\":0.001565600000001055,\"verified\":true}]"
+  },
+  {
+   "id": "wide-cache-index-migration",
+   "status": "executed",
+   "source": "python -m tools.verify_wide_index；测试专用调用计数",
+   "output": "已建索引宽表：四阶段都拒绝缓存。每查解码10000行作过滤，计算1000个候选距离，最终取10行，共10010次Reader.at。更新键3为零向量排第一，立即回滚和重开均恢复原TopK，全数核对独立真值。\n[{\"stage\":\"indexed\",\"counts\":{\"filtered_rows_decoded\":10010,\"distance_candidates\":1000,\"result_rows_fetched\":10,\"cache_available\":false},\"topk\":[[9583,5.660924346244087],[8973,5.8644692124265365],[6983,5.869556339571982],[2703,5.874681979130793],[63,5.875709615785444],[6123,5.909716085568059],[1663,5.930375859264526],[973,5.933486749886294],[1613,5.938506647191259],[9153,5.94203161698832]],\"verified\":true},{\"stage\":\"updated\",\"counts\":{\"filtered_rows_decoded\":10010,\"distance_candidates\":1000,\"result_rows_fetched\":10,\"cache_available\":false},\"topk\":[[3,0.0],[9583,5.660924346244087],[8973,5.8644692124265365],[6983,5.869556339571982],[2703,5.874681979130793],[63,5.875709615785444],[6123,5.909716085568059],[1663,5.930375859264526],[973,5.933486749886294],[1613,5.938506647191259]],\"verified\":true},{\"stage\":\"immediate_rollback\",\"counts\":{\"filtered_rows_decoded\":10010,\"distance_candidates\":1000,\"result_rows_fetched\":10,\"cache_available\":false},\"topk\":[[9583,5.660924346244087],[8973,5.8644692124265365],[6983,5.869556339571982],[2703,5.874681979130793],[63,5.875709615785444],[6123,5.909716085568059],[1663,5.930375859264526],[973,5.933486749886294],[1613,5.938506647191259],[9153,5.94203161698832]],\"verified\":true},{\"stage\":\"reopened\",\"counts\":{\"filtered_rows_decoded\":10010,\"distance_candidates\":1000,\"result_rows_fetched\":10,\"cache_available\":false},\"topk\":[[9583,5.660924346244087],[8973,5.8644692124265365],[6983,5.869556339571982],[2703,5.874681979130793],[63,5.875709615785444],[6123,5.909716085568059],[1663,5.930375859264526],[973,5.933486749886294],[1613,5.938506647191259],[9153,5.94203161698832]],\"verified\":true}]"
+  },
+  {
+   "id": "prompt12-final-regression",
+   "source": "本轮实际执行，Python a2bdfa9 引擎",
+   "status": "executed",
+   "output": "python -m unittest discover -s tests -q：Ran 81 tests in 12.798s，OK。python -m tools.run_public：20/20 cases，95 SQL。公开样例经本地核心API回放，本轮未执行平台正式用例。"
+  },
+  {
+   "id": "lazy-output-initial",
+   "status": "executed",
+   "source": "python -m tools.verify_lazy_response --run；调用真实serve和emit_query，StringIO代替标准流，测试注入惰性DBError",
+   "output": "小结果及300000字符宽行两组通过。stdout均为ready、bad错误、good成功、bye成功共4行，逐行可解析且最后有换行。宽行观测到rollover且文件句柄打开，错误不含生成的行数据。关闭后数据目录无临时文件。\n{\"wide\": false, \"events\": [\"row_yielded\", \"closed\", \"closed\"], \"stdout\": [\"{\\\"type\\\":\\\"ready\\\"}\", \"{\\\"id\\\":\\\"bad\\\",\\\"ok\\\":false,\\\"error\\\":{\\\"code\\\":\\\"TEST_LAZY\\\",\\\"message\\\":\\\"injected after first row\\\"}}\", \"{\\\"id\\\":\\\"good\\\",\\\"ok\\\":true,\\\"columns\\\":[\\\"value\\\"],\\\"rows\\\":[[7]]}\", \"{\\\"id\\\":\\\"bye\\\",\\\"ok\\\":true}\"], \"data_temporary_files_after_close\": 0, \"passed\": true}\n{\"wide\": true, \"events\": [{\"event\": \"rollover\", \"rolled\": true, \"fd_open\": true}, \"row_yielded\", \"closed\", \"closed\"], \"stdout\": [\"{\\\"type\\\":\\\"ready\\\"}\", \"{\\\"id\\\":\\\"bad\\\",\\\"ok\\\":false,\\\"error\\\":{\\\"code\\\":\\\"TEST_LAZY\\\",\\\"message\\\":\\\"injected after first row\\\"}}\", \"{\\\"id\\\":\\\"good\\\",\\\"ok\\\":true,\\\"columns\\\":[\\\"value\\\"],\\\"rows\\\":[[7]]}\", \"{\\\"id\\\":\\\"bye\\\",\\\"ok\\\":true}\"], \"data_temporary_files_after_close\": 0, \"passed\": true}"
+  },
+  {
+   "id": "lazy-repeat-result",
+   "status": "executed",
+   "source": "python -m tools.verify_lazy_response --run --repeat；内存标准流",
+   "output": "组合复测5行：ready、bad1错误、bad2错误、good成功、bye成功。四请求顺序正确，无空行，最终换行。三个暂存文件初始偏移均0，仅第二个溢写，两次失败共生成1行及100行，数据均未泄漏，全部文件关闭无残留。\n{\"test\":\"repeated_failures\",\"stdout\":[\"{\\\"type\\\":\\\"ready\\\"}\",\"{\\\"id\\\":\\\"bad1\\\",\\\"ok\\\":false,\\\"error\\\":{\\\"code\\\":\\\"TEST_1\\\",\\\"message\\\":\\\"injected 1\\\"}}\",\"{\\\"id\\\":\\\"bad2\\\",\\\"ok\\\":false,\\\"error\\\":{\\\"code\\\":\\\"TEST_2\\\",\\\"message\\\":\\\"injected 2\\\"}}\",\"{\\\"id\\\":\\\"good\\\",\\\"ok\\\":true,\\\"columns\\\":[\\\"value\\\"],\\\"rows\\\":[[7]]}\",\"{\\\"id\\\":\\\"bye\\\",\\\"ok\\\":true}\"],\"events\":[{\"file\":0,\"initial_offset\":0},{\"failure\":1,\"generated_rows\":1},{\"file\":1,\"initial_offset\":0},{\"file\":1,\"rollover\":true},{\"failure\":2,\"generated_rows\":100},{\"file\":2,\"initial_offset\":0}],\"all_spools_closed\":true,\"temporary_files_remaining\":0,\"passed\":true}"
+  },
+  {
+   "id": "lazy-pipe-result",
+   "status": "executed",
+   "source": "python -m tools.verify_lazy_pipe；Windows本地真实标准输入输出管道；超时/等待不代表系统调用栈证明",
+   "output": "真实子进程管道迁移：小响应241字节，未读输出已退出。大响应1000244字节，四条短请求都先写完，1秒未退出；开始读取后返回5行且退出码0。两组请求顺序正确，结果完整，无临时文件。未观察到不可恢复的双向死锁。\n{\"large\": false, \"input_requests_written_before_read\": 4, \"exited_before_read_after_1s\": true, \"stdout_bytes\": 241, \"lines\": 5, \"ids\": [\"bad1\", \"bad2\", \"good\", \"bye\"], \"exit_after_read\": 0, \"temporary_files\": 0, \"passed\": true}\n{\"large\": true, \"input_requests_written_before_read\": 4, \"exited_before_read_after_1s\": false, \"stdout_bytes\": 1000244, \"lines\": 5, \"ids\": [\"bad1\", \"bad2\", \"good\", \"bye\"], \"exit_after_read\": 0, \"temporary_files\": 0, \"passed\": true}"
+  }
+ ],
+ "evidence_chains": [
+  {
+   "topic": "问题理解与自主拆解",
+   "context": "提示词按协议、SQL、向量查询、事务和持久化拆解任务，区分通信通道与消息契约，并要求绑定比赛分支核查。既有实验记录提供了 JSONL 契约发现和容器检查的结果。",
+   "student_evidence": [
     {
-      "id": "student-001",
-      "role": "student",
-      "source": "项目目标与必测项拆解",
-      "content": "我想按“先保证功能准入，再寻找性能瓶颈”的顺序完成这道 MiniVectorDB 题目。我的理解是，协议交互、SQL 语义、向量查询、事务和持久化共同决定系统能否交付，单项查询跑得快并不足以说明方案可用。\n\n请先根据比赛题包整理一张要求对照表：每项约束对应哪个实现入口、已有哪类测试、还有什么边界没有验证。优先覆盖必测项，尤其是进程启动与交互、重复主键、精确 TopK、事务回滚、提交后重启和异常退出恢复，再安排性能优化。\n\n可以参考上次 powercontext 项目中固定版本、保存复现命令和用实验检验假设的做法，但先确认这些经验适用于本题。请把官方要求、当前代码行为和待验证假设分别说明，让后续每次修改都有明确的依据和验收条件。"
+     "pointer": "/conversations/0/content",
+     "quote": "我的理解是，协议交互、SQL 语义、向量查询、事务和持久化共同决定系统能否交付，单项查询跑得快并不足以说明方案可用。"
     },
     {
-      "id": "student-012",
-      "role": "student",
-      "source": "stdin/stdout 与 JSONL 协议的区别",
-      "content": "你前面说接口不能使用，我想先确认问题究竟发生在哪一层。题目允许通过 stdin/stdout 执行 SQL，我理解这说明通信通道可用，但通道可用还不代表消息格式符合驱动的约定。\n\n请对照协议检查：启动时的 ready、逐行 JSON 请求、请求 id 的回传、响应换行与刷新、错误响应，以及 shutdown 的处理。stdout 如果混入调试日志，即使 SQL 执行正确，也可能让驱动解析失败。\n\n请用实际 Docker 入口启动进程，保留首行输出和最小请求的实际响应，再说明是握手格式、消息字段还是执行逻辑的问题。不要仅凭 stdin/stdout 这个接口名称判断兼容性，也不要把单条握手通过当成全部功能通过。"
+     "pointer": "/conversations/1/content",
+     "quote": "题目允许通过 stdin/stdout 执行 SQL，我理解这说明通信通道可用，但通道可用还不代表消息格式符合驱动的约定。"
     },
     {
-      "id": "student-013",
-      "role": "student",
-      "source": "核对比赛分支与驱动版本",
-      "content": "请重新核对 [官方仓库](https://github.com/oceanbase/seekdb) 中的 `2026-competition-round2` 分支，确认比赛对应的题包、配套驱动和协议文档。\n\n我认为接口结论需要绑定具体版本：默认分支、旧题包和比赛分支可能不一致，继续沿用旧假设会把版本差异误判为实现缺陷。请记录实际读取的提交 SHA，检查 STDIO_PROTOCOL.md、protocol_check 和示例入口，并与当前 Dockerfile、JSONL 服务入口逐项对照。\n\n先列出已确认的差异和仍缺少依据的部分，再用配套驱动复现问题。若官方分支发生更新，请说明哪些要求有变化、现有测试需要补哪些覆盖，不要直接把旧测试结果套用到新协议。"
-    },
-    {
-      "id": "student-python-plan-001",
-      "role": "student",
-      "source": "Python exact 优化方案与实验顺序",
-      "content": "我希望把优化建立在可复现的基线之上，并沿用 Python 与 exact 的实现路线。可以参考 C++ 分支中减少重复工作和改善数据布局的思路，但实现和验收都以 Python 版本为对象。我的方案分为四步：\n\n1. 先把计量边界确定下来。\n   我关注 tools/benchmark_jsonl.py 中正确性核验与资源采样的先后关系。如果查询前的全表核验预热了页缓存，或被计入资源窗口，后续耗时、I/O 和峰值内存就难以比较。请先检查当前脚本，把独立真值核验与性能计量分开。写入和查询使用隔离的容器、数据目录与统计范围，明确启动、装载、建索引、预热和写回分别是否计入 T、B、M，并对所有版本采用同一口径。\n\n2. 优先消除查询链路中的重复工作。\n   请检查 minivector/vector.py 与 minivector/engine.py 中的向量转换、候选过滤、距离计算和结果投影。我倾向于先评估连续 float32 数组、可复用的候选行号和单次查询内的距离复用。TopK 阶段尽量保留距离、主键和行位置，确定结果后再读取需要投影的字段。缓存必须匹配查询条件与可见数据版本，更新、删除、回滚后不能继续使用失效结果；容量上限还应考虑中间数组带来的额外内存。\n\n3. 根据负载选择 exact 执行路径。\n   索引存在并不意味着索引路径一定更快。请比较预算内的连续数组扫描与分块或磁盘 Flat 路径，观察数据规模、过滤选择率和重复查询对成本的影响。所有路径都应先过滤再确定 TopK，按照题目要求处理并列距离、数值精度和不足 K 的结果。预算不足时应能回退，不能为了速度改变查询语义。\n\n4. 查询优化稳定后，再评估存储布局。\n   对 10,000 行、128 维 float32 向量，单看向量本体约为 4.88 MiB，但这不包括主键、元数据和运行时对象。若当前版本仍存在向量文本与重复序列化开销，再研究不可变二进制段；若已采用该布局，就先验证现状，避免重复改造。文件变小不直接等于设备 I/O 同比例下降。请分别测量逻辑容量和设备读写量，并保留提交持久化、清单原子发布、旧格式兼容及强杀恢复的验证。\n\n各阶段使用固定种子和相同负载：10,000 行、128 维、1,000 次查询、K=10，一半带等值过滤，每批 100 行提交。每次只引入一个主要变化，诊断 profiling 与正式计时分开，交替重复基线和候选，保存每轮写入与查询的 T、B、M。只有指标完整且正确性、资源检查通过时才计算完整 E_local；没有官方冻结基线时不推算平台分数。\n\n请先完成基线测试，再根据数据调整以上优先级。收益需要同时考虑稳定性、内存代价、适用负载和恢复风险；如果改动效果落在测量波动内，应继续验证或撤回。"
-    },
-    {
-      "id": "student-test-before-change-001",
-      "role": "student",
-      "source": "先测基线再实施",
-      "content": "请先固定当前源码版本、实际启动入口、依赖版本和资源限制，完成公开用例与已有回归，再执行上面的优化方案。我希望先区分已有缺陷和改动引入的问题，否则后续即使跑得更快，也无法判断是否牺牲了正确性。\n\n性能基线使用固定种子、相同 SQL 顺序和明确的缓存初始状态，保存逐轮耗时、I/O 与峰值内存。独立真值核验放在计量窗口之外，同时检查查询结果和重启后的持久化数据。\n\n测试结束后，请用数据重新审视方案：指出最主要的成本在哪一步、准备改变哪个因素，以及如何判断修改有效。若基线有失败项，先给出最小复现并定位，再继续优化。"
-    },
-    {
-      "id": "student-cpp-admission-001",
-      "role": "student",
-      "source": "根据功能准入反馈调整路线",
-      "content": "C++ 分支目前没有通过 MySQL case 功能准入，我认为这应当改变实现路线的优先级。数据库的接口、事务和持久化语义是前提，不能只凭查询速度就把这个分支作为可交付基线。\n\n请保留实际失败用例、构建版本和输出，区分协议、SQL 语义、事务恢复等问题；没有平台细节时不要猜测根因。后续将优化对象收敛到 Python 版本，先核对它的功能验证状态，再复用有价值的算法与数据布局思路。\n\n对比报告中请标明每条结果属于本地回归、公开用例还是正式准入，并绑定对应提交，避免用一个版本的通过记录替另一个版本作证明。"
-    },
-    {
-      "id": "student-python-only-001",
-      "role": "student",
-      "source": "限定 Python 实现并定位热点",
-      "content": "我希望最终交付继续使用 Python 引擎。我的优化方向是减少解释器层的重复循环、数据转换与对象创建，并评估 NumPy 批量计算和连续内存布局的收益。\n\n请把一次查询拆成输入解析、候选过滤、距离计算、TopK 选择和结果投影，先用诊断数据判断成本分布。若过滤条件重复，可以评估候选行号复用；若时间主要耗在距离或投影上，就优先检查向量转换、计算结果复用和延迟读取。\n\n不要预设缓存或向量化一定更快。请同时测低复用、不同过滤选择率和超缓存预算的情况，把缓存维护、临时数组和峰值内存计入取舍。每次仅改一个主要因素，并用独立真值与回归验证 Python 版本的行为。"
-    },
-    {
-      "id": "student-exact-only-001",
-      "role": "student",
-      "source": "明确 exact 检索语义与正确性边界",
-      "content": "这里需要的是 exact 检索，优化应保持精确结果，不能用 ANN 的召回率来替代正确性验收。\n\n我的理解是，先确定满足过滤条件且对当前事务可见的候选集合，再依照题目的距离定义选出 TopK；并列距离按主键规则排序，不足 K 时返回全部。缓存、索引或分块可以改变计算方式，但不能遗漏本应进入结果的记录。\n\n请逐条核对主键、距离、过滤条件、排序和返回数量，真值计算要独立于被测实现。重点检查距离接近或相同、float32 舍入、空候选和事务更新后的场景。如果使用近似算术进行预筛，必须说明保守误差边界如何保证不漏选，并精确复核可能影响 TopK 的候选。"
-    },
-    {
-      "id": "student-cache-prediction",
-      "role": "student",
-      "source": "缓存收益假设与可区分的成本来源",
-      "content": "我想验证缓存路径为什么更快。一个假设是：向量或过滤候选被复用后，减少了重复读取、解析和构造；另一个假设是 NumPy 批量距离计算降低了 Python 循环成本。这些因素可能同时存在。\n\n文件读取调用可能命中操作系统页缓存，因此读取调用减少不能直接证明物理磁盘读取减少。请固定同一份数据、查询与资源限制，分别观察应用缓存命中率、候选构造耗时、读取调用和设备读取字节，尽量一次只切换一个因素。\n\n我还想比较重复过滤、低复用过滤和超预算回退三种场景：前者可能摊薄准备成本，后两者可能暴露维护开销或旁路行为。设备读取字节为零时，请如实说明缓存条件，把耗时观察与尚未验证的原因分开。"
-    },
-    {
-      "id": "agent-002",
-      "role": "agent",
-      "source": "Agent对此问题的实际回复摘录，属于Agent纠正表述，不作为学生理解",
-      "content": "我之前把这个格式核对问题说成整个接口都不能使用，表述不准确，给你造成了困惑。"
-    },
-    {
-      "id": "agent-python-completion-explanation-001",
-      "role": "agent",
-      "source": "2026-11-14 补齐材料时，Agent依据已存在源码、逐轮报告与日志所作的结果说明；这是整理说明，不伪称此前逐字聊天，也不归为学生解释",
-      "content": "落实用户的最终约束：默认 Dockerfile 运行 Python 3.12.8 + NumPy 1.26.4，性能测量均为 exact，未使用 C++ 引擎或 ANN 结果。先固定原始 Python 基线，再优化连续数组、过滤行号缓存、精确距离复用和小表选路；随后优化输入转换，最后改为 Python 标准库实现的不可变二进制段。原有 SQL/事务/持久化语义与公开测试保持。最终 60 项 Python 回归、20 项官方公开用例、两种索引配置各三轮共 6000 条 exact 查询通过。无索引 E_local 从固定基线 0.505123 到 0.635468，有索引从 0.498887 到 0.779541；这些是同场景本地指标，不能换算平台排名。已补做旧 JSONL 读取、混合段、索引维护、回滚、六处强杀和超缓存容量检查。历史平台反馈不能证明本次改动正式准入。"
-    },
-    {
-      "id": "agent-cache-response-001",
-      "role": "agent",
-      "source": "Agent对该疑问的解释，不能作为学生理解证据",
-      "content": "缓存路径先把向量载入内存，后续查询可复用；磁盘Flat路径每次扫描索引，过滤可能回查原始行。NumPy批量计算与Python逐条运算也是差异来源。文件读取可能命中OS页缓存，读取调用次数不等于物理磁盘读取次数；当前耗时实验不能分离各因素贡献。"
-    },
-    {
-      "role": "student",
-      "id": "student-filter-experiment-prompt",
-      "content": "请作为我的 MiniVectorDB 开发搭档，以已记录正式准入通过的 Python 提交 e1561a7292443e4945b580cb23a24e399c2c18a5 为这轮实验的基线，在独立工作分支完成一次可解释的性能优化，继续使用 Python 和 exact。最终交付代码、逐轮实验结果和分析材料，正式提测由我操作。\n\n我理解基线已经存在候选行号缓存，因此这次要研究的是它在不同复用程度下是否划算，以及如何改善实际热点。不能仅凭增加缓存就预期收益，也不能把基线的准入结论沿用到候选版本。\n\n一、核对实现与约束\n\n先阅读题包、Dockerfile、JSONL 入口、SQL 执行器、向量查询、存储及相关测试。确认实际运行的源码 SHA、镜像与依赖，并列出实现入口、已有验证和未验证边界。协议侧关注 ready、请求 id、逐行响应、刷新、错误与 shutdown；数据库侧关注重复主键、Unicode、固定向量维度、有限 float32、语句原子性、事务可见性及持久化恢复。\n\nexact 查询必须先过滤再排名，遵守距离与并列主键排序规则，候选不足 K 时返回全部。请检查缓存键能否区分表、条件与数据版本，更新和回滚后如何失效，总预算如何计算，以及超预算时是否确实进入回退路径。旧 JSONL 与二进制段的兼容也应有验证入口。公开用例、本地回归与正式隐藏准入分别报告。\n\n二、建立基线并检验假设\n\n先运行公开用例与现有回归。性能负载固定为 10,000 行、128 维、1,000 次 TopK、K=10，其中一半带等值过滤，每批 100 行提交。记录数据与查询种子，用独立实现核对主键、距离、过滤、排序和数量，并在重启后核验持久化数据。真值检查与性能计量隔离，明确写入与查询各自的 T、B、M 统计边界。\n\n我的假设是：重复过滤能够摊薄候选集合构造成本，低复用过滤则可能付出查找、写入和淘汰开销；超过预算后，收益还取决于缓存是否被旁路。请分别设计重复等值过滤、低复用过滤和超预算三个场景，在相同数据、SQL、环境与资源限制下，只切换候选复用行为。\n\n每轮使用隔离的数据目录和明确的缓存初始状态，同时记录命中、写入、淘汰、缓存路径调用与内存占用。候选构造的细粒度诊断和端到端计时分开进行，避免插桩影响被误当成性能变化。设备读取为零或不可测时，分别报告观察值或缺失项，不把查询耗时差直接归因于物理磁盘读取。\n\n执行前写下假设、控制变量与判定依据。初测后向我提出一个具体的结果解释或方案选择问题，保留需要我回答的部分，同时继续完成不依赖该回答的验证。\n\n三、选择一个热点并成对复测\n\n请根据诊断决定主要改动：如果成本集中在未命中的候选构造，研究构造过程；如果集中在缓存维护、距离复算、投影或回退路径，先解释依据再调整方向。一次只改变一个主要因素，便于判断收益来源。\n\n使用同一 runner 交替执行基线与候选，各至少三轮，保存每轮写入和查询耗时、I/O 与峰值内存，比较中位数及波动。对直接受影响的边界补充最小验证，包括空候选、距离并列、事务更新与回滚、缓存失效及超预算回退。若结果不一致或恢复失败，先保存最小复现与实际输出，再修复复测。\n\n候选构造更快不自动意味着整体查询更快；请同时检查端到端收益、内存代价和超时余量。若改善落在轮间波动内，就报告证据不足。仅在计量完整且正确性、资源检查通过时计算本地 E_local，不据此预测平台分数或排名。\n\n四、解释结果并整理交付\n\n请说明改动减少了什么成本、增加了什么准备或维护开销、在哪些负载下适用、何时回退，以及保留或撤回的依据。提供完整基线与候选 SHA、修改范围、复现命令、逐轮数据、正确性结果和待平台确认事项。未执行的检查应列为计划。\n\n整理 UTF-8 的 conversation.json 时，区分学生提示词、Agent 分析、工具输出和平台反馈的来源。引用使用 RFC6901 JSON Pointer，摘录与对应内容精确匹配且不超过 240 字；同一问题的诊断、修改与复测归入同一条证据链。校验 JSON、引用和文件大小，不补造实验、平台结论或评审分数。",
-      "source": "等值过滤候选缓存的受控实验与交付要求"
-    },
-    {
-      "role": "agent",
-      "id": "agent-filter-initial-question",
-      "content": "初测中，重复过滤的候选构造开启缓存后约为 1.4 ms，关闭时为 16.1 ms；500 个不同条件则是 19.9 ms 对 16.5 ms。超过缓存预算时，两组都约为 2.52 秒。你怎么解释低复用场景的结果，或者你想先复测哪个判断？",
-      "source": "本次实际提问"
-    },
-    {
-      "role": "student",
-      "id": "student-filter-miss-analysis",
-      "content": "我想先验证低复用场景中的额外耗时是否主要来自缓存维护。初测为 19.9 ms 对 16.5 ms，相差 3.4 ms，约增加 20.6%；如果 500 个条件各执行一次，平均每次多约 6.8 µs。这只是候选构造阶段的差值，暂时不能据此断言端到端查询变慢。\n\n我的解释是假设性的：不同条件很少命中，每次仍要生成候选，还额外做了缓存键处理、查找、写入或淘汰。重复过滤从 16.1 ms 降到 1.4 ms，符合命中后复用候选的预期，但仍需要命中计数来验证机制。\n\n请固定输入、条件顺序和缓存预算，让 500 个不同条件从空缓存开始，交替重复以下三组：\n- A：关闭候选缓存，直接构造候选。\n- B：保留缓存键处理和查找，未命中后构造候选，但不写入。\n- C：执行完整的查找、构造、写入和淘汰流程。\n\n在三组均未命中且其他路径一致时，B 与 A 的差值可估计键处理及查找开销，C 与 B 的差值可估计写入及淘汰等维护开销。请记录每轮命中、写入、淘汰次数及候选构造耗时，再通过独立计时比较端到端查询。只有差异稳定超过轮间波动时，才进一步归因；三组对照也不能单独拆出写入与淘汰各自的贡献。\n\n超预算时两组都约 2.52 秒，单看总时间还不能判断是否旁路。请检查实际缓存路径调用次数和执行路径，再决定是否需要为回退部分单独设计实验。如果主要成本不在候选构造，就据此调整优化重点。",
-      "source": "解释低复用初测并设计三组对照"
-    },
-    {
-      "id": "block-student-0",
-      "role": "student",
-      "source": "本次用户实际回复摘录",
-      "content": "预测：扩大分块几乎不会带来提速，反而可能是负收益。"
-    },
-    {
-      "id": "block-student-1",
-      "role": "student",
-      "source": "本次用户实际回复摘录",
-      "content": "现在 p50 = p95 = max = 10，且 K=10——意思是每条查询恰好把答案集里的 10 条全部重算一遍，候选数已经是最小值，没有\"收窄容差\"的空间。"
-    },
-    {
-      "id": "block-tie-student",
-      "role": "student",
-      "source": "本次实际回复摘录，测前预测和决策条件",
-      "content": "一、高并列负载下，我预测「精确候选生成（fsum 精算）」段增幅最大\n普通负载 高并列负载 我的结论    +X%（可归因） ≈0（±2% 内） 保留。分块本就只该影响 einsum；高并列下主导是精算，它没有收益是正常的，不算缺点   +X%（可归因） 也 +Z% 保留，更稳   +X%（可归因） −Y%（负收益） 撤回。题包不承诺并列比例，收益符号相反等于在赌数据分布"
-    },
-    {
-      "id": "block-final-student-decision",
-      "role": "student",
-      "source": "本次用户看过高并列结果后的原话摘录",
-      "content": "撤回不是因为「3.1% 太小」，而是因为两次测量的符号相反，而正式负载的并列比例不在我们手里。\n普通负载那 −9.3%，可能本来就不是真的。\n让两版在普通负载下交错跑 3 个来回（A/B/A/B/A/B）。"
-    },
-    {
-      "id": "block-mechanism-source-review",
-      "role": "agent",
-      "source": "正式基线 vector.py 源码核查",
-      "content": "分块循环写入各自的距离切片。循环结束后才执行一次 partition、一次 flatnonzero，并将候选交给精算和 nsmallest。当前实现没有逐块判定或合并全局候选带。每条普通查询的 10 个候选与高并列的 500 个候选说明精算工作量不同，实际阶段耗时未单独测量。"
-    },
-    {
-      "id": "commit-cut-prediction",
-      "role": "student",
-      "source": "强杀执行前用户原话",
-      "content": "A={1,2}，B={2,3}，C={2,3}；如果看到 A 里出现 3 或者 2 消失、B 里只出现 2 或只出现 3、C 里出现 1 或 2，我会修正 \"磁盘发布点 = catalog.json 原子替换、客户端确认点 = 收到 ok:true\" 这个模型。"
-    },
-    {
-      "id": "commit-cut-student-retest",
-      "role": "student",
-      "source": "初测后用户原话",
-      "content": "客户端只知道「没收到响应」时，区分不了 A 和 B，A 和 B 的区别不是「事务做没做」，而是「这次修改有没有落到被引用的那份持久结构上」—— 这个区别发生在服务端内部，客户端接口上根本没有对应的观测维度。下一次反例复测：先加「清单 — 段 — 记录三层一致」，而不是再重启 ，**集合是结果层，A/B 的分界在存储层。** 只看集合，会把「发布点其实在恢复期重放，只是结果碰巧正确」这种模型错误整个放过 —— 而这正是我现在这条模型最可能错的地方。你对我上一条的质疑是对的 。"
-    },
-    {
-      "id": "commit-cut-migration-prediction",
-      "role": "student",
-      "source": "迁移之前用户原话摘录",
-      "content": "第一次重启（清单已替换，无应答）\t{(2,[0,0]), (3,[3,0])}\t{8}\t[(2, 0.0), (3, 3.0)]\n第二次重启（恢复中被杀，未 ready）\t同上\t同上\t不应被服务；磁盘上可能留残缺索引\n第三次正常启动\t同上\t同上\t[(2, 0.0), (3, 3.0)]。\nTopK 条数 < SELECT 条数，且不报错\t违规且最隐蔽\t残缺索引被 valid() 误判为可用；flat_index.valid 只校验 size % width 和 keys 数量，写入恰好截在整记录边界上查不出来"
-    },
-    {
-      "id": "commit-cut-migration-reflection",
-      "role": "student",
-      "source": "迁移实测后学生原话摘录",
-      "content": "我那句话自相矛盾，两因子守卫其实是有效的  。\n清单哈希可以变，被引用的数据代必须一致\t索引文件名是随机 uuid，重建必换名；所以哈希不能当数据一致性证据\n现在只是 \"一个点通过\""
-    },
-    {
-      "id": "mixed-keys-prediction",
-      "role": "student",
-      "source": "执行前用户原话",
-      "content": "步骤\t结果\t行数\t依据\nINSERT 1\t失败，ok:false + 非空 code\t2\t唯一性真值必须是可见行数据，不是 .keys 侧车。侧车被刻意删掉，正是为了逼出这一点\nINSERT 2\t失败\t2\t同上，2 在二进制段里可见\nINSERT (3),(3) 同批\t失败，0 行落盘\t2\t整句原子：批内自重复必须在写入前整句判定，一条都不能落\nINSERT 3 单独\t成功\t3\t3 在任一段都不存在。"
-    },
-    {
-      "id": "mixed-keys-student-control",
-      "role": "student",
-      "source": "初测后用户原话摘录",
-      "content": "还需补一个测试：插 (1),(1)。 记录里有两个 1，数据里也有 1，两边都该报重。\n- 如果读 0 行 → 说明先查记录自身，我的解释对。\n- 如果读 1 行 → 说明先去翻数据，我的解释错，需要修改。\n同时加插 (1),(3)，作为对照。 记录内不重复，只有数据里有 1，这个一定读 1 行。有它作对照，才能证明 “读 0 行” 是特殊情况，不是 “所有失败都不读数据”。"
-    },
-    {
-      "id": "mixed-keys-migration-prediction",
-      "role": "student",
-      "source": "迁移前用户原话摘录",
-      "content": "事务内（删除 1、插入 replacement 之后，未提交）\t(1,'replacement')、(2,'new')\t2\nROLLBACK 后重启\t(1,'old')、(2,'new')\t2\n另一次相同事务 COMMIT 后重启\t(1,'replacement')、(2,'new')\t2。\n事务内插入就报了 DUPLICATE\t查重看的是旧文件里那行还没删掉的 old，不是 “现在能看见什么”。说明删除没有进入查重视野"
-    },
-    {
-      "id": "mixed-keys-reflection",
-      "role": "student",
-      "source": "迁移实测后用户原话摘录",
-      "content": "原因：能否插入，取决于这条记录是否可见，与文件里是否还留有这行数据无关。\n其他事务并发：本次是单客户端单事务。若两个事务同时操作键 1（一个删一个插），可见性隔离会与判重冲突。题面不要求多客户端，所以这条不推广。\n崩溃时机：提交后、清理前被杀。重启必须仍读到 replacement；若重启时判重扫物理段，会出现“查得到 replacement、却插不进 1”的矛盾状态。\n第 4 条建议单独测一次，它是这条链唯一还没打到的点。"
-    },
-    {
-      "id": "statement-failure-prediction",
-      "role": "student",
-      "source": "测前用户原话摘录",
-      "content": "事务内（插入失败之后） (1,'edited') 1   COMMIT 后重启 (1,'edited') 1   ROLLBACK 后重启 (1,'old') 1\n失败的是那条插入语句，它一行都不该留下，所以 (2,'new') 查不到；但前一条 UPDATE 是独立成功的语句，它的效果要保留，所以事务内仍是 edited。回滚才把整笔事务退回原样。\n所以顺序是：失败 → 查事务内 → 提交 → 重启查 → 再复现一遍走回滚。"
-    },
-    {
-      "id": "statement-followup-student",
-      "role": "student",
-      "source": "本次对照执行前用户完整原话",
-      "content": "我猜插 (3,'after') 应该能成功，因为刚才报错的只是那一条插入语句，不是整个事务，前面改 1 都还成功着，事务本身没被弄坏。提交后重新打开，能看到 (1,'edited') 和 (3,'after') 两条；回滚后重新打开，就只剩 (1,'old') 一条，2 和 3 都没有。\n光看提交成功其实说明不了什么，那只证明最后能正常收尾，证明不了报错之后还能不能接着写东西。插了 3 就不一样了：如果回滚之后 3 还留着，说明没撤干净；如果留下了 2、反而没有 3，那就是撤错了，把该留的撤掉、该撤的留下了，这种错不插 3 根本看不出来。而且后面又写过一次，如果 2 是\"晚一点才冒出来\"的，这一步也能发现。"
-    },
-    {
-      "id": "statement-vector-prediction",
-      "role": "student",
-      "source": "向量迁移执行前学生原话摘录",
-      "content": "我猜批量插入失败以后，只能看到 (1,[0,0]) 这一条，连那条合法的 (2,[2,0]) 也不会进去，因为整句是一起失败的。接着插入 4 成功之后，事务里能看到 (1,[0,0]) 和 (4,[4,0]) 两条，按到 [0,0] 的距离排，1 的距离是 0、4 的距离是 4；提交后重开也是这两条。但回滚后重开就只剩 (1,[1,0])，距离应该是 1.0。如果这时候还算出 0.0，就说明索引里存的还是改过的那个值，没跟回滚一起退回去。\n我自己还有点不确定：回滚以后如果没有重启就直接查，内存里那份缓存的向量会不会还是改过的那个？这一条我想再单独测一次。"
-    },
-    {
-      "id": "statement-vector-reflection",
-      "role": "student",
-      "source": "迁移结果后的用户原话摘录",
-      "content": "现在不重启就返回 1.0，说明缓存要么跟着回滚一起失效了，要么这条路根本没走缓存——不管哪种，都不存在“必须等重启才对齐”的副本。这个担心可以撤回。\n所以要补一个“缓存确实被用过”的证据——先做几次热查询让缓存真正装进数据，看命中计数，再回滚查一次。\n结论只能限定在这条路上：别的缓存是另一个东西，比如等值过滤用的那个候选缓存，它按条件做键，回滚后会不会残留没测过；数据量到几千上万行缓存才真正启用，那时的行为也算未知；这次是正常回滚，如果换成“回滚做到一半被强杀”，重启后还得再验一遍。"
-    },
-    {
-      "id": "wide-cache-student-prediction",
-      "role": "student",
-      "source": "本实验执行前用户原话摘录",
-      "content": "我猜如果缓存是按整行大小算的，窄行能进、宽行进不去——宽行光字符串就差不多 19.5 MiB，加上向量 4.88 一共 24 MiB 左右，超过 16 MiB 预算；窄行才 5 MiB 出头，放得下。\n要是宽行确实更慢，我拿两组对照把它拆开：宽行不动，只把预算提到 64 MiB，如果追上窄行的速度，就说明慢在每次都重读向量；没追上，剩下的就是解析那两千多个字的成本。\n结论我只写在这一个配置上：一万行、128 维、16 MiB、这一个过滤条件。数据量换了、预算换了、过滤列换了，都算没测。"
-    },
-    {
-      "id": "wide-cache-student-revision",
-      "role": "student",
-      "source": "初测后用户原话摘录",
-      "content": "我原来猜把 WHERE 去掉会变快，结果实测反了，237 毫秒变成 483 毫秒，慢了快一倍。我错在把过滤当成“费钱”的一步，其实过滤是“省钱”的一步：它把要算距离的行从一万行砍到只剩命中的那些，而解析那两千多个字两组都躲不掉。\n迁移过来看，16 MiB 那组在已建索引的宽表上还是走磁盘索引那条路，先按 tag 过滤再只对命中的行算距离，解析还是一万行；事务改向量、回滚之后，因为它没有内存缓存，每次查读的都是当前那份，所以不重启也马上是对的，TopK 要和普通查询、真值保持一致。"
-    },
-    {
-      "id": "wide-cache-student-reflection",
-      "role": "student",
-      "source": "带索引宽表迁移完成后用户完整原话",
-      "content": "数据库建了索引之后，仍要读整张表，是因为索引里只存了主键和向量，没存 tag。要判断哪一行满足 tag=3，只能回头读原来的行，一行一行解析，一万行都得过一遍。索引帮的是算距离，不是帮过滤。\n如果改进，我会把 tag 这种又短又常用作过滤条件的字段单独存一份，或直接放进索引那条记录里；这样过滤时就不用读两千多字的长字符串了。代价是索引变宽、重建变慢、每次更新还要同步修改，事务成本会上去；而把长字符串也塞进去就不划算，它正是撑爆预算的东西。所以取舍的关键是：多存一字节能省下多少次解析。\n这个例子不能推广成“不用缓存就不容易出错”。它只说明没有副本就没有副本过期的问题，回滚正确是因为数据路径本身对，不是因为没有缓存；有缓存只要失效逻辑对也一样对。而且这次只有一个表、一个客户端、正常回滚，崩溃时序和别的缓存都没测。准确说：少一份副本少一个可能对不上的地方，代价是更慢。"
-    },
-    {
-      "id": "lazy-output-prediction",
-      "role": "student",
-      "source": "执行前用户原话摘录",
-      "content": "我猜第一种查询在 stdout 上不会出现任何内容，只会出现一行报错；第二种也应当一样：那 256 KiB 只是它先在磁盘上暂存，暂存的内容不应该出现在输出里。下一条合法查询应当照常成功，因为一次请求本来就应当只对应一行回复。\n这里最容易漏判的是“半条”的两种形式：一种是断掉的一行，它会把下一条回复吞进去、连在一起变成一行乱码；另一种更隐蔽，就是写出了一行看起来成功、其实只包含一半行的内容，紧接着又跟一行报错；这时一次请求出现了两行，下一条查询还照样成功，光看“下一条是否成功”根本发现不了问题。"
-    },
-    {
-      "id": "lazy-repeat-student",
-      "role": "student",
-      "source": "初测后真实回复摘录",
-      "content": "第一行必须是 ready，而且只出现一次；它只是开场通知，不算对某条请求的回复。从第二行起，每行对应一条请求。\n下一项我选“同一进程连续两次失败后再成功”，因为单次失败看起来干净说明不了什么，可能只是还没轮到暴露；真正容易暴露残留的是第二次。第一次的缓冲区、临时文件偏移和计数如果没有复位，第二次才会露出来。\n第一次只生成一行就失败，第二次生成很多行，并跨过 256 KiB rollover 之后才失败。"
-    },
-    {
-      "id": "lazy-pipe-prediction",
-      "role": "student",
-      "source": "真实管道迁移前用户原话摘录",
-      "content": "我猜仍然是 5 行，进程也能正常退出，因为这五行加起来才几百字节，管道再小也装得下，怎么写都不会卡住。不过我得提醒自己：这次能通过是因为输出较小，并不能说明“先写完再读”这个做法安全——只要有一条成功响应大到超过管道的那点缓冲，子进程就会卡在写这一步，父进程还在等自己写完，两边互等，直接死锁。\n为了证明“这次通过是因为运气”，我可以在同一套“先写后读”做法下故意放一条超大的成功响应作对照；如果这条导致阻塞，就说明前面通过是因为数据太小。"
+     "pointer": "/conversations/2/content",
+     "quote": "我认为接口结论需要绑定具体版本：默认分支、旧题包和比赛分支可能不一致，继续沿用旧假设会把版本差异误判为实现缺陷。"
     }
-  ],
-  "experiments": [
+   ],
+   "result_evidence": [
     {
-      "id": "official-jsonl-discovery-001",
-      "source": "既有实验记录 official-jsonl-discovery-001 的 output 字段。结构化结果转为 JSON 字符串便于引用。",
-      "status": "executed",
-      "output": "Official round2 advanced from9f6df2ba5acf871376e22b64a3d0724e4b575044 to f4d4e26653af823a7601668802f80e374ad6643c (upload stdin/stdout protocol and one demo py to double check). Added STDIO_PROTOCOL.md and protocol_check. Protocol is JSONL:ready={type:ready},execute(id,sql,search_mode),shutdown. Config:startup120s,request60s,case600s,max_response16777216,2CPU,2GiB,128PIDs,abs/rel tolerance1e-5,error_codes empty. Before implementation new actual-process JSONL test failed JSONDecodeError on LOCAL_READY. After implementation both JSONL tests pass;prior full53-test regression passed before adding second JSONL error-spill test. Official Docker before/after checker CI queued,not yet observed."
+     "pointer": "/experiments/0/output",
+     "quote": "Official round2 advanced from9f6df2ba5acf871376e22b64a3d0724e4b575044 to f4d4e26653af823a7601668802f80e374ad6643c (upload stdin/stdout protocol and one demo py to double check). Added STDIO_PROTOCOL.m"
     },
     {
-      "id": "official-jsonl-docker-result-001",
-      "source": "既有实验记录 official-jsonl-docker-result-001 的 output 字段。结构化结果转为 JSON 字符串便于引用。",
-      "status": "executed",
-      "output": "{\"official_source\": \"f4d4e26653af823a7601668802f80e374ad6643c\", \"checked_submission\": \"54875caff8bd4c28f2280c13d9653faef578f565\", \"reports\": {\"before/result.json\": {\"scope\": \"public-protocol-check\", \"passed\": false, \"cases\": [{\"id\": \"handshake\", \"status\": \"FAIL\", \"message\": \"invalid JSON response: Expecting value: line 1 column 1 (char 0); stdout line (first 240 bytes)=b'LOCAL_READY'\", \"duration_ms\": 286}], \"note\": \"Local diagnostic only; no performance/Agent scores or platform callbacks.\"}, \"handshake/result.json\": {\"scope\": \"public-protocol-check\", \"passed\": true, \"cases\": [{\"id\": \"handshake\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 242}], \"note\": \"Local diagnostic only; no performance/Agent scores or platform callbacks.\"}, \"public/result.json\": {\"scope\": \"public-protocol-check\", \"passed\": true, \"cases\": [{\"id\": \"sql_crud\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 283}, {\"id\": \"sql_comparisons\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 248}, {\"id\": \"sql_ordering\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 244}, {\"id\": \"sql_empty\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 275}, {\"id\": \"sql_primary_key\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 275}, {\"id\": \"sql_unicode\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 291}, {\"id\": \"sql_bigint\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 307}, {\"id\": \"sql_unsupported\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 239}, {\"id\": \"storage_restart\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 500}, {\"id\": \"vector_euclidean\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 306}, {\"id\": \"transaction_commit\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 276}, {\"id\": \"transaction_rollback\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 266}, {\"id\": \"storage_mutations\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 535}, {\"id\": \"storage_multiple_tables\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 499}, {\"id\": \"vector_ties_and_filter\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 381}, {\"id\": \"vector_float32\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 564}, {\"id\": \"vector_index_maintenance\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 564}, {\"id\": \"transaction_failed_insert\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 460}, {\"id\": \"transaction_autocommit_atomic\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 483}, {\"id\": \"transaction_shutdown_rollback\", \"status\": \"PASS\", \"message\": \"\", \"duration_ms\": 443}], \"note\": \"Local diagnostic only; no performance/Agent scores or platform callbacks.\"}}, \"protocol_ci\": {\"run\": {\"id\": 42804310574, \"head_sha\": \"54875caff8bd4c28f2280c13d9653faef578f565\", \"status\": \"completed\", \"conclusion\": \"success\", \"html_url\": \"https://github.com/lucky20040520/seekdb/actions/runs/42804310574\"}, \"jobs\": [{\"id\": 129789450084, \"conclusion\": \"success\", \"steps\": [{\"name\": \"Set up job\", \"conclusion\": \"success\"}, {\"name\": \"Run actions/checkout@v4\", \"conclusion\": \"success\"}, {\"name\": \"Reproduce previous diagnostic entry failure using official checker\", \"conclusion\": \"success\"}, {\"name\": \"Build actual submission default entry\", \"conclusion\": \"success\"}, {\"name\": \"Official interactive handshake and shutdown\", \"conclusion\": \"success\"}, {\"name\": \"Official public SQL suite with restart and live search mode\", \"conclusion\": \"success\"}, {\"name\": \"Preserve official checker reports\", \"conclusion\": \"success\"}, {\"name\": \"Post Run actions/checkout@v4\", \"conclusion\": \"success\"}, {\"name\": \"Complete job\", \"conclusion\": \"success\"}]}], \"artifacts\": [{\"id\": 13757756069, \"name\": \"minivector-official-protocol\", \"digest\": \"sha256:292a31a2799cb0d1fc10f0b6baa520b03e8e43cd81b3aa43e3d5112e5ba436f1\", \"size_in_bytes\": 5891}]}, \"regression_ci\": {\"run\": {\"id\": 42804309900, \"head_sha\": \"54875caff8bd4c28f2280c13d9653faef578f565\", \"status\": \"completed\", \"conclusion\": \"success\", \"html_url\": \"https://github.com/lucky20040520/seekdb/actions/runs/42804309900\"}, \"jobs\": [{\"id\": 129789447561, \"conclusion\": \"success\", \"steps\": [{\"name\": \"Set up job\", \"conclusion\": \"success\"}, {\"name\": \"Run actions/checkout@v4\", \"conclusion\": \"success\"}, {\"name\": \"Validate learning material\", \"conclusion\": \"success\"}, {\"name\": \"Build from source with locked dependencies\", \"conclusion\": \"success\"}, {\"name\": \"Check delivered versions examples and runtime file scope\", \"conclusion\": \"success\"}, {\"name\": \"Run self-tests offline in Linux container\", \"conclusion\": \"success\"}, {\"name\": \"Check published SQL assertions through core API\", \"conclusion\": \"success\"}, {\"name\": \"Explain scope\", \"conclusion\": \"success\"}, {\"name\": \"Check public assertions through diagnostic stdin stdout pipes\", \"conclusion\": \"success\"}, {\"name\": \"Verify data larger than process memory with transactions\", \"conclusion\": \"success\"}, {\"name\": \"Post Run actions/checkout@v4\", \"conclusion\": \"success\"}, {\"name\": \"Complete job\", \"conclusion\": \"success\"}]}], \"artifacts\": []}, \"jsonl_examples\": [{\"example\": \"first-run\", \"stdout\": \"{\\\"type\\\":\\\"ready\\\"}\\n{\\\"id\\\":1,\\\"ok\\\":true,\\\"affected_rows\\\":0}\\n{\\\"id\\\":2,\\\"ok\\\":true,\\\"affected_rows\\\":2}\\n{\\\"id\\\":3,\\\"ok\\\":true,\\\"columns\\\":[\\\"id\\\",\\\"title\\\"],\\\"rows\\\":[[1,\\\"alpha\\\"],[2,\\\"beta\\\"]]}\\n{\\\"id\\\":4,\\\"ok\\\":true,\\\"columns\\\":[\\\"id\\\",\\\"distance\\\"],\\\"rows\\\":[[2,1.0],[1,5.0]]}\\n{\\\"id\\\":5,\\\"ok\\\":true,\\\"affected_rows\\\":0}\\n{\\\"id\\\":6,\\\"ok\\\":true,\\\"affected_rows\\\":1}\\n{\\\"id\\\":7,\\\"ok\\\":true,\\\"affected_rows\\\":0}\\n{\\\"id\\\":8,\\\"ok\\\":true,\\\"affected_rows\\\":0}\\n{\\\"id\\\":9,\\\"ok\\\":true,\\\"affected_rows\\\":1}\\n{\\\"id\\\":10,\\\"ok\\\":true,\\\"affected_rows\\\":0}\\n{\\\"id\\\":11,\\\"ok\\\":true,\\\"affected_rows\\\":0}\\n{\\\"id\\\":12,\\\"ok\\\":true,\\\"affected_rows\\\":1}\\n{\\\"id\\\":\\\"shutdown\\\",\\\"ok\\\":true}\\n\"}, {\"example\": \"after-restart\", \"stdout\": \"{\\\"type\\\":\\\"ready\\\"}\\n{\\\"id\\\":1,\\\"ok\\\":true,\\\"columns\\\":[\\\"id\\\",\\\"title\\\",\\\"embedding\\\"],\\\"rows\\\":[[1,\\\"alpha\\\",[3.0,4.0]]]}\\n{\\\"id\\\":2,\\\"ok\\\":true,\\\"columns\\\":[\\\"id\\\",\\\"distance\\\"],\\\"rows\\\":[[1,5.0]]}\\n{\\\"id\\\":3,\\\"ok\\\":true,\\\"columns\\\":[\\\"id\\\"],\\\"rows\\\":[]}\\n{\\\"id\\\":\\\"shutdown\\\",\\\"ok\\\":true}\\n\"}], \"scope\": \"Unmodified official public protocol checker and20 public cases,not formal29-case admission,platform performance or learning score\"}"
-    },
-    {
-      "id": "python-measurement-correction-20261114",
-      "source": "既有实验记录 python-measurement-correction-20261114 的 output 字段。结构化结果转为 JSON 字符串便于引用。",
-      "status": "executed",
-      "output": "{\"workload\":{\"rows\":10000,\"dimensions\":128,\"queries\":1000,\"k\":10,\"mode\":\"exact\",\"unfiltered_queries\":500,\"equality_filtered_queries\":500,\"commit_batch_rows\":100,\"data_seeds\":[19017,19018,19019],\"query_seeds\":[29017,29018,29019]},\"isolation\":\"写入与查询各自独立容器、空数据卷、空父 cgroup v2；2 CPU、2 GiB、禁止 swap、128 PIDs；采样器在数据库父 cgroup 外。\",\"time_scope\":\"写入 T 为 100 次 BEGIN/100 行 INSERT/COMMIT；查询 T 为 1000 请求。启动、装载、建索引、一次无过滤预热不计查询 T，但均计查询 B/M。\",\"resource_scope\":\"数据卷 st_dev 与 8:48 计量设备对应；读取父 cgroup io.stat 与 memory.peak（含页缓存）。数据库结束后保留父 cgroup，执行 syncfs，dirty/writeback 归零、I/O 连续三次 0.1 秒采样稳定才结束。\",\"correctness_scope\":\"资源采样结束后，在独立重启容器逐条核验持久化记录；全部查询由容器外独立 math.fsum 真值核对 ID、距离、过滤、数量和主键破并列。\",\"score_policy\":\"缺失物理 I/O 或正确性/资源检查失败时不计算完整 E；无官方冻结基线只报 E_local；每轮完整六项指标计算 E 后取三轮中位数。\",\"measurement_tests\":{\"tests\":29,\"passed\":true},\"cache_policy\":\"每阶段空数据卷，镜像执行层预热一次，未驱逐宿主全局缓存；实测 rbytes 均为 0，B 主要是物理写入，不能解读为冷盘读性能。\"}"
-    },
-    {
-      "id": "python-query-and-routing-20261114",
-      "source": "既有实验记录 python-query-and-routing-20261114 的 output 字段。结构化结果转为 JSON 字符串便于引用。",
-      "status": "executed",
-      "output": "{\"runtime\":\"Python 3.12.8 / NumPy 1.26.4\",\"entrypoint\":[\"python\",\"-m\",\"minivector\",\"--data-dir\",\"/data\"],\"image_id\":\"sha256:172822af58aa898dd83b5f6c956c4652850fce445abf738edd52564cd5e46136\",\"source_archive_sha256\":\"21adc2f9d38cc877d26d828ac89adc1f60a696f9ca5f81239190a373e42f7f5d\",\"changes\":[\"在 Python 中复用连续 float32 数组；无过滤直接切片，不再为全表构造布尔掩码与 gather 拷贝。\",\"完整等值条件缓存行号，按当前不可变段签名/可见数据版本失效；共享 16 MiB 总预算，过滤缓存另限 1 MiB、32 项。\",\"分块复用至多 512 行的 float64 临时缓冲和 NumPy out=。批量距离用于保守候选筛选，边界仍由 math.fsum 标量精算，保持 exact。\",\"缓存路径 TopK 只保存距离、主键和行号；投影复用距离，需要向量输出或其他距离表达式时才重建列表。\",\"小表即使已建 Flat 索引，也尝试预算内的 NumPy 精确扫描；超预算保持磁盘 Flat 或有界流式路径，索引仍同步维护。\"],\"unit_tests_passed\":56,\"public_cases_passed\":20,\"exact_queries_verified\":6000,\"paired_no_index_E_local\":{\"before_median\":0.507375,\"after_median\":0.528784},\"with_index_E_local_against_frozen_baseline\":0.685841}"
-    },
-    {
-      "id": "python-final-validation-20261114",
-      "source": "既有实验记录 python-final-validation-20261114 的 output 字段。结构化结果转为 JSON 字符串便于引用。",
-      "status": "executed",
-      "output": "{\"regression\":{\"tests\":60,\"passed\":true,\"log_excerpt\":\"Ran 60 tests in 11.273s; OK\"},\"public\":{\"official_source_unchanged\":true,\"passed\":true,\"cases\":[{\"id\":\"sql_crud\",\"status\":\"PASS\"},{\"id\":\"sql_comparisons\",\"status\":\"PASS\"},{\"id\":\"sql_ordering\",\"status\":\"PASS\"},{\"id\":\"sql_empty\",\"status\":\"PASS\"},{\"id\":\"sql_primary_key\",\"status\":\"PASS\"},{\"id\":\"sql_unicode\",\"status\":\"PASS\"},{\"id\":\"sql_bigint\",\"status\":\"PASS\"},{\"id\":\"sql_unsupported\",\"status\":\"PASS\"},{\"id\":\"storage_restart\",\"status\":\"PASS\"},{\"id\":\"vector_euclidean\",\"status\":\"PASS\"},{\"id\":\"transaction_commit\",\"status\":\"PASS\"},{\"id\":\"transaction_rollback\",\"status\":\"PASS\"},{\"id\":\"storage_mutations\",\"status\":\"PASS\"},{\"id\":\"storage_multiple_tables\",\"status\":\"PASS\"},{\"id\":\"vector_ties_and_filter\",\"status\":\"PASS\"},{\"id\":\"vector_float32\",\"status\":\"PASS\"},{\"id\":\"vector_index_maintenance\",\"status\":\"PASS\"},{\"id\":\"transaction_failed_insert\",\"status\":\"PASS\"},{\"id\":\"transaction_autocommit_atomic\",\"status\":\"PASS\"},{\"id\":\"transaction_shutdown_rollback\",\"status\":\"PASS\"}]},\"final_exact_workload\":{\"profiles\":2,\"rounds_per_profile\":3,\"verified_queries\":6000,\"unfiltered_recall_each_round\":1.0,\"filtered_recall_each_round\":1.0},\"legacy_compatibility\":{\"image\":\"minivector-python:binary-20261114\",\"legacy_image\":\"minivector-baseline:python-20261114-175804\",\"passed\":true,\"checks\":[\"legacy JSONL/index recovery, mixed append, duplicate keys, rollback, binary rewrite, restart\",\"17000-row footer spill, exact full contents, restart, duplicate keys, empty segment and reinsertion\"],\"seconds\":6.299862843006849,\"requests\":53},\"crash_recovery\":{\"passed\":6,\"asserted_requests\":128,\"cases\":[{\"phase\":\"before-rows-sync\",\"passed\":true,\"expected_state\":\"all old\",\"second_recovery_crash\":false,\"response_received_before_kill\":false},{\"phase\":\"before-index-sync\",\"passed\":true,\"expected_state\":\"all old\",\"second_recovery_crash\":false,\"response_received_before_kill\":false},{\"phase\":\"before-catalog-sync\",\"passed\":true,\"expected_state\":\"all old\",\"second_recovery_crash\":false,\"response_received_before_kill\":false},{\"phase\":\"before-catalog-rename\",\"passed\":true,\"expected_state\":\"all old\",\"second_recovery_crash\":false,\"response_received_before_kill\":false},{\"phase\":\"after-catalog-rename\",\"passed\":true,\"expected_state\":\"all committed\",\"second_recovery_crash\":true,\"response_received_before_kill\":false},{\"phase\":\"before-collect-unlink\",\"passed\":true,\"expected_state\":\"all committed\",\"second_recovery_crash\":false,\"response_received_before_kill\":false}],\"isolation\":\"真实 SIGKILL，系统调用暂停钩子只放独立测试镜像；计分镜像不含 LD_PRELOAD 或 profiling。两表/索引同时验证提交全有或全无，恢复中再杀一次。\"},\"over_memory\":{\"rows\":20000,\"payload_bytes\":163840000,\"memory_limit_bytes\":134217728,\"memory_peak_bytes\":134217728,\"OOMKilled\":false,\"max_request_seconds\":3.4644478999980493,\"passed\":true,\"coverage\":\"20000 行、每行 8192 字符标量、8 维向量；外排序、超缓存容量扫描/磁盘 Flat、事务读己之写、回滚、提交、重启、两次强杀。\",\"scope\":\"Reduced-memory boundary probe, not the official 2 GiB full-scale workload\",\"mode_note\":\"压力检查还测试协议 ann 请求的兼容性，底层仍执行精确算法；它不是 ANN 性能实验，不混入本轮 exact 性能比分。\"},\"delivery\":{\"status\":\"PASS\",\"architecture\":\"amd64\",\"versions\":[\"3.12.8\",\"1.26.4\"],\"verified\":\"empty volume,documented examples,EOF rollback,restart persistence,no network sockets,no writes outside data volume\"},\"source_identity\":{\"final_source_matches_measured_archive\":true,\"production_file_sha256\":{\"minivector/__init__.py\":\"63e0e4daa7f4ed54aa06ca998a929efdca3c5e57c18884b8539d004107d4790e\",\"minivector/__main__.py\":\"6dd0642d3c910f4c5a768e79b5548d9ebd0974c12e7e30b0bf4d38b9419832c6\",\"minivector/engine.py\":\"ff71fc533e7763ce1d680ee753007f1faa855624c99321a87b328489d6acdc0c\",\"minivector/flat_index.py\":\"6bce06f85fbf7138b2e74ef8dcb1786cfa69acc3b8014187333c41531446f9dc\",\"minivector/jsonl.py\":\"6767d4bd4e23a996ea02552ac76813fd79106612a30babd5aa8b1aa8a2742107\",\"minivector/segments.py\":\"6a3eb8c5a88b55173d338f48960f0c512c7da1b71e588a648417ea45219e572c\",\"minivector/sql.py\":\"0cd2fee1dca14593770679c757ad913a6b5a9d736dacfad4e0555fdf4ffd70ac\",\"minivector/vector.py\":\"174a4cd62503f0f16c4ab7d2adda44efb38e82d01a1d9c5c61d5069824644541\",\"requirements.txt\":\"aba6405e5d8c6a3d7bb5104d28e823afb56305ef2f9d3e707d888f63993dfbd4\"}},\"formal_admission\":\"not rerun; public tests do not establish formal admission\"}"
-    },
-    {
-      "id": "python-platform-20261114",
-      "source": "用户提供的截图、准入确认及后续 Prompt 反馈",
-      "status": "executed",
-      "output": "2026-11-14 22:31，2026-competition-round2，e1561a7292443e4945b580cb23a24e399c2c18a5。提测列表执行成功，成功 1、失败 0。用户确认 MySQL 正式准入通过，随后反馈 Agent Prompt 仍没有分数。"
-    },
-    {
-      "id": "python-binary-storage-20261114",
-      "source": "既有实验记录 python-binary-storage-20261114 的 output 字段。结构化结果转为 JSON 字符串便于引用。",
-      "status": "executed",
-      "output": "{\"image\":\"minivector-python:binary-20261114\",\"image_id\":\"sha256:16123d3a333378e80508ca7f48695b9e23830179508c360bf2dc2c7c0cc78378\",\"source_archive_sha256\":\"632296043f17faf5aa2537362aa0a547458326e707433e6cac66ac16993966b8\",\"changes\":[\"新增 minivector/segments.py，以 Python struct/标准文件接口写不可变 .mvb 段，存储类型化 BIGINT、UTF-8 VARCHAR、float32 VECTOR。\",\"将主键和行位置合并在段尾；段尾缓冲超过 256 KiB 时写数据目录内临时文件，限制常驻内存。\",\"保留数据/索引同步、清单原子替换与目录同步，成功响应前完成必要持久化；索引可恢复、回滚可见集合不变。\",\"仍可读取旧 JSONL/主键侧文件以及新旧混合段；宽行在解码前做缓存预算检查，超过预算走流式扫描或磁盘 Flat。\"],\"vector_body_bytes\":5120000,\"query_directory_results\":{\"no_index\":{\"frozen\":{\"logical_data_bytes\":25546504,\"data_files\":201},\"binary\":{\"logical_data_bytes\":5567828,\"data_files\":101}},\"with_index\":{\"frozen\":{\"logical_data_bytes\":30837365,\"data_files\":301},\"binary\":{\"logical_data_bytes\":10858489,\"data_files\":201}}},\"paired_improvement\":[{\"stage\":\"binary\",\"profile\":\"no_index\",\"round_E_gains\":[0.09918263332580146,0.08703023488704864,0.09585204544630965],\"before_median\":0.540627,\"after_median\":0.635468},{\"stage\":\"binary\",\"profile\":\"with_index\",\"round_E_gains\":[0.09142007275624398,0.08701343294204822,0.0869270954579432],\"before_median\":0.692528,\"after_median\":0.779541}]}"
-    },
-    {
-      "id": "python-six-metrics-comparison-20261114",
-      "source": "既有实验记录 python-six-metrics-comparison-20261114 的 output 字段。结构化结果转为 JSON 字符串便于引用。",
-      "status": "executed",
-      "output": "{\"scope\":\"Python + exact / E_local only；所有数值从已完成报告直接抽取，非本次编辑材料时重跑\",\"units\":{\"time\":\"ms\",\"io\":\"bytes, rbytes+wbytes\",\"memory\":\"bytes, cgroup memory.peak\"},\"normalization\":\"f=(base+epsilon)/(base+actual+2*epsilon); E_phase=0.6*f(T)+0.2*f(B)+0.2*f(M); E=(E_write+2*E_query)/3\",\"epsilon\":{\"time_ms\":1,\"io_bytes\":1048576,\"memory_bytes\":1048576},\"baseline_policy\":\"各索引场景分别冻结原始 Python 的三轮各项中位数；每轮候选用该固定基线计算，再取三轮 E 中位数并保留六位小数。固定基线自身逐轮 E 中位数可略偏离 0.5。\",\"round_columns\":[\"round\",\"write_time_ms\",\"write_io_bytes\",\"write_memory_bytes\",\"query_time_ms\",\"query_io_bytes\",\"query_memory_bytes\",\"E_local\"],\"variants\":[{\"variant\":\"no_index/frozen\",\"rounds\":[[1,8699.281641995185,26693632,37298176,5690.56206800451,26693632,56373248,0.5051227193105045],[2,9640.631076996215,26693632,37552128,6444.745996996062,26693632,56356864,0.48746245688135675],[3,9640.797868996742,26693632,37269504,4733.265664006467,26693632,55930880,0.5186238172027426]],\"median_E_local\":0.505123,\"evidence\":{\"path\":\".artifacts/baseline-20261114-175804/performance/python.json\",\"sha256\":\"4810352749216cbb3ccb42ee458daf36e969bf5b292ccc4f3a3bbf562b57ea29\"}},{\"variant\":\"no_index/baseline_paired\",\"rounds\":[[1,9993.056599996635,26697728,37756928,5427.200548001565,26693632,55906304,0.5030039903237561],[2,9214.64963600738,26693632,37359616,5416.3341199891875,26693632,56004608,0.5073745531431832],[3,9811.514440996689,26693632,37527552,5157.932182002696,26693632,56143872,0.508963735061808]],\"median_E_local\":0.507375,\"evidence\":{\"path\":\".artifacts/python-optimization-20261114/query-paired/baseline.json\",\"sha256\":\"f9cb25d6d1a679db5585787f9826d011c8192d841ee992109cd79015e24dba26\"}},{\"variant\":\"no_index/query\",\"rounds\":[[1,9456.69471200381,26693632,37380096,4329.697263994603,26693632,55164928,0.5287837077583105],[2,9306.365003998508,26693632,37928960,4854.329241003143,26693632,55402496,0.5179083499606962],[3,9502.630980990943,26693632,37900288,4126.501060003648,26693632,55263232,0.5329599312565257]],\"median_E_local\":0.528784,\"evidence\":{\"path\":\".artifacts/python-optimization-20261114/query-paired/query.json\",\"sha256\":\"95308017bd18c76ad6d8d0df7b52d1bd1e8f52b33381ef0ed458c6d6b95b4722\"}},{\"variant\":\"no_index/query_repeated\",\"rounds\":[[1,9889.500689008855,26693632,37347328,4320.9385280060815,26693632,55218176,0.5267278547642581],[2,9765.841496991925,26693632,37453824,4886.953449007706,26693632,55631872,0.5149027924872954],[3,9566.689609011519,26693632,37580800,4443.013880998478,26693632,55201792,0.5255572787945848]],\"median_E_local\":0.525557,\"evidence\":{\"path\":\".artifacts/python-optimization-20261114/input-paired/query.json\",\"sha256\":\"46fd20ab7f795576d2ba1f819c7408900fb9634cc85d9081e382559ad14c8cae\"}},{\"variant\":\"no_index/input\",\"rounds\":[[1,7460.382422999828,26693632,37523456,4834.939702006523,26693632,55091200,0.529648231305337],[2,8322.971550005605,26693632,37527552,4464.780442998745,26693632,55435264,0.5319102938027431],[3,8424.484482995467,26693632,37355520,4609.679468994727,26693632,55369728,0.5282679781665084]],\"median_E_local\":0.529648,\"evidence\":{\"path\":\".artifacts/python-optimization-20261114/input-paired/input.json\",\"sha256\":\"db84f6845a320902dd92e9f98f7e1bbd57305587eba028f79969b758415346bb\"}},{\"variant\":\"no_index/input_repeated\",\"rounds\":[[1,9047.666000988102,26693632,37302272,4099.566801000037,26693632,55300096,0.5362855217730669],[2,8278.694276988972,26693632,37384192,4105.573788998299,26693632,55144448,0.5406265634471571],[3,7941.378085990436,26693632,37269504,4004.90764999995,26693632,55209984,0.5451135954161538]],\"median_E_local\":0.540627,\"evidence\":{\"path\":\".artifacts/python-optimization-20261114/binary-paired/input.json\",\"sha256\":\"9aa541836f5cdeec86d5f0beb2126f9aa1f8e66f73cbdfb0dfb745e336536538\"}},{\"variant\":\"no_index/binary\",\"rounds\":[[1,6844.314677000511,6201344,16134144,4142.140593990916,6201344,34414592,0.6354681550988683],[2,6226.113804994384,6201344,16338944,4686.473024004954,6201344,34480128,0.6276567983342057],[3,6262.657123996178,6201344,16236544,4089.303356013261,6201344,34353152,0.6409656408624634]],\"median_E_local\":0.635468,\"evidence\":{\"path\":\".artifacts/python-optimization-20261114/binary-paired/binary.json\",\"sha256\":\"e69a36719679176a8ba5cfcfad7ade31c19e369866fb1e9b869e3ff61c2bbf4b\"}},{\"variant\":\"with_index/frozen\",\"rounds\":[[1,9562.335891998373,26693632,37257216,481701.98643898766,32034816,43356160,0.5009161175255076],[2,9546.749606000958,26693632,37683200,489017.5608510035,32034816,43917312,0.4988874911423285],[3,9852.51033399254,26693632,37752832,484763.52302099986,32034816,43487232,0.4984756167456059]],\"median_E_local\":0.498887,\"evidence\":{\"path\":\".artifacts/optimization-20261114/step3-indexed/python.json\",\"sha256\":\"aba9f0b227f982ca515cdbb15e93cbb7fa551ba38636531c1fca6452179fb9db\"}},{\"variant\":\"with_index/query\",\"rounds\":[[1,9485.22332200082,26693632,37728256,4164.11922199768,32034816,60821504,0.6861174105380426],[2,9434.381540995673,26693632,37654528,4662.43071599456,32034816,61153280,0.6858405642936539],[3,9686.338265993982,26693632,37302272,4342.357229994377,32034816,61001728,0.6850136836150363]],\"median_E_local\":0.685841,\"evidence\":{\"path\":\".artifacts/python-optimization-20261114/query-indexed/query.json\",\"sha256\":\"2d2a4e4d43f687c498c3ce26211f48cea34a5bbc46ebeba01326f5e7f2458fe1\"}},{\"variant\":\"with_index/input\",\"rounds\":[[1,8535.582562006311,26693632,37597184,4100.506311006029,32034816,61243392,0.6912729522987225],[2,8507.378800000879,26693632,37158912,3961.7306019936223,32034816,61145088,0.6917917863153958],[3,8660.351605998585,26693632,37335040,4062.8905839985237,32034816,60665856,0.6909956044079353]],\"median_E_local\":0.691273,\"evidence\":{\"path\":\".artifacts/python-optimization-20261114/input-indexed/input.json\",\"sha256\":\"6e8db4a378c1e0bb905bcaa5cd340cd6004a9096467aec1b3c3f2fa810cd956d\"}},{\"variant\":\"with_index/input_repeated\",\"rounds\":[[1,8047.191263001878,26693632,37580800,4271.446270999149,32034816,61022208,0.694187148547004],[2,8348.197706000064,26693632,37400576,4274.367914986215,32034816,60850176,0.6925277567717272],[3,8462.552231998416,26693632,37605376,4042.0539189944975,32034816,60932096,0.6919074014604747]],\"median_E_local\":0.692528,\"evidence\":{\"path\":\".artifacts/python-optimization-20261114/binary-indexed/input.json\",\"sha256\":\"eaf6d347e1803a221e6ae65bf1d362c27d9dc05ed6c1654e83843e812b5eb1b8\"}},{\"variant\":\"with_index/binary\",\"rounds\":[[1,5809.629388997564,6201344,16273408,4268.086996002239,11542528,40235008,0.785607221303248],[2,6587.815963008325,6201344,16502784,4056.4598490018398,11542528,40304640,0.7795411897137754],[3,6738.062898002681,6201344,16089088,4168.005140003515,11542528,40136704,0.7788344969184179]],\"median_E_local\":0.779541,\"evidence\":{\"path\":\".artifacts/python-optimization-20261114/binary-indexed/binary.json\",\"sha256\":\"1ca06bdd652eccc5f1ead863cea186b77c8dd1fa9f1de174d25eabc283b94696\"}}],\"correctness_for_every_listed_round\":{\"write_correct\":true,\"query_correct\":true,\"resources_ok\":true,\"recall_unfiltered\":1.0,\"recall_filtered\":1.0,\"query_counts\":{\"unfiltered\":500,\"filtered\":500}},\"paired_gates\":[{\"stage\":\"query\",\"profile\":\"no_index\",\"round_E_gains\":[0.025779717434554428,0.010533796817512986,0.02399619619471771],\"before_median\":0.507375,\"after_median\":0.528784},{\"stage\":\"input\",\"profile\":\"no_index\",\"round_E_gains\":[0.002920376541078906,0.017007501315447704,0.002710699371923586],\"before_median\":0.525557,\"after_median\":0.529648},{\"stage\":\"binary\",\"profile\":\"no_index\",\"round_E_gains\":[0.09918263332580146,0.08703023488704864,0.09585204544630965],\"before_median\":0.540627,\"after_median\":0.635468},{\"stage\":\"binary\",\"profile\":\"with_index\",\"round_E_gains\":[0.09142007275624398,0.08701343294204822,0.0869270954579432],\"before_median\":0.692528,\"after_median\":0.779541}],\"order_and_limits\":\"无索引逐阶段交替成对；查询/输入阶段带索引仅与冻结原始 Python 对比，没有每阶段重复约 485 秒原始查询。最终二进制存储的两种场景都与前一版交替复测。不同批次的对照波动不混为同轮结果。\"}"
-    },
-    {
-      "id": "filter-three-way-observed",
-      "status": "executed",
-      "source": "本次 Windows/Python 3.8.8/NumPy 1.20.1 三轮诊断",
-      "output": "关闭缓存、只查找、完整缓存三组的候选构造中位数分别为 13.36、13.19、17.91 ms。每轮完整缓存 0 次命中、500 次写入、468 次淘汰。超预算时基线和候选的缓存路径调用均为 0。"
-    },
-    {
-      "id": "filter-three-way-raw",
-      "status": "executed",
-      "source": "本次诊断工具的逐轮 JSON 输出",
-      "output": "[{\"scenario\":\"low-reuse\",\"postings\":\"off\",\"queries\":500,\"seconds\":0.22593799999999487,\"filter_seconds\":0.0131115,\"cache_calls\":500,\"cache_bytes\":7460468,\"hits\":0,\"writes\":0,\"evictions\":0,\"round\":1},{\"scenario\":\"low-reuse\",\"postings\":\"lookup-only\",\"queries\":500,\"seconds\":0.21635139999999708,\"filter_seconds\":0.0131687,\"cache_calls\":500,\"cache_bytes\":7460468,\"hits\":0,\"writes\":0,\"evictions\":0,\"round\":1},{\"scenario\":\"low-reuse\",\"postings\":\"on\",\"queries\":500,\"seconds\":0.2234746000000074,\"filter_seconds\":0.017908,\"cache_calls\":500,\"cache_bytes\":7484852,\"hits\":0,\"writes\":500,\"evictions\":468,\"round\":1},{\"scenario\":\"low-reuse\",\"postings\":\"lookup-only\",\"queries\":500,\"seconds\":0.21564199999999722,\"filter_seconds\":0.0131925,\"cache_calls\":500,\"cache_bytes\":7460468,\"hits\":0,\"writes\":0,\"evictions\":0,\"round\":2},{\"scenario\":\"low-reuse\",\"postings\":\"on\",\"queries\":500,\"seconds\":0.21870669999999848,\"filter_seconds\":0.0173416,\"cache_calls\":500,\"cache_bytes\":7484852,\"hits\":0,\"writes\":500,\"evictions\":468,\"round\":2},{\"scenario\":\"low-reuse\",\"postings\":\"off\",\"queries\":500,\"seconds\":0.24646539999999106,\"filter_seconds\":0.0143052,\"cache_calls\":500,\"cache_bytes\":7460468,\"hits\":0,\"writes\":0,\"evictions\":0,\"round\":2},{\"scenario\":\"low-reuse\",\"postings\":\"on\",\"queries\":500,\"seconds\":0.23221639999999866,\"filter_seconds\":0.018243,\"cache_calls\":500,\"cache_bytes\":7484852,\"hits\":0,\"writes\":500,\"evictions\":468,\"round\":3},{\"scenario\":\"low-reuse\",\"postings\":\"off\",\"queries\":500,\"seconds\":0.23050939999999365,\"filter_seconds\":0.0133645,\"cache_calls\":500,\"cache_bytes\":7460468,\"hits\":0,\"writes\":0,\"evictions\":0,\"round\":3},{\"scenario\":\"low-reuse\",\"postings\":\"lookup-only\",\"queries\":500,\"seconds\":0.230106899999992,\"filter_seconds\":0.0140362,\"cache_calls\":500,\"cache_bytes\":7460468,\"hits\":0,\"writes\":0,\"evictions\":0,\"round\":3},{\"scenario\":\"repeated\",\"postings\":\"on\",\"queries\":500,\"seconds\":0.22131150000000854,\"filter_seconds\":0.002709,\"cache_calls\":500,\"cache_bytes\":7461230,\"hits\":499,\"writes\":500,\"evictions\":0,\"variant\":\"baseline\"},{\"scenario\":\"low-reuse\",\"postings\":\"on\",\"queries\":500,\"seconds\":0.24638039999999872,\"filter_seconds\":0.0195415,\"cache_calls\":500,\"cache_bytes\":7484852,\"hits\":0,\"writes\":500,\"evictions\":468,\"variant\":\"baseline\"},{\"scenario\":\"over-budget\",\"postings\":\"on\",\"queries\":12,\"seconds\":2.5028571999999984,\"filter_seconds\":0.0,\"cache_calls\":0,\"cache_bytes\":0,\"hits\":0,\"writes\":0,\"evictions\":0,\"variant\":\"baseline\"},{\"scenario\":\"repeated\",\"postings\":\"on\",\"queries\":500,\"seconds\":0.2216949999999951,\"filter_seconds\":0.0026131,\"cache_calls\":500,\"cache_bytes\":7461230,\"hits\":499,\"writes\":500,\"evictions\":0,\"variant\":\"candidate\"},{\"scenario\":\"low-reuse\",\"postings\":\"on\",\"queries\":500,\"seconds\":0.24314660000000998,\"filter_seconds\":0.0160771,\"cache_calls\":500,\"cache_bytes\":7484852,\"hits\":0,\"writes\":500,\"evictions\":468,\"variant\":\"candidate\"},{\"scenario\":\"over-budget\",\"postings\":\"on\",\"queries\":12,\"seconds\":2.4763842999999994,\"filter_seconds\":0.0,\"cache_calls\":0,\"cache_bytes\":0,\"hits\":0,\"writes\":0,\"evictions\":0,\"variant\":\"candidate\"}]"
-    },
-    {
-      "id": "filter-regression",
-      "status": "executed",
-      "source": "本轮实际命令输出",
-      "output": "基线：60 项回归通过，20/20 公开样例、95 条 SQL 通过。候选：60 项回归通过，20/20 公开样例、95 条 SQL 通过。公开样例通过本地核心 API 执行。"
-    },
-    {
-      "id": "python-exact-screen-20261116",
-      "status": "executed",
-      "source": "docs/python-performance-20261116.json；原始输出在 .artifacts/python-optimization-20261116",
-      "output": "{\"baseline_sha\":\"8ec857e60bd63f345c9341038ffd37018a5f163e\",\"changes\":[\"64 KiB immutable-segment primary-key ranges; scan on overlap or saturation\",\"reuse validated vectors only within the same parsed SELECT expression\",\"float32 scan with conservative error envelope and exact math.fsum refinement; float64 overflow/high-dimension fallback\"],\"summary\":{\"no_index\":{\"baseline\":{\"write\":{\"time_ms\":5204.594399999991,\"io_bytes\":6201344,\"memory_bytes\":16617472},\"query\":{\"time_ms\":2817.232700000005,\"io_bytes\":6201344,\"memory_bytes\":34512896}},\"candidate\":{\"write\":{\"time_ms\":4971.3451000000005,\"io_bytes\":6201344,\"memory_bytes\":16142336},\"query\":{\"time_ms\":2275.593299999997,\"io_bytes\":6201344,\"memory_bytes\":34029568}},\"baseline_E_local\":0.499981,\"candidate_E_local\":0.524395,\"E_relative_gain_percent\":4.882985553451014,\"round_E_gains\":[0.021656216238746584,0.029182599956295407,0.029167790321101894],\"time_reduction_percent\":{\"write\":4.481603792218481,\"query\":19.225937566321992}},\"with_index\":{\"baseline\":{\"write\":{\"time_ms\":5166.8994999999995,\"io_bytes\":6201344,\"memory_bytes\":16539648},\"query\":{\"time_ms\":2941.6487000000016,\"io_bytes\":11542528,\"memory_bytes\":40710144}},\"candidate\":{\"write\":{\"time_ms\":4900.960699999999,\"io_bytes\":6201344,\"memory_bytes\":16322560},\"query\":{\"time_ms\":2239.748200000001,\"io_bytes\":11542528,\"memory_bytes\":39489536}},\"baseline_E_local\":0.499906,\"candidate_E_local\":0.529833,\"E_relative_gain_percent\":5.986525466787751,\"round_E_gains\":[0.03215422125181655,0.02992618673928643,0.03697901200314646],\"time_reduction_percent\":{\"write\":5.14697063490398,\"query\":23.860785959927856}}},\"engine_tests_passed\":68,\"measurement_tests_passed\":34,\"public_cases_passed\":20,\"final_exact_queries_verified\":12000,\"over_memory_checks_passed\":222,\"over_memory_docker_sigkills\":2,\"runtime_source_matches_image\":true,\"scope\":\"local E_local; no official hidden admission or platform score\"}"
-    },
-    {
-      "id": "block-matrix",
-      "source": "本次实际工具输出",
-      "status": "executed",
-      "output": "边界候选 p50/p95/max 均为 10，fsum 总调用 10000 次。\n{\"scope\":\"local topk kernel, exact returned rows and distances vs baseline\",\"rows\":10000,\"queries\":1000,\"fsum_total\":10000,\"candidate_p50\":10.0,\"candidate_p95\":10,\"candidate_max\":10,\"rounds\":[[1,256,false,2.2219922999999993],[1,256,true,1.7030730999999992],[1,512,true,2.0258942000000015],[1,1024,true,1.8109753999999985],[1,2048,true,2.005452400000001],[1,4096,true,2.3743465000000015],[2,4096,true,2.2179353999999982],[2,2048,true,1.9541168000000013],[2,1024,true,1.8404001999999977],[2,512,true,1.9531975999999993],[2,256,true,1.905104999999999],[2,256,false,2.0336295],[3,256,false,2.0595414000000005],[3,256,true,1.8423040999999998],[3,512,true,1.920228999999999],[3,1024,true,1.8881378000000026],[3,2048,true,1.9606864000000002],[3,4096,true,2.219417]]}"
-    },
-    {
-      "id": "block-paired",
-      "source": "本次实际工具输出",
-      "status": "executed",
-      "output": "本地 JSONL 三轮。512 行基线查询中位数 3.002188 秒，256 行候选 2.722095 秒。六组共 6000 条独立真值核对与重启检查通过。\n{\"baseline_sha\":\"8ec857e60bd63f345c9341038ffd37018a5f163e\",\"python\":\"3.8.8 (default, Apr 13 2021, 15:08:03) [MSC v.1916 64 bit (AMD64)]\",\"rounds\":[{\"round\":1,\"variant\":\"baseline\",\"write_seconds\":4.921150200000001,\"query_seconds\":3.002187599999999,\"verified_queries\":1000,\"persisted\":true,\"io_bytes\":null,\"memory_bytes\":null},{\"round\":1,\"variant\":\"candidate\",\"write_seconds\":4.6645629,\"query_seconds\":2.722095000000003,\"verified_queries\":1000,\"persisted\":true,\"io_bytes\":null,\"memory_bytes\":null},{\"round\":2,\"variant\":\"candidate\",\"write_seconds\":4.724395099999995,\"query_seconds\":2.86754719999999,\"verified_queries\":1000,\"persisted\":true,\"io_bytes\":null,\"memory_bytes\":null},{\"round\":2,\"variant\":\"baseline\",\"write_seconds\":4.771867200000003,\"query_seconds\":2.920915699999995,\"verified_queries\":1000,\"persisted\":true,\"io_bytes\":null,\"memory_bytes\":null},{\"round\":3,\"variant\":\"baseline\",\"write_seconds\":4.638017200000007,\"query_seconds\":3.006259099999994,\"verified_queries\":1000,\"persisted\":true,\"io_bytes\":null,\"memory_bytes\":null},{\"round\":3,\"variant\":\"candidate\",\"write_seconds\":4.71049579999999,\"query_seconds\":2.7167910999999947,\"verified_queries\":1000,\"persisted\":true,\"io_bytes\":null,\"memory_bytes\":null}],\"numpy\":\"1.20.1\"}"
-    },
-    {
-      "id": "block-counterexample",
-      "source": "本次实际工具输出",
-      "status": "executed",
-      "output": "10000 组随机距离中 5273 组不同，383 组超过 1 ULP，最大 2 ULP。并列场景中，批量归约会选主键 10，实际 SQL 返回 [[3, 218.299801775181]]。\n{\"vectors\":[[0.0078125,2.0,128.0,5.960464477539063e-08,9.313225746154785e-10,2.9802322387695312e-08,3.725290298461914e-09,0.0625,16.0,2.3283064365386963e-10,1.0,16.0,1.862645149230957e-09,0.00390625,5.960464477539063e-08,0.0078125,0.25,0.000244140625,0.125,0.00048828125,0.000244140625,0.015625,9.5367431640625e-07,5.960464477539063e-08,5.960464477539063e-08,4.0,0.5,6.103515625e-05,0.00048828125,9.313225746154785e-10,0.0078125,16.0,64.0,0.0625,1.4901161193847656e-08,1.0,3.814697265625e-06,2.384185791015625e-07,1.1920928955078125e-07,0.0009765625,0.25,64.0,0.00048828125,0.0001220703125,0.00390625,1.52587890625e-05,0.0001220703125,7.62939453125e-06,3.725290298461914e-09,6.103515625e-05,0.0001220703125,0.001953125,0.0001220703125,0.000244140625,0.00048828125,8.0,2.3283064365386963e-10,0.125,2.9802322387695312e-08,5.960464477539063e-08,1.0,3.0517578125e-05,2.3283064365386963e-10,1.0,0.25,8.0,6.103515625e-05,8.0,2.3283064365386963e-10,1.862645149230957e-09,0.125,2.384185791015625e-07,0.015625,9.5367431640625e-07,1.9073486328125e-06,5.960464477539063e-08,6.103515625e-05,6.103515625e-05,1.0,4.0,0.000244140625,64.0,0.0625,2.384185791015625e-07,0.0625,0.03125,4.0,2.0,4.656612873077393e-10,0.0009765625,0.0625,4.76837158203125e-07,32.0,0.001953125,0.000244140625,6.103515625e-05,2.3283064365386963e-10,9.313225746154785e-10,6.103515625e-05,1.1920928955078125e-07,0.000244140625,128.0,2.0,1.0,1.4901161193847656e-08,0.00048828125,0.125,1.52587890625e-05,7.450580596923828e-09,3.814697265625e-06,16.0,16.0,4.0,9.5367431640625e-07,2.0,7.62939453125e-06,4.656612873077393e-10,0.001953125,0.125,3.0517578125e-05,0.5,5.960464477539063e-08,0.125,0.03125,1.4901161193847656e-08,0.001953125,4.0,1.862645149230957e-09],[2.3283064365386963e-10,0.0001220703125,0.25,4.76837158203125e-07,1.4901161193847656e-08,5.960464477539063e-08,6.103515625e-05,0.000244140625,16.0,0.015625,0.001953125,6.103515625e-05,0.000244140625,4.0,6.103515625e-05,16.0,0.125,64.0,0.03125,3.0517578125e-05,1.52587890625e-05,1.0,0.0078125,9.5367431640625e-07,0.00048828125,2.3283064365386963e-10,0.0001220703125,5.960464477539063e-08,1.1920928955078125e-07,2.9802322387695312e-08,0.125,2.9802322387695312e-08,0.0001220703125,0.000244140625,0.0078125,8.0,0.0001220703125,9.5367431640625e-07,1.0,5.960464477539063e-08,0.125,9.313225746154785e-10,1.0,3.814697265625e-06,0.03125,0.000244140625,4.0,0.0009765625,8.0,0.125,7.450580596923828e-09,9.313225746154785e-10,0.25,5.960464477539063e-08,1.0,0.00390625,1.862645149230957e-09,1.1920928955078125e-07,4.0,2.384185791015625e-07,128.0,1.52587890625e-05,0.001953125,1.9073486328125e-06,0.0625,6.103515625e-05,2.384185791015625e-07,5.960464477539063e-08,2.0,1.4901161193847656e-08,2.0,0.0625,0.00048828125,0.0009765625,0.00048828125,1.862645149230957e-09,32.0,4.656612873077393e-10,3.0517578125e-05,64.0,6.103515625e-05,0.001953125,64.0,16.0,3.725290298461914e-09,2.384185791015625e-07,0.5,2.3283064365386963e-10,0.000244140625,0.0078125,0.00048828125,5.960464477539063e-08,0.00048828125,0.25,0.0625,16.0,6.103515625e-05,4.656612873077393e-10,16.0,0.001953125,7.62939453125e-06,128.0,2.0,0.000244140625,8.0,9.313225746154785e-10,2.3283064365386963e-10,0.5,0.00390625,1.4901161193847656e-08,5.960464477539063e-08,1.862645149230957e-09,0.015625,4.0,0.0625,1.0,6.103515625e-05,9.5367431640625e-07,3.725290298461914e-09,0.125,4.0,1.0,0.125,2.0,0.0625,2.3283064365386963e-10,7.62939453125e-06,3.814697265625e-06]],\"scalar\":[218.299801775181,218.299801775181],\"batch\":[218.29980177518098,218.299801775181]}"
-    },
-    {
-      "id": "block-boundary-migration",
-      "source": "本次工具实际结果；arrays 依查询顺序",
-      "status": "executed",
-      "output": "本地诊断：两版均通过 20 组同距与 20 组 float32 近邻；1000 条查询共 600 万个批量距离平方，最大 0 ULP。500 个同距候选压力下，256 行三轮均更慢。保留版 60 个回归通过。\n{\"array_columns\":[\"max_ulp\",\"over_1_ulp\",\"pairs\"],\"queries\":1000,\"strict_tie_groups\":20,\"near_groups\":20,\"high_tie\":{\"rows\":10000,\"boundary_rows\":500,\"queries_per_round\":100,\"seed\":\"deterministic constant vectors, no RNG\",\"rounds\":[[1,512,1.3840224999999995],[1,256,1.4266753999999997],[2,256,1.433224599999999],[2,512,1.4259640999999998],[3,512,1.3905013000000004],[3,256,1.4420713000000003]]},\"arrays_lossless_encoding\":{\"order\":\"queries 0..999\",\"repeat_count\":500,\"repeated_pattern\":[[0,0,10000],[0,0,2000]],\"columns\":[\"max_ulp\",\"over_1_ulp\",\"pairs\"],\"explanation\":\"原数组每两行重复一次，共500次；可按此模式完整还原1000条查询记录。\"},\"verified_pairs_total\":6000000,\"max_ulp\":0,\"over_1_ulp_total\":0}"
-    },
-    {
-      "id": "commit-cut-initial-results",
-      "status": "executed",
-      "source": "本地 JSONL 子进程故障注入",
-      "output": "A：清单未变，未收到提交响应，重启为 {1,2}。B：清单已变，未收到提交响应，重启为 {2,3}。C：已收到 ok:true，重启为 {2,3}。\n{\"cut\": \"before\", \"checkpoint\": \"CUT before\", \"killed_pid\": 34116, \"commit_request_id\": 4, \"commit_response\": null, \"catalog_changed\": false, \"restarted_rows\": [[1], [2]], \"expected_rows\": [[1], [2]], \"passed\": true}\n{\"cut\": \"after\", \"checkpoint\": \"CUT after\", \"killed_pid\": 10296, \"commit_request_id\": 4, \"commit_response\": null, \"catalog_changed\": true, \"restarted_rows\": [[2], [3]], \"expected_rows\": [[2], [3]], \"passed\": true}\n{\"cut\": \"ack\", \"checkpoint\": \"client received COMMIT success\", \"killed_pid\": 24276, \"commit_request_id\": 4, \"commit_response\": {\"id\": 4, \"ok\": true, \"affected_rows\": 0}, \"catalog_changed\": true, \"restarted_rows\": [[2], [3]], \"expected_rows\": [[2], [3]], \"passed\": true}"
-    },
-    {
-      "id": "commit-cut-layer-retest",
-      "status": "executed",
-      "source": "python -m tools.verify_commit_cut all；恢复前通过段 Reader 读取，无数据库实例",
-      "output": "恢复启动前，A 清单引用的段已经包含 {1,2}，B 和 C 清单引用的段已经包含 {2,3}。三组恢复后清单哈希及引用段记录保持一致，SQL 与段记录相符。\n{\"cut\": \"before\", \"checkpoint\": \"CUT before\", \"killed_pid\": 30460, \"commit_request_id\": 4, \"commit_response\": null, \"catalog_changed\": false, \"restarted_rows\": [[1], [2]], \"expected_rows\": [[1], [2]], \"pre_recovery\": {\"catalog_sha256\": \"2f1bd2978d869dd18c9b17cd108aa90c41d9575f2915c54952133d85070f5815\", \"segments\": [{\"name\": \"rows-54230b1fe80f4050a2c6bcd0e1051474.mvb\", \"rows\": [[1], [2]]}]}, \"post_recovery\": {\"catalog_sha256\": \"2f1bd2978d869dd18c9b17cd108aa90c41d9575f2915c54952133d85070f5815\", \"segments\": [{\"name\": \"rows-54230b1fe80f4050a2c6bcd0e1051474.mvb\", \"rows\": [[1], [2]]}]}, \"passed\": true}\n{\"cut\": \"after\", \"checkpoint\": \"CUT after\", \"killed_pid\": 32952, \"commit_request_id\": 4, \"commit_response\": null, \"catalog_changed\": true, \"restarted_rows\": [[2], [3]], \"expected_rows\": [[2], [3]], \"pre_recovery\": {\"catalog_sha256\": \"05b9bfad81b79ffbfcab3c14d5925f63d3085cc430ab7f8866c3320e491f8195\", \"segments\": [{\"name\": \"rows-08ac74a0396040fd819296b7eb28ff05.mvb\", \"rows\": [[2]]}, {\"name\": \"rows-58899e7a69234e298b66707a79e9f603.mvb\", \"rows\": [[3]]}]}, \"post_recovery\": {\"catalog_sha256\": \"05b9bfad81b79ffbfcab3c14d5925f63d3085cc430ab7f8866c3320e491f8195\", \"segments\": [{\"name\": \"rows-08ac74a0396040fd819296b7eb28ff05.mvb\", \"rows\": [[2]]}, {\"name\": \"rows-58899e7a69234e298b66707a79e9f603.mvb\", \"rows\": [[3]]}]}, \"passed\": true}\n{\"cut\": \"ack\", \"checkpoint\": \"client received COMMIT success\", \"killed_pid\": 27092, \"commit_request_id\": 4, \"commit_response\": {\"id\": 4, \"ok\": true, \"affected_rows\": 0}, \"catalog_changed\": true, \"restarted_rows\": [[2], [3]], \"expected_rows\": [[2], [3]], \"pre_recovery\": {\"catalog_sha256\": \"a3962d67f3d056efd9be62bffe1be9a76d86ede366a796f96a3a45b4a947bf4e\", \"segments\": [{\"name\": \"rows-0ba23b84068e45718531646b77335d76.mvb\", \"rows\": [[2]]}, {\"name\": \"rows-60de047a0cd34bd6b9362455a3da5dbf.mvb\", \"rows\": [[3]]}]}, \"post_recovery\": {\"catalog_sha256\": \"a3962d67f3d056efd9be62bffe1be9a76d86ede366a796f96a3a45b4a947bf4e\", \"segments\": [{\"name\": \"rows-0ba23b84068e45718531646b77335d76.mvb\", \"rows\": [[2]]}, {\"name\": \"rows-60de047a0cd34bd6b9362455a3da5dbf.mvb\", \"rows\": [[3]]}]}, \"passed\": true}"
-    },
-    {
-      "id": "commit-cut-migration-result",
-      "status": "executed",
-      "source": "python -m tools.verify_commit_cut migration；禁用向量缓存以实际使用磁盘 Flat",
-      "output": "截去一个完整索引记录后 valid() 返回 false。恢复重建 fsync 前被强杀且未输出 ready。最终 t 和 u 一致提交，磁盘 exact TopK 为 [(2,0.0),(3,3.0)]。\n{\"commit_checkpoint\":\"CUT after\",\"commit_response\":null,\"injected_index_fault\":\"truncate one whole Flat record\",\"truncated_index_valid\":false,\"recovery_checkpoint\":\"CUT rebuild\",\"ready_before_second_kill\":false,\"catalog_unchanged_after_second_kill\":true,\"abandoned_index_removed\":true,\"repaired_index_valid\":true,\"t\":[[2,[0.0,0.0]],[3,[3.0,0.0]]],\"u\":[[8]],\"exact_disk_topk\":[[2,0.0],[3,3.0]],\"passed\":true}"
-    },
-    {
-      "id": "mixed-keys-initial",
-      "status": "executed",
-      "source": "python -m tools.verify_mixed_keys；核心 API 错误映射和 Reader.keys 跟踪",
-      "output": "键 1 经旧 JSONL 读取后拒绝；键 2 经旧段后由二进制段尾找到并拒绝；批内重复不读旧键。三次失败的清单和文件列表未变，成功后主键为 [1,2,3]。\n{\"values\": \"(1)\", \"response\": {\"ok\": false, \"error\": {\"code\": \"DUPLICATE\", \"message\": \"duplicate primary key\"}}, \"ids\": [1, 2], \"catalog_and_file_list_unchanged\": true, \"key_reads\": [{\"key\": 1, \"path\": \"legacy_jsonl\"}]}\n{\"values\": \"(2)\", \"response\": {\"ok\": false, \"error\": {\"code\": \"DUPLICATE\", \"message\": \"duplicate primary key\"}}, \"ids\": [1, 2], \"catalog_and_file_list_unchanged\": true, \"key_reads\": [{\"key\": 1, \"path\": \"legacy_jsonl\"}, {\"key\": 2, \"path\": \"binary_footer\"}]}\n{\"values\": \"(3),(3)\", \"response\": {\"ok\": false, \"error\": {\"code\": \"DUPLICATE\", \"message\": \"duplicate primary key\"}}, \"ids\": [1, 2], \"catalog_and_file_list_unchanged\": true, \"key_reads\": []}\n{\"values\": \"(3)\", \"response\": {\"ok\": true, \"affected_rows\": 1}, \"ids\": [1, 2, 3], \"catalog_and_file_list_unchanged\": false, \"key_reads\": [{\"key\": 1, \"path\": \"legacy_jsonl\"}, {\"key\": 2, \"path\": \"binary_footer\"}]}"
-    },
-    {
-      "id": "mixed-keys-order-retest",
-      "status": "executed",
-      "source": "本地混合段核心 API 受控对照",
-      "output": "同一初始快照：(1),(1) 返回 DUPLICATE，Reader.keys 轨迹为空；(1),(3) 返回 DUPLICATE，轨迹只读出旧段键 1。两次照常读取到 [1,2]，清单和文件列表未变。\n[{\"values\":\"(1),(1)\",\"response\":{\"ok\":false,\"error\":{\"code\":\"DUPLICATE\",\"message\":\"duplicate primary key\"}},\"ids\":[1,2],\"catalog_and_file_list_unchanged\":true,\"key_reads\":[]},{\"values\":\"(1),(3)\",\"response\":{\"ok\":false,\"error\":{\"code\":\"DUPLICATE\",\"message\":\"duplicate primary key\"}},\"ids\":[1,2],\"catalog_and_file_list_unchanged\":true,\"key_reads\":[{\"key\":1,\"path\":\"legacy_jsonl\"}]}]"
-    },
-    {
-      "id": "mixed-keys-migration",
-      "status": "executed",
-      "source": "python -m tools.verify_mixed_keys migration；独立目录、关闭后重开数据库实例",
-      "output": "重插两组只扫描到键 2。事务内读到 replacement；回滚重开读到 old 且旧文件保留；提交重开读到 replacement 且旧文件清理。\n{\"outcome\": \"ROLLBACK\", \"key_reads_on_reinsert\": [2], \"in_transaction\": [[1, \"replacement\"], [2, \"new\"]], \"after_reopen\": [[1, \"old\"], [2, \"new\"]], \"legacy_file_survives\": true, \"passed\": true}\n{\"outcome\": \"COMMIT\", \"key_reads_on_reinsert\": [2], \"in_transaction\": [[1, \"replacement\"], [2, \"new\"]], \"after_reopen\": [[1, \"replacement\"], [2, \"new\"]], \"legacy_file_survives\": false, \"passed\": true}"
-    },
-    {
-      "id": "mixed-keys-crash",
-      "source": "python -m tools.verify_mixed_keys crash",
-      "status": "executed",
-      "output": "清单已发布而旧段未清理时强杀，客户端未收到确认。恢复前旧文件仍在但已无清单引用；恢复后旧文件被清理，读到 replacement，拒绝直接重复插入，事务内删除后可重插。\n{\"commit_response\":null,\"legacy_exists_before_recovery\":true,\"legacy_referenced_by_published_catalog\":false,\"legacy_exists_after_recovery\":false,\"restarted_rows\":[[1,\"replacement\"],[2,\"new\"]],\"live_duplicate_rejected\":true,\"reinsert_after_delete\":true}"
-    },
-    {
-      "id": "statement-failure-initial",
-      "source": "python -m tools.verify_statement_failure，真实 JSONL 响应及进程重开",
-      "status": "executed",
-      "output": "两组批量 INSERT 均实际返回 DUPLICATE。失败后事务内只见 (1,'edited')。COMMIT 成功后重开仍为 edited，ROLLBACK 成功后重开为 old。\n{\"outcome\": \"COMMIT\", \"failed_statement\": {\"id\": 5, \"ok\": false, \"error\": {\"code\": \"DUPLICATE\", \"message\": \"duplicate primary key\"}}, \"inside\": [[1, \"edited\"]], \"transaction_end\": {\"id\": 7, \"ok\": true, \"affected_rows\": 0}, \"reopened\": [[1, \"edited\"]]}\n{\"outcome\": \"ROLLBACK\", \"failed_statement\": {\"id\": 5, \"ok\": false, \"error\": {\"code\": \"DUPLICATE\", \"message\": \"duplicate primary key\"}}, \"inside\": [[1, \"edited\"]], \"transaction_end\": {\"id\": 7, \"ok\": true, \"affected_rows\": 0}, \"reopened\": [[1, \"old\"]]}"
-    },
-    {
-      "id": "statement-followup-result",
-      "status": "executed",
-      "source": "a2bdfa9 引擎；python -m tools.verify_statement_failure；JSONL 和新进程重开",
-      "output": "两组失败批量 INSERT 返回 DUPLICATE，失败后事务内只有 edited。继续插入键 3 成功，事务内为 edited 和 after。COMMIT 后新进程重开仍是这两行，ROLLBACK 后新进程重开只有 old，键 2 始终没有出现。\n{\"outcome\": \"COMMIT\", \"failed_statement\": {\"id\": 5, \"ok\": false, \"error\": {\"code\": \"DUPLICATE\", \"message\": \"duplicate primary key\"}}, \"inside\": [[1, \"edited\"]], \"followup\": {\"id\": 7, \"ok\": true, \"affected_rows\": 1}, \"after_followup\": [[1, \"edited\"], [3, \"after\"]], \"transaction_end\": {\"id\": 9, \"ok\": true, \"affected_rows\": 0}, \"reopened\": [[1, \"edited\"], [3, \"after\"]]}\n{\"outcome\": \"ROLLBACK\", \"failed_statement\": {\"id\": 5, \"ok\": false, \"error\": {\"code\": \"DUPLICATE\", \"message\": \"duplicate primary key\"}}, \"inside\": [[1, \"edited\"]], \"followup\": {\"id\": 7, \"ok\": true, \"affected_rows\": 1}, \"after_followup\": [[1, \"edited\"], [3, \"after\"]], \"transaction_end\": {\"id\": 9, \"ok\": true, \"affected_rows\": 0}, \"reopened\": [[1, \"old\"]]}"
-    },
-    {
-      "id": "statement-vector-result",
-      "source": "python -m tools.verify_vector_failure；独立数据目录和 JSONL 子进程",
-      "status": "executed",
-      "output": "四组向量迁移通过。维度错误返回 TYPE，合法首行也未插入；后续插入键4成功。回滚后不重启立即返回 [(1,1.0)]，重开相同；提交前后均 [(1,0.0),(4,4.0)]。两组默认缓存配置、两组关闭 NumPy 且建磁盘索引。\n{\"outcome\": \"COMMIT\", \"path\": \"default_cache\", \"warmed_transaction\": [[1, 0.0]], \"error\": {\"id\": 7, \"ok\": false, \"error\": {\"code\": \"TYPE\", \"message\": \"VECTOR dimension mismatch\"}}, \"select_after_failure\": [[1, [0.0, 0.0]]], \"topk_before_end\": [[1, 0.0], [4, 4.0]], \"immediate_after_end\": [[1, 0.0], [4, 4.0]], \"after_restart\": [[1, 0.0], [4, 4.0]], \"passed\": true}\n{\"outcome\": \"ROLLBACK\", \"path\": \"default_cache\", \"warmed_transaction\": [[1, 0.0]], \"error\": {\"id\": 7, \"ok\": false, \"error\": {\"code\": \"TYPE\", \"message\": \"VECTOR dimension mismatch\"}}, \"select_after_failure\": [[1, [0.0, 0.0]]], \"topk_before_end\": [[1, 0.0], [4, 4.0]], \"immediate_after_end\": [[1, 1.0]], \"after_restart\": [[1, 1.0]], \"passed\": true}\n{\"outcome\": \"COMMIT\", \"path\": \"disk_index\", \"warmed_transaction\": [[1, 0.0]], \"error\": {\"id\": 7, \"ok\": false, \"error\": {\"code\": \"TYPE\", \"message\": \"VECTOR dimension mismatch\"}}, \"select_after_failure\": [[1, [0.0, 0.0]]], \"topk_before_end\": [[1, 0.0], [4, 4.0]], \"immediate_after_end\": [[1, 0.0], [4, 4.0]], \"after_restart\": [[1, 0.0], [4, 4.0]], \"passed\": true}\n{\"outcome\": \"ROLLBACK\", \"path\": \"disk_index\", \"warmed_transaction\": [[1, 0.0]], \"error\": {\"id\": 7, \"ok\": false, \"error\": {\"code\": \"TYPE\", \"message\": \"VECTOR dimension mismatch\"}}, \"select_after_failure\": [[1, [0.0, 0.0]]], \"topk_before_end\": [[1, 0.0], [4, 4.0]], \"immediate_after_end\": [[1, 1.0]], \"after_restart\": [[1, 1.0]], \"passed\": true}"
-    },
-    {
-      "id": "statement-cache-path-observed",
-      "status": "executed",
-      "source": "python -m tools.verify_vector_failure --observe-cache；同引擎核心 API 的测试包装器，不修改生产实现",
-      "output": "测试专用包装器观测：事务内三次 TopK 都实际调用 VectorCache.topk，首次构建后命中两次。回滚后缓存条目为零，随后重建并实际走缓存 TopK，立即结果为 [(1,1.0)]。\n{\"test\":\"observed_cache\",\"before_rollback\":[{\"kind\":\"lookup\",\"hit\":false,\"available\":true},{\"kind\":\"topk\"},{\"kind\":\"lookup\",\"hit\":true,\"available\":true},{\"kind\":\"topk\"},{\"kind\":\"lookup\",\"hit\":true,\"available\":true},{\"kind\":\"topk\"}],\"cache_entries_after_rollback\":0,\"after_rollback_events\":[{\"kind\":\"lookup\",\"hit\":false,\"available\":true},{\"kind\":\"topk\"}],\"immediate_result\":[[1,1.0]],\"passed\":true}"
-    },
-    {
-      "id": "wide-cache-initial-controls",
-      "status": "executed",
-      "source": "tools.verify_wide_cache；诊断观测，单次冷热查询，不是正式性能统计；设备I/O与内存峰值未测",
-      "output": "窄行16字节缓存可用约7.69MB，宽行2048字节在16MiB预算下拒绝。宽行预算改64MiB后缓存约28.02MB，第二查解码从10000行变为0行。去掉tag整数过滤后，16MiB组第二查由约242ms变483ms；所有结果与独立真值一致。\n[{\"width\":16,\"rows\":10000,\"dimension\":128,\"cache_budget\":16777216,\"cache_observations\":[{\"available\":true,\"bytes\":7686804},{\"available\":true,\"bytes\":7695406}],\"first_rows_decoded\":10000,\"second_rows_decoded\":0,\"first_seconds\":0.41782549999999996,\"second_seconds\":0.0014412000000001424,\"verified\":true},{\"width\":2048,\"rows\":10000,\"dimension\":128,\"cache_budget\":16777216,\"cache_observations\":[{\"available\":false,\"bytes\":0},{\"available\":false,\"bytes\":0}],\"first_rows_decoded\":10000,\"second_rows_decoded\":10000,\"first_seconds\":0.2420845000000007,\"second_seconds\":0.2371888000000002,\"verified\":true},{\"width\":2048,\"rows\":10000,\"dimension\":128,\"cache_budget\":16777216,\"filtered\":true,\"cache_observations\":[{\"available\":false,\"bytes\":0},{\"available\":false,\"bytes\":0}],\"first_rows_decoded\":10000,\"second_rows_decoded\":10000,\"first_seconds\":0.2420116000000001,\"second_seconds\":0.24155440000000006,\"verified\":true},{\"width\":2048,\"rows\":10000,\"dimension\":128,\"cache_budget\":67108864,\"filtered\":true,\"cache_observations\":[{\"available\":true,\"bytes\":28006804},{\"available\":true,\"bytes\":28015406}],\"first_rows_decoded\":10000,\"second_rows_decoded\":0,\"first_seconds\":0.43014750000000035,\"second_seconds\":0.0013380999999998977,\"verified\":true},{\"width\":2048,\"rows\":10000,\"dimension\":128,\"cache_budget\":16777216,\"filtered\":false,\"cache_observations\":[{\"available\":false,\"bytes\":0},{\"available\":false,\"bytes\":0}],\"first_rows_decoded\":10000,\"second_rows_decoded\":10000,\"first_seconds\":0.49958049999999865,\"second_seconds\":0.4828967000000013,\"verified\":true},{\"width\":2048,\"rows\":10000,\"dimension\":128,\"cache_budget\":67108864,\"filtered\":false,\"cache_observations\":[{\"available\":true,\"bytes\":28006804},{\"available\":true,\"bytes\":28006804}],\"first_rows_decoded\":10000,\"second_rows_decoded\":0,\"first_seconds\":0.27820529999999977,\"second_seconds\":0.001565600000001055,\"verified\":true}]"
-    },
-    {
-      "id": "wide-cache-index-migration",
-      "status": "executed",
-      "source": "python -m tools.verify_wide_index；测试专用调用计数",
-      "output": "已建索引宽表：四阶段都拒绝缓存。每查解码10000行作过滤，计算1000个候选距离，最终取10行，共10010次Reader.at。更新键3为零向量排第一，立即回滚和重开均恢复原TopK，全数核对独立真值。\n[{\"stage\":\"indexed\",\"counts\":{\"filtered_rows_decoded\":10010,\"distance_candidates\":1000,\"result_rows_fetched\":10,\"cache_available\":false},\"topk\":[[9583,5.660924346244087],[8973,5.8644692124265365],[6983,5.869556339571982],[2703,5.874681979130793],[63,5.875709615785444],[6123,5.909716085568059],[1663,5.930375859264526],[973,5.933486749886294],[1613,5.938506647191259],[9153,5.94203161698832]],\"verified\":true},{\"stage\":\"updated\",\"counts\":{\"filtered_rows_decoded\":10010,\"distance_candidates\":1000,\"result_rows_fetched\":10,\"cache_available\":false},\"topk\":[[3,0.0],[9583,5.660924346244087],[8973,5.8644692124265365],[6983,5.869556339571982],[2703,5.874681979130793],[63,5.875709615785444],[6123,5.909716085568059],[1663,5.930375859264526],[973,5.933486749886294],[1613,5.938506647191259]],\"verified\":true},{\"stage\":\"immediate_rollback\",\"counts\":{\"filtered_rows_decoded\":10010,\"distance_candidates\":1000,\"result_rows_fetched\":10,\"cache_available\":false},\"topk\":[[9583,5.660924346244087],[8973,5.8644692124265365],[6983,5.869556339571982],[2703,5.874681979130793],[63,5.875709615785444],[6123,5.909716085568059],[1663,5.930375859264526],[973,5.933486749886294],[1613,5.938506647191259],[9153,5.94203161698832]],\"verified\":true},{\"stage\":\"reopened\",\"counts\":{\"filtered_rows_decoded\":10010,\"distance_candidates\":1000,\"result_rows_fetched\":10,\"cache_available\":false},\"topk\":[[9583,5.660924346244087],[8973,5.8644692124265365],[6983,5.869556339571982],[2703,5.874681979130793],[63,5.875709615785444],[6123,5.909716085568059],[1663,5.930375859264526],[973,5.933486749886294],[1613,5.938506647191259],[9153,5.94203161698832]],\"verified\":true}]"
-    },
-    {
-      "id": "prompt12-final-regression",
-      "source": "本轮实际执行，Python a2bdfa9 引擎",
-      "status": "executed",
-      "output": "python -m unittest discover -s tests -q：Ran 81 tests in 12.798s，OK。python -m tools.run_public：20/20 cases，95 SQL。公开样例经本地核心API回放，本轮未执行平台正式用例。"
-    },
-    {
-      "id": "lazy-output-initial",
-      "status": "executed",
-      "source": "python -m tools.verify_lazy_response --run；调用真实serve和emit_query，StringIO代替标准流，测试注入惰性DBError",
-      "output": "小结果及300000字符宽行两组通过。stdout均为ready、bad错误、good成功、bye成功共4行，逐行可解析且最后有换行。宽行观测到rollover且文件句柄打开，错误不含生成的行数据。关闭后数据目录无临时文件。\n{\"wide\": false, \"events\": [\"row_yielded\", \"closed\", \"closed\"], \"stdout\": [\"{\\\"type\\\":\\\"ready\\\"}\", \"{\\\"id\\\":\\\"bad\\\",\\\"ok\\\":false,\\\"error\\\":{\\\"code\\\":\\\"TEST_LAZY\\\",\\\"message\\\":\\\"injected after first row\\\"}}\", \"{\\\"id\\\":\\\"good\\\",\\\"ok\\\":true,\\\"columns\\\":[\\\"value\\\"],\\\"rows\\\":[[7]]}\", \"{\\\"id\\\":\\\"bye\\\",\\\"ok\\\":true}\"], \"data_temporary_files_after_close\": 0, \"passed\": true}\n{\"wide\": true, \"events\": [{\"event\": \"rollover\", \"rolled\": true, \"fd_open\": true}, \"row_yielded\", \"closed\", \"closed\"], \"stdout\": [\"{\\\"type\\\":\\\"ready\\\"}\", \"{\\\"id\\\":\\\"bad\\\",\\\"ok\\\":false,\\\"error\\\":{\\\"code\\\":\\\"TEST_LAZY\\\",\\\"message\\\":\\\"injected after first row\\\"}}\", \"{\\\"id\\\":\\\"good\\\",\\\"ok\\\":true,\\\"columns\\\":[\\\"value\\\"],\\\"rows\\\":[[7]]}\", \"{\\\"id\\\":\\\"bye\\\",\\\"ok\\\":true}\"], \"data_temporary_files_after_close\": 0, \"passed\": true}"
-    },
-    {
-      "id": "lazy-repeat-result",
-      "status": "executed",
-      "source": "python -m tools.verify_lazy_response --run --repeat；内存标准流",
-      "output": "组合复测5行：ready、bad1错误、bad2错误、good成功、bye成功。四请求顺序正确，无空行，最终换行。三个暂存文件初始偏移均0，仅第二个溢写，两次失败共生成1行及100行，数据均未泄漏，全部文件关闭无残留。\n{\"test\":\"repeated_failures\",\"stdout\":[\"{\\\"type\\\":\\\"ready\\\"}\",\"{\\\"id\\\":\\\"bad1\\\",\\\"ok\\\":false,\\\"error\\\":{\\\"code\\\":\\\"TEST_1\\\",\\\"message\\\":\\\"injected 1\\\"}}\",\"{\\\"id\\\":\\\"bad2\\\",\\\"ok\\\":false,\\\"error\\\":{\\\"code\\\":\\\"TEST_2\\\",\\\"message\\\":\\\"injected 2\\\"}}\",\"{\\\"id\\\":\\\"good\\\",\\\"ok\\\":true,\\\"columns\\\":[\\\"value\\\"],\\\"rows\\\":[[7]]}\",\"{\\\"id\\\":\\\"bye\\\",\\\"ok\\\":true}\"],\"events\":[{\"file\":0,\"initial_offset\":0},{\"failure\":1,\"generated_rows\":1},{\"file\":1,\"initial_offset\":0},{\"file\":1,\"rollover\":true},{\"failure\":2,\"generated_rows\":100},{\"file\":2,\"initial_offset\":0}],\"all_spools_closed\":true,\"temporary_files_remaining\":0,\"passed\":true}"
-    },
-    {
-      "id": "lazy-pipe-result",
-      "status": "executed",
-      "source": "python -m tools.verify_lazy_pipe；Windows本地真实标准输入输出管道；超时/等待不代表系统调用栈证明",
-      "output": "真实子进程管道迁移：小响应241字节，未读输出已退出。大响应1000244字节，四条短请求都先写完，1秒未退出；开始读取后返回5行且退出码0。两组请求顺序正确，结果完整，无临时文件。未观察到不可恢复的双向死锁。\n{\"large\": false, \"input_requests_written_before_read\": 4, \"exited_before_read_after_1s\": true, \"stdout_bytes\": 241, \"lines\": 5, \"ids\": [\"bad1\", \"bad2\", \"good\", \"bye\"], \"exit_after_read\": 0, \"temporary_files\": 0, \"passed\": true}\n{\"large\": true, \"input_requests_written_before_read\": 4, \"exited_before_read_after_1s\": false, \"stdout_bytes\": 1000244, \"lines\": 5, \"ids\": [\"bad1\", \"bad2\", \"good\", \"bye\"], \"exit_after_read\": 0, \"temporary_files\": 0, \"passed\": true}"
+     "pointer": "/experiments/1/output",
+     "quote": "{\"official_source\": \"f4d4e26653af823a7601668802f80e374ad6643c\", \"checked_submission\": \"54875caff8bd4c28f2280c13d9653faef578f565\", \"reports\": {\"before/result.json\": {\"scope\": \"public-protocol-check\", \""
     }
-  ],
-  "evidence_chains": [
+   ],
+   "agent_context": [
+    "/conversations/9/content"
+   ],
+   "python_correspondence": {
+    "question_and_decomposition": "先拆出准入、协议和数据库语义。协议入口处理 ready、逐行请求、id、错误响应和 shutdown；SQL 层再执行功能。",
+    "implementation_or_verification_entry": "minivector/jsonl.py::serve → minivector/sql.py::execute；protocol_check/run.py 验证真实进程交互。",
+    "observation_and_limit": "官方分支变化和公开容器检查回答了协议疑问；正式准入另由 11 月 14 日的平台结果确认。",
+    "annotation_source": "Agent 对正式通过的 Python 提交所做的对应说明"
+   }
+  },
+  {
+   "topic": "独立验证与质疑",
+   "context": "方案提出正确性核验可能污染缓存与资源计量，要求先固定基线、隔离真值验证，再按数据选择改动。隔离统计和回归的实际结果见既有实验记录。",
+   "student_evidence": [
     {
-      "topic": "问题理解与自主拆解",
-      "context": "提示词按协议、SQL、向量查询、事务和持久化拆解任务，区分通信通道与消息契约，并要求绑定比赛分支核查。既有实验记录提供了 JSONL 契约发现和容器检查的结果。",
-      "student_evidence": [
-        {
-          "pointer": "/conversations/0/content",
-          "quote": "我的理解是，协议交互、SQL 语义、向量查询、事务和持久化共同决定系统能否交付，单项查询跑得快并不足以说明方案可用。"
-        },
-        {
-          "pointer": "/conversations/1/content",
-          "quote": "题目允许通过 stdin/stdout 执行 SQL，我理解这说明通信通道可用，但通道可用还不代表消息格式符合驱动的约定。"
-        },
-        {
-          "pointer": "/conversations/2/content",
-          "quote": "我认为接口结论需要绑定具体版本：默认分支、旧题包和比赛分支可能不一致，继续沿用旧假设会把版本差异误判为实现缺陷。"
-        }
-      ],
-      "result_evidence": [
-        {
-          "pointer": "/experiments/0/output",
-          "quote": "Official round2 advanced from9f6df2ba5acf871376e22b64a3d0724e4b575044 to f4d4e26653af823a7601668802f80e374ad6643c (upload stdin/stdout protocol and one demo py to double check). Added STDIO_PROTOCOL.m"
-        },
-        {
-          "pointer": "/experiments/1/output",
-          "quote": "{\"official_source\": \"f4d4e26653af823a7601668802f80e374ad6643c\", \"checked_submission\": \"54875caff8bd4c28f2280c13d9653faef578f565\", \"reports\": {\"before/result.json\": {\"scope\": \"public-protocol-check\", \""
-        }
-      ],
-      "agent_context": [
-        "/conversations/9/content"
-      ],
-      "python_correspondence": {
-        "question_and_decomposition": "先拆出准入、协议和数据库语义。协议入口处理 ready、逐行请求、id、错误响应和 shutdown；SQL 层再执行功能。",
-        "implementation_or_verification_entry": "minivector/jsonl.py::serve → minivector/sql.py::execute；protocol_check/run.py 验证真实进程交互。",
-        "observation_and_limit": "官方分支变化和公开容器检查回答了协议疑问；正式准入另由 11 月 14 日的平台结果确认。",
-        "annotation_source": "Agent 对正式通过的 Python 提交所做的对应说明"
-      }
+     "pointer": "/conversations/3/content",
+     "quote": "如果查询前的全表核验预热了页缓存，或被计入资源窗口，后续耗时、I/O 和峰值内存就难以比较。请先检查当前脚本，把独立真值核验与性能计量分开。"
     },
     {
-      "topic": "独立验证与质疑",
-      "context": "方案提出正确性核验可能污染缓存与资源计量，要求先固定基线、隔离真值验证，再按数据选择改动。隔离统计和回归的实际结果见既有实验记录。",
-      "student_evidence": [
-        {
-          "pointer": "/conversations/3/content",
-          "quote": "如果查询前的全表核验预热了页缓存，或被计入资源窗口，后续耗时、I/O 和峰值内存就难以比较。请先检查当前脚本，把独立真值核验与性能计量分开。"
-        },
-        {
-          "pointer": "/conversations/4/content",
-          "quote": "我希望先区分已有缺陷和改动引入的问题，否则后续即使跑得更快，也无法判断是否牺牲了正确性。"
-        }
-      ],
-      "result_evidence": [
-        {
-          "pointer": "/experiments/2/output",
-          "quote": "{\"workload\":{\"rows\":10000,\"dimensions\":128,\"queries\":1000,\"k\":10,\"mode\":\"exact\",\"unfiltered_queries\":500,\"equality_filtered_queries\":500,\"commit_batch_rows\":100,\"data_seeds\":[19017,19018,19019],\"query"
-        }
-      ],
-      "python_correspondence": {
-        "question_and_decomposition": "在动查询代码前确定写入和查询的计量边界，并把全表正确性核验移出计量窗口。",
-        "implementation_or_verification_entry": "验证对象为提交的 Dockerfile 和 Python 容器；计量环境见材料中的 python-measurement-correction-20261114。",
-        "observation_and_limit": "隔离后的结果记录了独立数据卷、父 cgroup、写回稳定检查和外部真值校验。rbytes 为 0，冷盘读取收益仍未验证。",
-        "annotation_source": "Agent 对正式通过的 Python 提交所做的对应说明"
-      }
-    },
-    {
-      "topic": "实验与反馈迭代",
-      "context": "提示词围绕 C++ 未过功能准入的反馈，明确 Python 实现与 exact 结果要求。既有记录包括 Agent 的逐查询真值验证及用户提测反馈，验证结论仍绑定原提交。",
-      "student_evidence": [
-        {
-          "pointer": "/conversations/5/content",
-          "quote": "数据库的接口、事务和持久化语义是前提，不能只凭查询速度就把这个分支作为可交付基线。"
-        },
-        {
-          "pointer": "/conversations/6/content",
-          "quote": "请把一次查询拆成输入解析、候选过滤、距离计算、TopK 选择和结果投影，先用诊断数据判断成本分布。"
-        },
-        {
-          "pointer": "/conversations/7/content",
-          "quote": "这里需要的是 exact 检索，优化应保持精确结果，不能用 ANN 的召回率来替代正确性验收。"
-        }
-      ],
-      "result_evidence": [
-        {
-          "pointer": "/experiments/3/output",
-          "quote": "{\"runtime\":\"Python 3.12.8 / NumPy 1.26.4\",\"entrypoint\":[\"python\",\"-m\",\"minivector\",\"--data-dir\",\"/data\"],\"image_id\":\"sha256:172822af58aa898dd83b5f6c956c4652850fce445abf738edd52564cd5e46136\",\"source_ar"
-        },
-        {
-          "pointer": "/experiments/4/output",
-          "quote": "{\"regression\":{\"tests\":60,\"passed\":true,\"log_excerpt\":\"Ran 60 tests in 11.273s; OK\"},\"public\":{\"official_source_unchanged\":true,\"passed\":true,\"cases\":[{\"id\":\"sql_crud\",\"status\":\"PASS\"},{\"id\":\"sql_comp"
-        },
-        {
-          "pointer": "/experiments/5/output",
-          "quote": "2026-11-14 22:31，2026-competition-round2，e1561a7292443e4945b580cb23a24e399c2c18a5。提测列表执行成功，成功 1、失败 0。用户确认 MySQL 正式准入通过，随后反馈 Agent Prompt 仍没有分数。"
-        }
-      ],
-      "agent_context": [
-        "/conversations/10/content"
-      ],
-      "python_correspondence": {
-        "question_and_decomposition": "C++ 未过准入后明确改用 Python，并指定 exact。将优化拆为缓存选路、过滤候选、距离及投影复用。",
-        "implementation_or_verification_entry": "minivector/engine.py::select、cached_vectors → minivector/vector.py::candidate_indexes、topk；tests/test_optimized.py 中的 scalar_differential_and_ties 与 cache_invalidation_and_budget 覆盖精确结果和事务可见性。",
-        "observation_and_limit": "Agent 校验了两个负载场景总计 6000 条查询。最终 Python SHA 经用户提测通过正式准入，Prompt 分数仍未显示。",
-        "annotation_source": "Agent 对正式通过的 Python 提交所做的对应说明"
-      }
-    },
-    {
-      "topic": "取舍与反思",
-      "context": "方案将查询优化排在存储改造之前，要求分别量化容量、物理 I/O 与持久化恢复代价。结果引用保留既有测量，未据改写文本增加学生已解释历史结果的事实。",
-      "student_evidence": [
-        {
-          "pointer": "/conversations/3/content",
-          "quote": "文件变小不直接等于设备 I/O 同比例下降。请分别测量逻辑容量和设备读写量，并保留提交持久化、清单原子发布、旧格式兼容及强杀恢复的验证。"
-        }
-      ],
-      "result_evidence": [
-        {
-          "pointer": "/experiments/6/output",
-          "quote": "\"logical_data_bytes\":5567828"
-        },
-        {
-          "pointer": "/experiments/7/output",
-          "quote": "0.779541"
-        }
-      ],
-      "python_correspondence": {
-        "question_and_decomposition": "方案将查询成本与存储容量、I/O、恢复语义分别讨论，要求用测量和恢复验证决定改造顺序。",
-        "implementation_or_verification_entry": "minivector/segments.py::write、Reader 对应二进制段和旧 JSONL；minivector/engine.py::rewrite、publish 对应文件写入和清单原子发布；tests/test_segments.py 与 tests/test_crash_matrix.py 覆盖兼容和恢复。",
-        "observation_and_limit": "无索引场景逻辑文件总量从 25546504 降至 5567828 字节。逻辑容量与物理 I/O 有各自的测量记录。此处结果解释由 Agent 整理，保留学生未进一步解释测量结果的边界。",
-        "annotation_source": "Agent 对正式通过的 Python 提交所做的对应说明"
-      }
-    },
-    {
-      "topic": "技术理解与迁移",
-      "context": "提示词提出读取复用与批量计算两类假设，并要求区分应用缓存、文件读取与设备 I/O。既有观察未隔离各机制的贡献，独立验证仍有边界。",
-      "student_evidence": [
-        {
-          "pointer": "/conversations/8/content",
-          "quote": "文件读取调用可能命中操作系统页缓存，因此读取调用减少不能直接证明物理磁盘读取减少。"
-        }
-      ],
-      "result_evidence": [],
-      "agent_context": [
-        "/conversations/11/content"
-      ],
-      "python_correspondence": {
-        "question_and_decomposition": "提示词区分候选复用、批量计算与设备读取，设计重复、低复用和超预算场景检验适用条件。",
-        "implementation_or_verification_entry": "minivector/engine.py::cached_vectors、indexed_rows 对应两条执行路径；minivector/vector.py::build 检查预算后决定是否缓存。",
-        "observation_and_limit": "后续独立实验可固定同一查询及数据，分别记录读取调用和设备 rbytes，并控制页缓存状态。该假设的独立实验尚未执行。",
-        "annotation_source": "Agent 对正式通过的 Python 提交所做的对应说明"
-      }
-    },
-    {
-      "topic": "实验与反馈迭代",
-      "context": "提示词围绕缓存复用假设和初测差异设计三组对照，结果引用对应既有诊断。Agent 原有分析指出查找组与关闭组差距小于轮间波动，完整缓存的额外候选构造成本集中在插入和淘汰组，不能据此判断端到端查询变慢；候选改动仅减少未命中掩码构造的一次布尔运算。",
-      "student_evidence": [
-        {
-          "pointer": "/conversations/12/content",
-          "quote": "我的假设是：重复过滤能够摊薄候选集合构造成本，低复用过滤则可能付出查找、写入和淘汰开销；超过预算后，收益还取决于缓存是否被旁路。"
-        },
-        {
-          "pointer": "/conversations/14/content",
-          "quote": "在三组均未命中且其他路径一致时，B 与 A 的差值可估计键处理及查找开销，C 与 B 的差值可估计写入及淘汰等维护开销。"
-        }
-      ],
-      "result_evidence": [
-        {
-          "pointer": "/experiments/8/output",
-          "quote": "关闭缓存、只查找、完整缓存三组的候选构造中位数分别为 13.36、13.19、17.91 ms。每轮完整缓存 0 次命中、500 次写入、468 次淘汰。超预算时基线和候选的缓存路径调用均为 0。"
-        }
-      ]
-    },
-    {
-      "topic": "精确 TopK 分块与边界精算",
-      "context": "学生预测大块收益有限，看到候选个数后提出检验能否省掉精算。反例显示会破坏主键并列规则。Agent 据此保留标量精算；本地端到端提速未到学生设定的 10%，保留 512 行基线。学生对迁移结果的解释待补。 学生在迁移前给出了高并列预测与收益反转时的撤回标准。自建负载三轮均反向，依据该预先判据保留 512。未直接分段计时，精算增幅的归因保留为假设。 实测之后学生确认撤回，指出普通负载收益可能受漂移影响，提出固定顺序 A/B/A/B/A/B 复测。源码核查排除了当前版本逐块扫描全局候选带的解释。严格固定顺序复测尚未执行；既有三轮顺序为 AB/BA/AB。",
-      "student_evidence": [
-        {
-          "pointer": "/conversations/15/content",
-          "quote": "预测：扩大分块几乎不会带来提速，反而可能是负收益。"
-        },
-        {
-          "pointer": "/conversations/16/content",
-          "quote": "现在 p50 = p95 = max = 10，且 K=10——意思是每条查询恰好把答案集里的 10 条全部重算一遍，候选数已经是最小值，没有\"收窄容差\"的空间。"
-        },
-        {
-          "pointer": "/conversations/17/content",
-          "quote": "题包不承诺并列比例，收益符号相反等于在赌数据分布"
-        },
-        {
-          "pointer": "/conversations/18/content",
-          "quote": "撤回不是因为「3.1% 太小」，而是因为两次测量的符号相反，而正式负载的并列比例不在我们手里。"
-        }
-      ],
-      "result_evidence": [
-        {
-          "pointer": "/experiments/12/output",
-          "quote": "边界候选 p50/p95/max 均为 10，fsum 总调用 10000 次。"
-        },
-        {
-          "pointer": "/experiments/13/output",
-          "quote": "本地 JSONL 三轮。512 行基线查询中位数 3.002188 秒，256 行候选 2.722095 秒。六组共 6000 条独立真值核对与重启检查通过。"
-        },
-        {
-          "pointer": "/experiments/14/output",
-          "quote": "10000 组随机距离中 5273 组不同，383 组超过 1 ULP，最大 2 ULP。并列场景中，批量归约会选主键 10，实际 SQL 返回 [[3, 218.299801775181]]。"
-        },
-        {
-          "pointer": "/experiments/15/output",
-          "quote": "本地诊断：两版均通过 20 组同距与 20 组 float32 近邻；1000 条查询共 600 万个批量距离平方，最大 0 ULP。500 个同距候选压力下，256 行三轮均更慢。保留版 60 个回归通过。"
-        }
-      ],
-      "dimension": "取舍与反思"
-    },
-    {
-      "topic": "提交确认与崩溃恢复",
-      "dimension": "实验与反馈迭代",
-      "context": "C 初测脚本断言误拒合法 affected_rows，修正测试后通过。学生指出无响应无法区分 A/B，并提出在恢复前检查持久结构以排除恢复期重放的解释。按学生选择复测，读取清单、引用段和完整记录，再对照恢复后 SQL。学生迁移前预测双表及 TopK 结果，并质疑整记录截断是否会被发现。故障注入验证二进制段计数检查能检测本例，重建被二次强杀后再次恢复通过。学生修正整记录截断判断，区分清单哈希与数据代，并指出单一故障点通过的局限。Agent 核对：无响应时客户端无法区分 A、B；已知 A 在替换前则是旧代。仅验证进程强杀。",
-      "student_evidence": [
-        {
-          "pointer": "/conversations/20/content",
-          "quote": "A={1,2}，B={2,3}，C={2,3}；如果看到 A 里出现 3 或者 2 消失、B 里只出现 2 或只出现 3、C 里出现 1 或 2，我会修正 \"磁盘发布点 = catalog.json 原子替换、客户端确认点 = 收到 ok:true\" 这个模型。"
-        },
-        {
-          "pointer": "/conversations/21/content",
-          "quote": "集合是结果层，A/B 的分界在存储层。"
-        },
-        {
-          "pointer": "/conversations/22/content",
-          "quote": "第三次正常启动\t同上\t同上\t[(2, 0.0), (3, 3.0)]。"
-        },
-        {
-          "pointer": "/conversations/23/content",
-          "quote": "清单哈希可以变，被引用的数据代必须一致"
-        }
-      ],
-      "result_evidence": [
-        {
-          "pointer": "/experiments/16/output",
-          "quote": "A：清单未变，未收到提交响应，重启为 {1,2}。B：清单已变，未收到提交响应，重启为 {2,3}。C：已收到 ok:true，重启为 {2,3}。"
-        },
-        {
-          "pointer": "/experiments/17/output",
-          "quote": "恢复启动前，A 清单引用的段已经包含 {1,2}，B 和 C 清单引用的段已经包含 {2,3}。三组恢复后清单哈希及引用段记录保持一致，SQL 与段记录相符。"
-        },
-        {
-          "pointer": "/experiments/18/output",
-          "quote": "截去一个完整索引记录后 valid() 返回 false。恢复重建 fsync 前被强杀且未输出 ready。最终 t 和 u 一致提交，磁盘 exact TopK 为 [(2,0.0),(3,3.0)]。"
-        }
-      ]
-    },
-    {
-      "topic": "旧格式兼容与跨段主键判重",
-      "dimension": "技术理解与迁移",
-      "context": "初测核对可见键集合、错误码和旧段及段尾的实际读键轨迹。批内重复作为对照，失败语句事务可见性另有独立实验。学生提出同时与批内和存量冲突的对照，并用仅与存量冲突的语句排除所有失败均不读键的解释。复测支持先完成批内检查，再扫描存量键。学生预测删除后重插在事务内和提交后可见 replacement，回滚恢复 old。实测支持预测；学生依据可见快照解释结果，指出并发、扫描代价和崩溃边界，并提出清理前强杀。实测通过。Agent 核查：DELETE 重写事务可见段，旧段由提交视图保留至清理；重启后仍有活的 replacement 时拒绝重复是正确行为，删除可见键后重插才用于检查陈旧键。",
-      "student_evidence": [
-        {
-          "pointer": "/conversations/24/content",
-          "quote": "整句原子：批内自重复必须在写入前整句判定，一条都不能落"
-        },
-        {
-          "pointer": "/conversations/25/content",
-          "quote": "有它作对照，才能证明 “读 0 行” 是特殊情况，不是 “所有失败都不读数据”。"
-        },
-        {
-          "pointer": "/conversations/26/content",
-          "quote": "事务内插入就报了 DUPLICATE\t查重看的是旧文件里那行还没删掉的 old，不是 “现在能看见什么”。说明删除没有进入查重视野"
-        },
-        {
-          "pointer": "/conversations/27/content",
-          "quote": "第 4 条建议单独测一次，它是这条链唯一还没打到的点。"
-        }
-      ],
-      "result_evidence": [
-        {
-          "pointer": "/experiments/19/output",
-          "quote": "键 1 经旧 JSONL 读取后拒绝；键 2 经旧段后由二进制段尾找到并拒绝；批内重复不读旧键。三次失败的清单和文件列表未变，成功后主键为 [1,2,3]。"
-        },
-        {
-          "pointer": "/experiments/20/output",
-          "quote": "同一初始快照：(1),(1) 返回 DUPLICATE，Reader.keys 轨迹为空；(1),(3) 返回 DUPLICATE，轨迹只读出旧段键 1。两次照常读取到 [1,2]，清单和文件列表未变。"
-        },
-        {
-          "pointer": "/experiments/21/output",
-          "quote": "重插两组只扫描到键 2。事务内读到 replacement；回滚重开读到 old 且旧文件保留；提交重开读到 replacement 且旧文件清理。"
-        },
-        {
-          "pointer": "/experiments/22/output",
-          "quote": "清单已发布而旧段未清理时强杀，客户端未收到确认。恢复前旧文件仍在但已无清单引用；恢复后旧文件被清理，读到 replacement，拒绝直接重复插入，事务内删除后可重插。"
-        }
-      ]
-    },
-    {
-      "topic": "失败语句与事务可见性",
-      "dimension": "独立验证与质疑",
-      "context": "学生分别用键 2 追踪失败语句的部分写入、用键 1 的值追踪成功修改是否被连带撤销，并指定先查事务内再结束事务。对照两组独立目录。复测和非法向量迁移待补。 以已获12分的 a2bdfa9 为引擎复测。学生预测错误后仍可插入键3并解释它能检验后续可写性和迟发部分写入。实测支持，非法向量迁移待补。 用户预测迁移到非法向量，并提出回滚后不重启查询以排查内存状态。四组结果符合预测，学生对迁移结果的最终解释待补。默认缓存配置与实际磁盘索引路径分组；本次未新增生产代码。 学生指出默认配置不证明实际缓存启用，要求命中观测。复测证实三次实际缓存查询、两次复用，回滚清空后重新构建。大表、过滤缓存和回滚中强杀仍是边界。",
-      "student_evidence": [
-        {
-          "pointer": "/conversations/28/content",
-          "quote": "失败的是那条插入语句，它一行都不该留下，所以 (2,'new') 查不到；但前一条 UPDATE 是独立成功的语句，它的效果要保留，所以事务内仍是 edited。回滚才把整笔事务退回原样。"
-        },
-        {
-          "pointer": "/conversations/28/content",
-          "quote": "所以顺序是：失败 → 查事务内 → 提交 → 重启查 → 再复现一遍走回滚。"
-        },
-        {
-          "pointer": "/conversations/29/content",
-          "quote": "光看提交成功其实说明不了什么，那只证明最后能正常收尾，证明不了报错之后还能不能接着写东西。"
-        },
-        {
-          "pointer": "/conversations/30/content",
-          "quote": "我自己还有点不确定：回滚以后如果没有重启就直接查，内存里那份缓存的向量会不会还是改过的那个？这一条我想再单独测一次。"
-        },
-        {
-          "pointer": "/conversations/31/content",
-          "quote": "所以要补一个“缓存确实被用过”的证据——先做几次热查询让缓存真正装进数据，看命中计数，再回滚查一次。"
-        }
-      ],
-      "result_evidence": [
-        {
-          "pointer": "/experiments/23/output",
-          "quote": "两组批量 INSERT 均实际返回 DUPLICATE。失败后事务内只见 (1,'edited')。COMMIT 成功后重开仍为 edited，ROLLBACK 成功后重开为 old。"
-        },
-        {
-          "pointer": "/experiments/24/output",
-          "quote": "两组失败批量 INSERT 返回 DUPLICATE，失败后事务内只有 edited。继续插入键 3 成功，事务内为 edited 和 after。COMMIT 后新进程重开仍是这两行，ROLLBACK 后新进程重开只有 old，键 2 始终没有出现。"
-        },
-        {
-          "pointer": "/experiments/25/output",
-          "quote": "四组向量迁移通过。维度错误返回 TYPE，合法首行也未插入；后续插入键4成功。回滚后不重启立即返回 [(1,1.0)]，重开相同；提交前后均 [(1,0.0),(4,4.0)]。两组默认缓存配置、两组关闭 NumPy 且建磁盘索引。"
-        },
-        {
-          "pointer": "/experiments/26/output",
-          "quote": "测试专用包装器观测：事务内三次 TopK 都实际调用 VectorCache.topk，首次构建后命中两次。回滚后缓存条目为零，随后重建并实际走缓存 TopK，立即结果为 [(1,1.0)]。"
-        }
-      ]
-    },
-    {
-      "topic": "宽行缓存准入与磁盘回退",
-      "dimension": "取舍与反思",
-      "context": "学生按标量与向量体积预测预算边界，并指定宽行64MiB及移除过滤的对照。实际首次构建和第二次复用分开记录。无过滤需计算更多行的距离，不能只归因于长字符串。学生实测后解释和带索引迁移待补。 学生看到无过滤变慢后修正成本判断，预测磁盘索引及回滚结果。迁移通过。调用次数为解码次数，不等同设备读取；最终取行另计。缓存核算含Python对象开销。学生根据实测解释tag不在索引所以回查宽行，提出短过滤字段冗余并权衡存储、重建及事务成本，限定了无缓存与正确性的关系。索引还包含行位置，少副本不排除索引自身陈旧。覆盖字段是学生提出的后续方案，尚未实现或测量。",
-      "student_evidence": [
-        {
-          "pointer": "/conversations/32/content",
-          "quote": "结论我只写在这一个配置上：一万行、128 维、16 MiB、这一个过滤条件。数据量换了、预算换了、过滤列换了，都算没测。"
-        },
-        {
-          "pointer": "/conversations/33/content",
-          "quote": "我原来猜把 WHERE 去掉会变快，结果实测反了，237 毫秒变成 483 毫秒，慢了快一倍。我错在把过滤当成“费钱”的一步，其实过滤是“省钱”的一步：它把要算距离的行从一万行砍到只剩命中的那些，而解析那两千多个字两组都躲不掉。"
-        },
-        {
-          "pointer": "/conversations/34/content",
-          "quote": "所以取舍的关键是：多存一字节能省下多少次解析。"
-        }
-      ],
-      "result_evidence": [
-        {
-          "pointer": "/experiments/27/output",
-          "quote": "窄行16字节缓存可用约7.69MB，宽行2048字节在16MiB预算下拒绝。宽行预算改64MiB后缓存约28.02MB，第二查解码从10000行变为0行。去掉tag整数过滤后，16MiB组第二查由约242ms变483ms；所有结果与独立真值一致。"
-        },
-        {
-          "pointer": "/experiments/28/output",
-          "quote": "已建索引宽表：四阶段都拒绝缓存。每查解码10000行作过滤，计算1000个候选距离，最终取10行，共10010次Reader.at。更新键3为零向量排第一，立即回滚和重开均恢复原TopK，全数核对独立真值。"
-        }
-      ]
-    },
-    {
-      "topic": "惰性查询失败与响应原子性",
-      "dimension": "独立验证与质疑",
-      "context": "学生区分断行污染和完整但不完整结果的成功响应泄漏，要求核对行数、JSON及ID。初测用真实协议适配器，内存标准流而非操作系统管道；ready独立于请求响应计数。临时文件可能无命名路径，已观测rollover及打开句柄。复测和迁移待补。 学生选择连续两次不同位置的失败，观察状态清理和多行溢写。实测5行而非4行，因为现在有四个请求及ready。真实管道迁移预测待补。 学生迁移前提出大成功响应对照以检查管道背压。实测短输入已写完，大输出延迟读取时未退出，读取后完成。1秒未退出与背压解释一致，未采集线程栈以证明阻塞调用点；用户对迁移结果的解释待补。脚本初版换行转义语法错误，修复后实际运行通过。",
-      "student_evidence": [
-        {
-          "pointer": "/conversations/35/content",
-          "quote": "这时一次请求出现了两行，下一条查询还照样成功，光看“下一条是否成功”根本发现不了问题。"
-        },
-        {
-          "pointer": "/conversations/36/content",
-          "quote": "第一次的缓冲区、临时文件偏移和计数如果没有复位，第二次才会露出来。"
-        },
-        {
-          "pointer": "/conversations/37/content",
-          "quote": "为了证明“这次通过是因为运气”，我可以在同一套“先写后读”做法下故意放一条超大的成功响应作对照；如果这条导致阻塞，就说明前面通过是因为数据太小。"
-        }
-      ],
-      "result_evidence": [
-        {
-          "pointer": "/experiments/30/output",
-          "quote": "小结果及300000字符宽行两组通过。stdout均为ready、bad错误、good成功、bye成功共4行，逐行可解析且最后有换行。宽行观测到rollover且文件句柄打开，错误不含生成的行数据。关闭后数据目录无临时文件。"
-        },
-        {
-          "pointer": "/experiments/31/output",
-          "quote": "组合复测5行：ready、bad1错误、bad2错误、good成功、bye成功。四请求顺序正确，无空行，最终换行。三个暂存文件初始偏移均0，仅第二个溢写，两次失败共生成1行及100行，数据均未泄漏，全部文件关闭无残留。"
-        },
-        {
-          "pointer": "/experiments/32/output",
-          "quote": "真实子进程管道迁移：小响应241字节，未读输出已退出。大响应1000244字节，四条短请求都先写完，1秒未退出；开始读取后返回5行且退出码0。两组请求顺序正确，结果完整，无临时文件。未观察到不可恢复的双向死锁。"
-        }
-      ]
+     "pointer": "/conversations/4/content",
+     "quote": "我希望先区分已有缺陷和改动引入的问题，否则后续即使跑得更快，也无法判断是否牺牲了正确性。"
     }
-  ],
-  "retrospective": [
+   ],
+   "result_evidence": [
     {
-      "role": "agent",
-      "content": "Python exact 最终本地通过 60 项回归、20 个公开用例和 6000 次逐查询真值校验。无索引场景 E_local 从 0.505123 到 0.635468，有索引从 0.498887 到 0.779541。两类场景使用各自固定的 Python 基线。"
+     "pointer": "/experiments/2/output",
+     "quote": "{\"workload\":{\"rows\":10000,\"dimensions\":128,\"queries\":1000,\"k\":10,\"mode\":\"exact\",\"unfiltered_queries\":500,\"equality_filtered_queries\":500,\"commit_batch_rows\":100,\"data_seeds\":[19017,19018,19019],\"query"
+    }
+   ],
+   "python_correspondence": {
+    "question_and_decomposition": "在动查询代码前确定写入和查询的计量边界，并把全表正确性核验移出计量窗口。",
+    "implementation_or_verification_entry": "验证对象为提交的 Dockerfile 和 Python 容器；计量环境见材料中的 python-measurement-correction-20261114。",
+    "observation_and_limit": "隔离后的结果记录了独立数据卷、父 cgroup、写回稳定检查和外部真值校验。rbytes 为 0，冷盘读取收益仍未验证。",
+    "annotation_source": "Agent 对正式通过的 Python 提交所做的对应说明"
+   }
+  },
+  {
+   "topic": "实验与反馈迭代",
+   "context": "提示词围绕 C++ 未过功能准入的反馈，明确 Python 实现与 exact 结果要求。既有记录包括 Agent 的逐查询真值验证及用户提测反馈，验证结论仍绑定原提交。",
+   "student_evidence": [
+    {
+     "pointer": "/conversations/5/content",
+     "quote": "数据库的接口、事务和持久化语义是前提，不能只凭查询速度就把这个分支作为可交付基线。"
     },
     {
-      "role": "agent",
-      "content": "正式准入依赖整套功能；缓存假设要用独立的读取计数来验证，耗时差异不足以确认原因。当前 Prompt 未计分的具体原因需要平台详情。"
+     "pointer": "/conversations/6/content",
+     "quote": "请把一次查询拆成输入解析、候选过滤、距离计算、TopK 选择和结果投影，先用诊断数据判断成本分布。"
+    },
+    {
+     "pointer": "/conversations/7/content",
+     "quote": "这里需要的是 exact 检索，优化应保持精确结果，不能用 ANN 的召回率来替代正确性验收。"
     }
-  ],
-  "limitations": [
-    "正式提测截图和用户确认支持准入通过，现有材料没有该次性能原始分或 Prompt 评审报告。Prompt 未计分的具体原因未知。",
-    "本地 E_local 使用固定 Python 基线，不能换算平台原始指标或名次。统计中 rbytes 为 0，测试不能解释为冷盘读取性能。",
-    "本轮材料锁定时，三轮本机 JSONL 端到端对照仍在运行。Linux CI 尚无运行结果，未取得可核实的容器峰值内存或设备 I/O。没有据此计算平台分数。",
-    "本轮端到端为 Windows。Linux 三轮、峰值内存与设备 I/O、完整距离数组对照和 20 组近邻用例未完成。",
-    "Linux workflow 已推送，按提交未查到运行，手动 dispatch 返回 HTTP 404。Linux 10% 相对线、2.38 秒绝对线、内存和设备 I/O 均未知。已完成本地 1000 条距离平方数组与 20 组近邻验证。"
-  ]
+   ],
+   "result_evidence": [
+    {
+     "pointer": "/experiments/3/output",
+     "quote": "{\"runtime\":\"Python 3.12.8 / NumPy 1.26.4\",\"entrypoint\":[\"python\",\"-m\",\"minivector\",\"--data-dir\",\"/data\"],\"image_id\":\"sha256:172822af58aa898dd83b5f6c956c4652850fce445abf738edd52564cd5e46136\",\"source_ar"
+    },
+    {
+     "pointer": "/experiments/4/output",
+     "quote": "{\"regression\":{\"tests\":60,\"passed\":true,\"log_excerpt\":\"Ran 60 tests in 11.273s; OK\"},\"public\":{\"official_source_unchanged\":true,\"passed\":true,\"cases\":[{\"id\":\"sql_crud\",\"status\":\"PASS\"},{\"id\":\"sql_comp"
+    },
+    {
+     "pointer": "/experiments/5/output",
+     "quote": "2026-11-14 22:31，2026-competition-round2，e1561a7292443e4945b580cb23a24e399c2c18a5。提测列表执行成功，成功 1、失败 0。用户确认 MySQL 正式准入通过，随后反馈 Agent Prompt 仍没有分数。"
+    }
+   ],
+   "agent_context": [
+    "/conversations/10/content"
+   ],
+   "python_correspondence": {
+    "question_and_decomposition": "C++ 未过准入后明确改用 Python，并指定 exact。将优化拆为缓存选路、过滤候选、距离及投影复用。",
+    "implementation_or_verification_entry": "minivector/engine.py::select、cached_vectors → minivector/vector.py::candidate_indexes、topk；tests/test_optimized.py 中的 scalar_differential_and_ties 与 cache_invalidation_and_budget 覆盖精确结果和事务可见性。",
+    "observation_and_limit": "Agent 校验了两个负载场景总计 6000 条查询。最终 Python SHA 经用户提测通过正式准入，Prompt 分数仍未显示。",
+    "annotation_source": "Agent 对正式通过的 Python 提交所做的对应说明"
+   }
+  },
+  {
+   "topic": "取舍与反思",
+   "context": "方案将查询优化排在存储改造之前，要求分别量化容量、物理 I/O 与持久化恢复代价。结果引用保留既有测量，未据改写文本增加学生已解释历史结果的事实。",
+   "student_evidence": [
+    {
+     "pointer": "/conversations/3/content",
+     "quote": "文件变小不直接等于设备 I/O 同比例下降。请分别测量逻辑容量和设备读写量，并保留提交持久化、清单原子发布、旧格式兼容及强杀恢复的验证。"
+    }
+   ],
+   "result_evidence": [
+    {
+     "pointer": "/experiments/6/output",
+     "quote": "\"logical_data_bytes\":5567828"
+    },
+    {
+     "pointer": "/experiments/7/output",
+     "quote": "0.779541"
+    }
+   ],
+   "python_correspondence": {
+    "question_and_decomposition": "方案将查询成本与存储容量、I/O、恢复语义分别讨论，要求用测量和恢复验证决定改造顺序。",
+    "implementation_or_verification_entry": "minivector/segments.py::write、Reader 对应二进制段和旧 JSONL；minivector/engine.py::rewrite、publish 对应文件写入和清单原子发布；tests/test_segments.py 与 tests/test_crash_matrix.py 覆盖兼容和恢复。",
+    "observation_and_limit": "无索引场景逻辑文件总量从 25546504 降至 5567828 字节。逻辑容量与物理 I/O 有各自的测量记录。此处结果解释由 Agent 整理，保留学生未进一步解释测量结果的边界。",
+    "annotation_source": "Agent 对正式通过的 Python 提交所做的对应说明"
+   }
+  },
+  {
+   "topic": "技术理解与迁移",
+   "context": "提示词提出读取复用与批量计算两类假设，并要求区分应用缓存、文件读取与设备 I/O。既有观察未隔离各机制的贡献，独立验证仍有边界。",
+   "student_evidence": [
+    {
+     "pointer": "/conversations/8/content",
+     "quote": "文件读取调用可能命中操作系统页缓存，因此读取调用减少不能直接证明物理磁盘读取减少。"
+    }
+   ],
+   "result_evidence": [],
+   "agent_context": [
+    "/conversations/11/content"
+   ],
+   "python_correspondence": {
+    "question_and_decomposition": "提示词区分候选复用、批量计算与设备读取，设计重复、低复用和超预算场景检验适用条件。",
+    "implementation_or_verification_entry": "minivector/engine.py::cached_vectors、indexed_rows 对应两条执行路径；minivector/vector.py::build 检查预算后决定是否缓存。",
+    "observation_and_limit": "后续独立实验可固定同一查询及数据，分别记录读取调用和设备 rbytes，并控制页缓存状态。该假设的独立实验尚未执行。",
+    "annotation_source": "Agent 对正式通过的 Python 提交所做的对应说明"
+   }
+  },
+  {
+   "topic": "实验与反馈迭代",
+   "context": "提示词围绕缓存复用假设和初测差异设计三组对照，结果引用对应既有诊断。Agent 原有分析指出查找组与关闭组差距小于轮间波动，完整缓存的额外候选构造成本集中在插入和淘汰组，不能据此判断端到端查询变慢；候选改动仅减少未命中掩码构造的一次布尔运算。",
+   "student_evidence": [
+    {
+     "pointer": "/conversations/12/content",
+     "quote": "我的假设是：重复过滤能够摊薄候选集合构造成本，低复用过滤则可能付出查找、写入和淘汰开销；超过预算后，收益还取决于缓存是否被旁路。"
+    },
+    {
+     "pointer": "/conversations/14/content",
+     "quote": "在三组均未命中且其他路径一致时，B 与 A 的差值可估计键处理及查找开销，C 与 B 的差值可估计写入及淘汰等维护开销。"
+    }
+   ],
+   "result_evidence": [
+    {
+     "pointer": "/experiments/8/output",
+     "quote": "关闭缓存、只查找、完整缓存三组的候选构造中位数分别为 13.36、13.19、17.91 ms。每轮完整缓存 0 次命中、500 次写入、468 次淘汰。超预算时基线和候选的缓存路径调用均为 0。"
+    }
+   ]
+  },
+  {
+   "topic": "精确 TopK 分块与边界精算",
+   "context": "学生预测大块收益有限，看到候选个数后提出检验能否省掉精算。反例显示会破坏主键并列规则。Agent 据此保留标量精算；本地端到端提速未到学生设定的 10%，保留 512 行基线。学生对迁移结果的解释待补。 学生在迁移前给出了高并列预测与收益反转时的撤回标准。自建负载三轮均反向，依据该预先判据保留 512。未直接分段计时，精算增幅的归因保留为假设。 实测之后学生确认撤回，指出普通负载收益可能受漂移影响，提出固定顺序 A/B/A/B/A/B 复测。源码核查排除了当前版本逐块扫描全局候选带的解释。严格固定顺序复测尚未执行；既有三轮顺序为 AB/BA/AB。",
+   "student_evidence": [
+    {
+     "pointer": "/conversations/15/content",
+     "quote": "预测：扩大分块几乎不会带来提速，反而可能是负收益。"
+    },
+    {
+     "pointer": "/conversations/16/content",
+     "quote": "现在 p50 = p95 = max = 10，且 K=10——意思是每条查询恰好把答案集里的 10 条全部重算一遍，候选数已经是最小值，没有\"收窄容差\"的空间。"
+    },
+    {
+     "pointer": "/conversations/17/content",
+     "quote": "题包不承诺并列比例，收益符号相反等于在赌数据分布"
+    },
+    {
+     "pointer": "/conversations/18/content",
+     "quote": "撤回不是因为「3.1% 太小」，而是因为两次测量的符号相反，而正式负载的并列比例不在我们手里。"
+    }
+   ],
+   "result_evidence": [
+    {
+     "pointer": "/experiments/12/output",
+     "quote": "边界候选 p50/p95/max 均为 10，fsum 总调用 10000 次。"
+    },
+    {
+     "pointer": "/experiments/13/output",
+     "quote": "本地 JSONL 三轮。512 行基线查询中位数 3.002188 秒，256 行候选 2.722095 秒。六组共 6000 条独立真值核对与重启检查通过。"
+    },
+    {
+     "pointer": "/experiments/14/output",
+     "quote": "10000 组随机距离中 5273 组不同，383 组超过 1 ULP，最大 2 ULP。并列场景中，批量归约会选主键 10，实际 SQL 返回 [[3, 218.299801775181]]。"
+    },
+    {
+     "pointer": "/experiments/15/output",
+     "quote": "本地诊断：两版均通过 20 组同距与 20 组 float32 近邻；1000 条查询共 600 万个批量距离平方，最大 0 ULP。500 个同距候选压力下，256 行三轮均更慢。保留版 60 个回归通过。"
+    }
+   ],
+   "dimension": "取舍与反思"
+  },
+  {
+   "topic": "提交确认与崩溃恢复",
+   "dimension": "实验与反馈迭代",
+   "context": "C 初测脚本断言误拒合法 affected_rows，修正测试后通过。学生指出无响应无法区分 A/B，并提出在恢复前检查持久结构以排除恢复期重放的解释。按学生选择复测，读取清单、引用段和完整记录，再对照恢复后 SQL。学生迁移前预测双表及 TopK 结果，并质疑整记录截断是否会被发现。故障注入验证二进制段计数检查能检测本例，重建被二次强杀后再次恢复通过。学生修正整记录截断判断，区分清单哈希与数据代，并指出单一故障点通过的局限。Agent 核对：无响应时客户端无法区分 A、B；已知 A 在替换前则是旧代。仅验证进程强杀。",
+   "student_evidence": [
+    {
+     "pointer": "/conversations/20/content",
+     "quote": "A={1,2}，B={2,3}，C={2,3}；如果看到 A 里出现 3 或者 2 消失、B 里只出现 2 或只出现 3、C 里出现 1 或 2，我会修正 \"磁盘发布点 = catalog.json 原子替换、客户端确认点 = 收到 ok:true\" 这个模型。"
+    },
+    {
+     "pointer": "/conversations/21/content",
+     "quote": "集合是结果层，A/B 的分界在存储层。"
+    },
+    {
+     "pointer": "/conversations/22/content",
+     "quote": "第三次正常启动\t同上\t同上\t[(2, 0.0), (3, 3.0)]。"
+    },
+    {
+     "pointer": "/conversations/23/content",
+     "quote": "清单哈希可以变，被引用的数据代必须一致"
+    }
+   ],
+   "result_evidence": [
+    {
+     "pointer": "/experiments/16/output",
+     "quote": "A：清单未变，未收到提交响应，重启为 {1,2}。B：清单已变，未收到提交响应，重启为 {2,3}。C：已收到 ok:true，重启为 {2,3}。"
+    },
+    {
+     "pointer": "/experiments/17/output",
+     "quote": "恢复启动前，A 清单引用的段已经包含 {1,2}，B 和 C 清单引用的段已经包含 {2,3}。三组恢复后清单哈希及引用段记录保持一致，SQL 与段记录相符。"
+    },
+    {
+     "pointer": "/experiments/18/output",
+     "quote": "截去一个完整索引记录后 valid() 返回 false。恢复重建 fsync 前被强杀且未输出 ready。最终 t 和 u 一致提交，磁盘 exact TopK 为 [(2,0.0),(3,3.0)]。"
+    }
+   ]
+  },
+  {
+   "topic": "旧格式兼容与跨段主键判重",
+   "dimension": "技术理解与迁移",
+   "context": "初测核对可见键集合、错误码和旧段及段尾的实际读键轨迹。批内重复作为对照，失败语句事务可见性另有独立实验。学生提出同时与批内和存量冲突的对照，并用仅与存量冲突的语句排除所有失败均不读键的解释。复测支持先完成批内检查，再扫描存量键。学生预测删除后重插在事务内和提交后可见 replacement，回滚恢复 old。实测支持预测；学生依据可见快照解释结果，指出并发、扫描代价和崩溃边界，并提出清理前强杀。实测通过。Agent 核查：DELETE 重写事务可见段，旧段由提交视图保留至清理；重启后仍有活的 replacement 时拒绝重复是正确行为，删除可见键后重插才用于检查陈旧键。",
+   "student_evidence": [
+    {
+     "pointer": "/conversations/24/content",
+     "quote": "整句原子：批内自重复必须在写入前整句判定，一条都不能落"
+    },
+    {
+     "pointer": "/conversations/25/content",
+     "quote": "有它作对照，才能证明 “读 0 行” 是特殊情况，不是 “所有失败都不读数据”。"
+    },
+    {
+     "pointer": "/conversations/26/content",
+     "quote": "事务内插入就报了 DUPLICATE\t查重看的是旧文件里那行还没删掉的 old，不是 “现在能看见什么”。说明删除没有进入查重视野"
+    },
+    {
+     "pointer": "/conversations/27/content",
+     "quote": "第 4 条建议单独测一次，它是这条链唯一还没打到的点。"
+    }
+   ],
+   "result_evidence": [
+    {
+     "pointer": "/experiments/19/output",
+     "quote": "键 1 经旧 JSONL 读取后拒绝；键 2 经旧段后由二进制段尾找到并拒绝；批内重复不读旧键。三次失败的清单和文件列表未变，成功后主键为 [1,2,3]。"
+    },
+    {
+     "pointer": "/experiments/20/output",
+     "quote": "同一初始快照：(1),(1) 返回 DUPLICATE，Reader.keys 轨迹为空；(1),(3) 返回 DUPLICATE，轨迹只读出旧段键 1。两次照常读取到 [1,2]，清单和文件列表未变。"
+    },
+    {
+     "pointer": "/experiments/21/output",
+     "quote": "重插两组只扫描到键 2。事务内读到 replacement；回滚重开读到 old 且旧文件保留；提交重开读到 replacement 且旧文件清理。"
+    },
+    {
+     "pointer": "/experiments/22/output",
+     "quote": "清单已发布而旧段未清理时强杀，客户端未收到确认。恢复前旧文件仍在但已无清单引用；恢复后旧文件被清理，读到 replacement，拒绝直接重复插入，事务内删除后可重插。"
+    }
+   ]
+  },
+  {
+   "topic": "失败语句与事务可见性",
+   "dimension": "独立验证与质疑",
+   "context": "学生分别用键 2 追踪失败语句的部分写入、用键 1 的值追踪成功修改是否被连带撤销，并指定先查事务内再结束事务。对照两组独立目录。复测和非法向量迁移待补。 以已获12分的 a2bdfa9 为引擎复测。学生预测错误后仍可插入键3并解释它能检验后续可写性和迟发部分写入。实测支持，非法向量迁移待补。 用户预测迁移到非法向量，并提出回滚后不重启查询以排查内存状态。四组结果符合预测，学生对迁移结果的最终解释待补。默认缓存配置与实际磁盘索引路径分组；本次未新增生产代码。 学生指出默认配置不证明实际缓存启用，要求命中观测。复测证实三次实际缓存查询、两次复用，回滚清空后重新构建。大表、过滤缓存和回滚中强杀仍是边界。",
+   "student_evidence": [
+    {
+     "pointer": "/conversations/28/content",
+     "quote": "失败的是那条插入语句，它一行都不该留下，所以 (2,'new') 查不到；但前一条 UPDATE 是独立成功的语句，它的效果要保留，所以事务内仍是 edited。回滚才把整笔事务退回原样。"
+    },
+    {
+     "pointer": "/conversations/28/content",
+     "quote": "所以顺序是：失败 → 查事务内 → 提交 → 重启查 → 再复现一遍走回滚。"
+    },
+    {
+     "pointer": "/conversations/29/content",
+     "quote": "光看提交成功其实说明不了什么，那只证明最后能正常收尾，证明不了报错之后还能不能接着写东西。"
+    },
+    {
+     "pointer": "/conversations/30/content",
+     "quote": "我自己还有点不确定：回滚以后如果没有重启就直接查，内存里那份缓存的向量会不会还是改过的那个？这一条我想再单独测一次。"
+    },
+    {
+     "pointer": "/conversations/31/content",
+     "quote": "所以要补一个“缓存确实被用过”的证据——先做几次热查询让缓存真正装进数据，看命中计数，再回滚查一次。"
+    }
+   ],
+   "result_evidence": [
+    {
+     "pointer": "/experiments/23/output",
+     "quote": "两组批量 INSERT 均实际返回 DUPLICATE。失败后事务内只见 (1,'edited')。COMMIT 成功后重开仍为 edited，ROLLBACK 成功后重开为 old。"
+    },
+    {
+     "pointer": "/experiments/24/output",
+     "quote": "两组失败批量 INSERT 返回 DUPLICATE，失败后事务内只有 edited。继续插入键 3 成功，事务内为 edited 和 after。COMMIT 后新进程重开仍是这两行，ROLLBACK 后新进程重开只有 old，键 2 始终没有出现。"
+    },
+    {
+     "pointer": "/experiments/25/output",
+     "quote": "四组向量迁移通过。维度错误返回 TYPE，合法首行也未插入；后续插入键4成功。回滚后不重启立即返回 [(1,1.0)]，重开相同；提交前后均 [(1,0.0),(4,4.0)]。两组默认缓存配置、两组关闭 NumPy 且建磁盘索引。"
+    },
+    {
+     "pointer": "/experiments/26/output",
+     "quote": "测试专用包装器观测：事务内三次 TopK 都实际调用 VectorCache.topk，首次构建后命中两次。回滚后缓存条目为零，随后重建并实际走缓存 TopK，立即结果为 [(1,1.0)]。"
+    }
+   ]
+  },
+  {
+   "topic": "宽行缓存准入与磁盘回退",
+   "dimension": "取舍与反思",
+   "context": "学生按标量与向量体积预测预算边界，并指定宽行64MiB及移除过滤的对照。实际首次构建和第二次复用分开记录。无过滤需计算更多行的距离，不能只归因于长字符串。学生实测后解释和带索引迁移待补。 学生看到无过滤变慢后修正成本判断，预测磁盘索引及回滚结果。迁移通过。调用次数为解码次数，不等同设备读取；最终取行另计。缓存核算含Python对象开销。学生根据实测解释tag不在索引所以回查宽行，提出短过滤字段冗余并权衡存储、重建及事务成本，限定了无缓存与正确性的关系。索引还包含行位置，少副本不排除索引自身陈旧。覆盖字段是学生提出的后续方案，尚未实现或测量。",
+   "student_evidence": [
+    {
+     "pointer": "/conversations/32/content",
+     "quote": "结论我只写在这一个配置上：一万行、128 维、16 MiB、这一个过滤条件。数据量换了、预算换了、过滤列换了，都算没测。"
+    },
+    {
+     "pointer": "/conversations/33/content",
+     "quote": "我原来猜把 WHERE 去掉会变快，结果实测反了，237 毫秒变成 483 毫秒，慢了快一倍。我错在把过滤当成“费钱”的一步，其实过滤是“省钱”的一步：它把要算距离的行从一万行砍到只剩命中的那些，而解析那两千多个字两组都躲不掉。"
+    },
+    {
+     "pointer": "/conversations/34/content",
+     "quote": "所以取舍的关键是：多存一字节能省下多少次解析。"
+    }
+   ],
+   "result_evidence": [
+    {
+     "pointer": "/experiments/27/output",
+     "quote": "窄行16字节缓存可用约7.69MB，宽行2048字节在16MiB预算下拒绝。宽行预算改64MiB后缓存约28.02MB，第二查解码从10000行变为0行。去掉tag整数过滤后，16MiB组第二查由约242ms变483ms；所有结果与独立真值一致。"
+    },
+    {
+     "pointer": "/experiments/28/output",
+     "quote": "已建索引宽表：四阶段都拒绝缓存。每查解码10000行作过滤，计算1000个候选距离，最终取10行，共10010次Reader.at。更新键3为零向量排第一，立即回滚和重开均恢复原TopK，全数核对独立真值。"
+    }
+   ]
+  },
+  {
+   "topic": "惰性查询失败与响应原子性",
+   "dimension": "独立验证与质疑",
+   "context": "学生区分断行污染和完整但不完整结果的成功响应泄漏，要求核对行数、JSON及ID。初测用真实协议适配器，内存标准流而非操作系统管道；ready独立于请求响应计数。临时文件可能无命名路径，已观测rollover及打开句柄。复测和迁移待补。 学生选择连续两次不同位置的失败，观察状态清理和多行溢写。实测5行而非4行，因为现在有四个请求及ready。真实管道迁移预测待补。 学生迁移前提出大成功响应对照以检查管道背压。实测短输入已写完，大输出延迟读取时未退出，读取后完成。1秒未退出与背压解释一致，未采集线程栈以证明阻塞调用点；学生依据读取后恢复区分背压与死锁，修正了先写后读总会死锁的判断，并限定Windows、短输入和1MB输出。Agent核对：双向写阻塞是一种可能的循环等待，不能以读一下未恢复来独断死锁原因；本次未测Linux、大请求及系统调用栈。脚本初版换行转义语法错误，修复后实际运行通过。",
+   "student_evidence": [
+    {
+     "pointer": "/conversations/35/content",
+     "quote": "这时一次请求出现了两行，下一条查询还照样成功，光看“下一条是否成功”根本发现不了问题。"
+    },
+    {
+     "pointer": "/conversations/36/content",
+     "quote": "第一次的缓冲区、临时文件偏移和计数如果没有复位，第二次才会露出来。"
+    },
+    {
+     "pointer": "/conversations/37/content",
+     "quote": "为了证明“这次通过是因为运气”，我可以在同一套“先写后读”做法下故意放一条超大的成功响应作对照；如果这条导致阻塞，就说明前面通过是因为数据太小。"
+    },
+    {
+     "pointer": "/conversations/38/content",
+     "quote": "结论只适用于这套测试：本地 Windows、单条 1 MB 响应、请求都很短。"
+    }
+   ],
+   "result_evidence": [
+    {
+     "pointer": "/experiments/30/output",
+     "quote": "小结果及300000字符宽行两组通过。stdout均为ready、bad错误、good成功、bye成功共4行，逐行可解析且最后有换行。宽行观测到rollover且文件句柄打开，错误不含生成的行数据。关闭后数据目录无临时文件。"
+    },
+    {
+     "pointer": "/experiments/31/output",
+     "quote": "组合复测5行：ready、bad1错误、bad2错误、good成功、bye成功。四请求顺序正确，无空行，最终换行。三个暂存文件初始偏移均0，仅第二个溢写，两次失败共生成1行及100行，数据均未泄漏，全部文件关闭无残留。"
+    },
+    {
+     "pointer": "/experiments/32/output",
+     "quote": "真实子进程管道迁移：小响应241字节，未读输出已退出。大响应1000244字节，四条短请求都先写完，1秒未退出；开始读取后返回5行且退出码0。两组请求顺序正确，结果完整，无临时文件。未观察到不可恢复的双向死锁。"
+    }
+   ]
+  }
+ ],
+ "retrospective": [
+  {
+   "role": "agent",
+   "content": "Python exact 最终本地通过 60 项回归、20 个公开用例和 6000 次逐查询真值校验。无索引场景 E_local 从 0.505123 到 0.635468，有索引从 0.498887 到 0.779541。两类场景使用各自固定的 Python 基线。"
+  },
+  {
+   "role": "agent",
+   "content": "正式准入依赖整套功能；缓存假设要用独立的读取计数来验证，耗时差异不足以确认原因。当前 Prompt 未计分的具体原因需要平台详情。"
+  }
+ ],
+ "limitations": [
+  "正式提测截图和用户确认支持准入通过，现有材料没有该次性能原始分或 Prompt 评审报告。Prompt 未计分的具体原因未知。",
+  "本地 E_local 使用固定 Python 基线，不能换算平台原始指标或名次。统计中 rbytes 为 0，测试不能解释为冷盘读取性能。",
+  "本轮材料锁定时，三轮本机 JSONL 端到端对照仍在运行。Linux CI 尚无运行结果，未取得可核实的容器峰值内存或设备 I/O。没有据此计算平台分数。",
+  "本轮端到端为 Windows。Linux 三轮、峰值内存与设备 I/O、完整距离数组对照和 20 组近邻用例未完成。",
+  "Linux workflow 已推送，按提交未查到运行，手动 dispatch 返回 HTTP 404。Linux 10% 相对线、2.38 秒绝对线、内存和设备 I/O 均未知。已完成本地 1000 条距离平方数组与 20 组近邻验证。"
+ ]
 }
