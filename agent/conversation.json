@@ -219,6 +219,12 @@
       "role": "student",
       "source": "执行前用户原话摘录",
       "content": "我猜第一种查询在 stdout 上不会出现任何内容，只会出现一行报错；第二种也应当一样：那 256 KiB 只是它先在磁盘上暂存，暂存的内容不应该出现在输出里。下一条合法查询应当照常成功，因为一次请求本来就应当只对应一行回复。\n这里最容易漏判的是“半条”的两种形式：一种是断掉的一行，它会把下一条回复吞进去、连在一起变成一行乱码；另一种更隐蔽，就是写出了一行看起来成功、其实只包含一半行的内容，紧接着又跟一行报错；这时一次请求出现了两行，下一条查询还照样成功，光看“下一条是否成功”根本发现不了问题。"
+    },
+    {
+      "id": "lazy-repeat-student",
+      "role": "student",
+      "source": "初测后真实回复摘录",
+      "content": "第一行必须是 ready，而且只出现一次；它只是开场通知，不算对某条请求的回复。从第二行起，每行对应一条请求。\n下一项我选“同一进程连续两次失败后再成功”，因为单次失败看起来干净说明不了什么，可能只是还没轮到暴露；真正容易暴露残留的是第二次。第一次的缓冲区、临时文件偏移和计数如果没有复位，第二次才会露出来。\n第一次只生成一行就失败，第二次生成很多行，并跨过 256 KiB rollover 之后才失败。"
     }
   ],
   "experiments": [
@@ -407,6 +413,12 @@
       "status": "executed",
       "source": "python -m tools.verify_lazy_response --run；调用真实serve和emit_query，StringIO代替标准流，测试注入惰性DBError",
       "output": "小结果及300000字符宽行两组通过。stdout均为ready、bad错误、good成功、bye成功共4行，逐行可解析且最后有换行。宽行观测到rollover且文件句柄打开，错误不含生成的行数据。关闭后数据目录无临时文件。\n{\"wide\": false, \"events\": [\"row_yielded\", \"closed\", \"closed\"], \"stdout\": [\"{\\\"type\\\":\\\"ready\\\"}\", \"{\\\"id\\\":\\\"bad\\\",\\\"ok\\\":false,\\\"error\\\":{\\\"code\\\":\\\"TEST_LAZY\\\",\\\"message\\\":\\\"injected after first row\\\"}}\", \"{\\\"id\\\":\\\"good\\\",\\\"ok\\\":true,\\\"columns\\\":[\\\"value\\\"],\\\"rows\\\":[[7]]}\", \"{\\\"id\\\":\\\"bye\\\",\\\"ok\\\":true}\"], \"data_temporary_files_after_close\": 0, \"passed\": true}\n{\"wide\": true, \"events\": [{\"event\": \"rollover\", \"rolled\": true, \"fd_open\": true}, \"row_yielded\", \"closed\", \"closed\"], \"stdout\": [\"{\\\"type\\\":\\\"ready\\\"}\", \"{\\\"id\\\":\\\"bad\\\",\\\"ok\\\":false,\\\"error\\\":{\\\"code\\\":\\\"TEST_LAZY\\\",\\\"message\\\":\\\"injected after first row\\\"}}\", \"{\\\"id\\\":\\\"good\\\",\\\"ok\\\":true,\\\"columns\\\":[\\\"value\\\"],\\\"rows\\\":[[7]]}\", \"{\\\"id\\\":\\\"bye\\\",\\\"ok\\\":true}\"], \"data_temporary_files_after_close\": 0, \"passed\": true}"
+    },
+    {
+      "id": "lazy-repeat-result",
+      "status": "executed",
+      "source": "python -m tools.verify_lazy_response --run --repeat；内存标准流",
+      "output": "组合复测5行：ready、bad1错误、bad2错误、good成功、bye成功。四请求顺序正确，无空行，最终换行。三个暂存文件初始偏移均0，仅第二个溢写，两次失败共生成1行及100行，数据均未泄漏，全部文件关闭无残留。\n{\"test\": \"repeated_failures\", \"stdout\": [\"{\\\"type\\\":\\\"ready\\\"}\", \"{\\\"id\\\":\\\"bad1\\\",\\\"ok\\\":false,\\\"error\\\":{\\\"code\\\":\\\"TEST_1\\\",\\\"message\\\":\\\"injected 1\\\"}}\", \"{\\\"id\\\":\\\"bad2\\\",\\\"ok\\\":false,\\\"error\\\":{\\\"code\\\":\\\"TEST_2\\\",\\\"message\\\":\\\"injected 2\\\"}}\", \"{\\\"id\\\":\\\"good\\\",\\\"ok\\\":true,\\\"columns\\\":[\\\"value\\\"],\\\"rows\\\":[[7]]}\", \"{\\\"id\\\":\\\"bye\\\",\\\"ok\\\":true}\"], \"events\": [{\"file\": 0, \"initial_offset\": 0}, {\"failure\": 1, \"generated_rows\": 1}, {\"file\": 1, \"initial_offset\": 0}, {\"file\": 1, \"rollover\": true}, {\"failure\": 2, \"generated_rows\": 100}, {\"file\": 2, \"initial_offset\": 0}], \"all_spools_closed\": true, \"temporary_files_remaining\": 0, \"passed\": true}"
     }
   ],
   "evidence_chains": [
@@ -776,17 +788,25 @@
     {
       "topic": "惰性查询失败与响应原子性",
       "dimension": "独立验证与质疑",
-      "context": "学生区分断行污染和完整但不完整结果的成功响应泄漏，要求核对行数、JSON及ID。初测用真实协议适配器，内存标准流而非操作系统管道；ready独立于请求响应计数。临时文件可能无命名路径，已观测rollover及打开句柄。复测和迁移待补。",
+      "context": "学生区分断行污染和完整但不完整结果的成功响应泄漏，要求核对行数、JSON及ID。初测用真实协议适配器，内存标准流而非操作系统管道；ready独立于请求响应计数。临时文件可能无命名路径，已观测rollover及打开句柄。复测和迁移待补。 学生选择连续两次不同位置的失败，观察状态清理和多行溢写。实测5行而非4行，因为现在有四个请求及ready。真实管道迁移预测待补。",
       "student_evidence": [
         {
           "pointer": "/conversations/35/content",
           "quote": "这时一次请求出现了两行，下一条查询还照样成功，光看“下一条是否成功”根本发现不了问题。"
+        },
+        {
+          "pointer": "/conversations/36/content",
+          "quote": "第一次的缓冲区、临时文件偏移和计数如果没有复位，第二次才会露出来。"
         }
       ],
       "result_evidence": [
         {
           "pointer": "/experiments/30/output",
           "quote": "小结果及300000字符宽行两组通过。stdout均为ready、bad错误、good成功、bye成功共4行，逐行可解析且最后有换行。宽行观测到rollover且文件句柄打开，错误不含生成的行数据。关闭后数据目录无临时文件。"
+        },
+        {
+          "pointer": "/experiments/31/output",
+          "quote": "组合复测5行：ready、bad1错误、bad2错误、good成功、bye成功。四请求顺序正确，无空行，最终换行。三个暂存文件初始偏移均0，仅第二个溢写，两次失败共生成1行及100行，数据均未泄漏，全部文件关闭无残留。"
         }
       ]
     }

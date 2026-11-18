@@ -66,9 +66,77 @@ def trial(wide):
                       "data_temporary_files_after_close": 0, "passed": True}))
 
 
+def repeated_failures():
+    events = []
+    files = []
+    original = wire.tempfile.SpooledTemporaryFile
+
+    def spool(*args, **kwargs):
+        file = original(*args, **kwargs)
+        number = len(files)
+        files.append(file)
+        events.append({"file": number, "initial_offset": file.tell()})
+        rollover = file.rollover
+
+        def tracked():
+            rollover()
+            events.append({"file": number, "rollover": True})
+        file.rollover = tracked
+        return file
+
+    def failed_rows(number):
+        for index in range(1 if number == 1 else 100):
+            yield [("FIRST" if number == 1 else "SECOND") + str(index) + "x"*4096]
+        events.append({"failure": number, "generated_rows": 1 if number == 1 else 100})
+        raise DBError("TEST_" + str(number), "injected " + str(number))
+
+    def execute(db, sql, mode):
+        if sql in ("FAIL1", "FAIL2"):
+            return ["payload"], failed_rows(int(sql[-1]))
+        return ["value"], iter([[7]])
+
+    class Database:
+        def __init__(self, root):
+            self.path = root
+
+        def close(self):
+            pass
+
+    requests = [
+        {"id": "bad1", "op": "execute", "sql": "FAIL1"},
+        {"id": "bad2", "op": "execute", "sql": "FAIL2"},
+        {"id": "good", "op": "execute", "sql": "OK"},
+        {"id": "bye", "op": "shutdown"},
+    ]
+    with tempfile.TemporaryDirectory() as root:
+        stdout = io.StringIO()
+        stdin = io.StringIO("".join(json.dumps(item) + "\n" for item in requests))
+        with patch.object(wire, "execute", execute),              patch.object(wire.tempfile, "SpooledTemporaryFile", spool),              patch.object(wire.sys, "stdin", stdin), patch.object(wire.sys, "stdout", stdout):
+            wire.serve(Database(root))
+        text = stdout.getvalue()
+        lines = text.splitlines()
+        assert text.endswith("\n") and all(lines) and len(lines) == 5
+        decoded = [json.loads(line) for line in lines]
+        assert decoded[0] == {"type": "ready"}
+        assert [item["id"] for item in decoded[1:]] == ["bad1", "bad2", "good", "bye"]
+        assert [item["ok"] for item in decoded[1:]] == [False, False, True, True]
+        assert [item["error"]["code"] for item in decoded[1:3]] == ["TEST_1", "TEST_2"]
+        assert decoded[3]["rows"] == [[7]]
+        assert "FIRST" not in text and "SECOND" not in text
+        assert all(file.closed for file in files)
+        assert all(item["initial_offset"] == 0 for item in events if "initial_offset" in item)
+        assert [item["file"] for item in events if item.get("rollover")] == [1]
+        assert not list(Path(root).iterdir())
+    print(json.dumps({"test": "repeated_failures", "stdout": lines, "events": events,
+                      "all_spools_closed": True, "temporary_files_remaining": 0, "passed": True}))
+
+
 if __name__ == "__main__":
     import sys
     if "--run" not in sys.argv:
         raise SystemExit("Use --run after recording the student's prediction")
+    if "--repeat" in sys.argv:
+        repeated_failures()
+        raise SystemExit(0)
     for wide in (False, True):
         trial(wide)
