@@ -189,6 +189,12 @@
       "role": "student",
       "source": "向量迁移执行前学生原话摘录",
       "content": "我猜批量插入失败以后，只能看到 (1,[0,0]) 这一条，连那条合法的 (2,[2,0]) 也不会进去，因为整句是一起失败的。接着插入 4 成功之后，事务里能看到 (1,[0,0]) 和 (4,[4,0]) 两条，按到 [0,0] 的距离排，1 的距离是 0、4 的距离是 4；提交后重开也是这两条。但回滚后重开就只剩 (1,[1,0])，距离应该是 1.0。如果这时候还算出 0.0，就说明索引里存的还是改过的那个值，没跟回滚一起退回去。\n我自己还有点不确定：回滚以后如果没有重启就直接查，内存里那份缓存的向量会不会还是改过的那个？这一条我想再单独测一次。"
+    },
+    {
+      "id": "statement-vector-reflection",
+      "role": "student",
+      "source": "迁移结果后的用户原话摘录",
+      "content": "现在不重启就返回 1.0，说明缓存要么跟着回滚一起失效了，要么这条路根本没走缓存——不管哪种，都不存在“必须等重启才对齐”的副本。这个担心可以撤回。\n所以要补一个“缓存确实被用过”的证据——先做几次热查询让缓存真正装进数据，看命中计数，再回滚查一次。\n结论只能限定在这条路上：别的缓存是另一个东西，比如等值过滤用的那个候选缓存，它按条件做键，回滚后会不会残留没测过；数据量到几千上万行缓存才真正启用，那时的行为也算未知；这次是正常回滚，如果换成“回滚做到一半被强杀”，重启后还得再验一遍。"
     }
   ],
   "experiments": [
@@ -347,6 +353,12 @@
       "source": "python -m tools.verify_vector_failure；独立数据目录和 JSONL 子进程",
       "status": "executed",
       "output": "四组向量迁移通过。维度错误返回 TYPE，合法首行也未插入；后续插入键4成功。回滚后不重启立即返回 [(1,1.0)]，重开相同；提交前后均 [(1,0.0),(4,4.0)]。两组默认缓存配置、两组关闭 NumPy 且建磁盘索引。\n{\"outcome\": \"COMMIT\", \"path\": \"default_cache\", \"warmed_transaction\": [[1, 0.0]], \"error\": {\"id\": 7, \"ok\": false, \"error\": {\"code\": \"TYPE\", \"message\": \"VECTOR dimension mismatch\"}}, \"select_after_failure\": [[1, [0.0, 0.0]]], \"topk_before_end\": [[1, 0.0], [4, 4.0]], \"immediate_after_end\": [[1, 0.0], [4, 4.0]], \"after_restart\": [[1, 0.0], [4, 4.0]], \"passed\": true}\n{\"outcome\": \"ROLLBACK\", \"path\": \"default_cache\", \"warmed_transaction\": [[1, 0.0]], \"error\": {\"id\": 7, \"ok\": false, \"error\": {\"code\": \"TYPE\", \"message\": \"VECTOR dimension mismatch\"}}, \"select_after_failure\": [[1, [0.0, 0.0]]], \"topk_before_end\": [[1, 0.0], [4, 4.0]], \"immediate_after_end\": [[1, 1.0]], \"after_restart\": [[1, 1.0]], \"passed\": true}\n{\"outcome\": \"COMMIT\", \"path\": \"disk_index\", \"warmed_transaction\": [[1, 0.0]], \"error\": {\"id\": 7, \"ok\": false, \"error\": {\"code\": \"TYPE\", \"message\": \"VECTOR dimension mismatch\"}}, \"select_after_failure\": [[1, [0.0, 0.0]]], \"topk_before_end\": [[1, 0.0], [4, 4.0]], \"immediate_after_end\": [[1, 0.0], [4, 4.0]], \"after_restart\": [[1, 0.0], [4, 4.0]], \"passed\": true}\n{\"outcome\": \"ROLLBACK\", \"path\": \"disk_index\", \"warmed_transaction\": [[1, 0.0]], \"error\": {\"id\": 7, \"ok\": false, \"error\": {\"code\": \"TYPE\", \"message\": \"VECTOR dimension mismatch\"}}, \"select_after_failure\": [[1, [0.0, 0.0]]], \"topk_before_end\": [[1, 0.0], [4, 4.0]], \"immediate_after_end\": [[1, 1.0]], \"after_restart\": [[1, 1.0]], \"passed\": true}"
+    },
+    {
+      "id": "statement-cache-path-observed",
+      "status": "executed",
+      "source": "python -m tools.verify_vector_failure --observe-cache；同引擎核心 API 的测试包装器，不修改生产实现",
+      "output": "测试专用包装器观测：事务内三次 TopK 都实际调用 VectorCache.topk，首次构建后命中两次。回滚后缓存条目为零，随后重建并实际走缓存 TopK，立即结果为 [(1,1.0)]。\n{\"test\": \"observed_cache\", \"before_rollback\": [{\"kind\": \"lookup\", \"hit\": false, \"available\": true}, {\"kind\": \"topk\"}, {\"kind\": \"lookup\", \"hit\": true, \"available\": true}, {\"kind\": \"topk\"}, {\"kind\": \"lookup\", \"hit\": true, \"available\": true}, {\"kind\": \"topk\"}], \"cache_entries_after_rollback\": 0, \"after_rollback_events\": [{\"kind\": \"lookup\", \"hit\": false, \"available\": true}, {\"kind\": \"topk\"}], \"immediate_result\": [[1, 1.0]], \"passed\": true}"
     }
   ],
   "evidence_chains": [
@@ -642,7 +654,7 @@
     {
       "topic": "失败语句与事务可见性",
       "dimension": "独立验证与质疑",
-      "context": "学生分别用键 2 追踪失败语句的部分写入、用键 1 的值追踪成功修改是否被连带撤销，并指定先查事务内再结束事务。对照两组独立目录。复测和非法向量迁移待补。 以已获12分的 a2bdfa9 为引擎复测。学生预测错误后仍可插入键3并解释它能检验后续可写性和迟发部分写入。实测支持，非法向量迁移待补。 用户预测迁移到非法向量，并提出回滚后不重启查询以排查内存状态。四组结果符合预测，学生对迁移结果的最终解释待补。默认缓存配置与实际磁盘索引路径分组；本次未新增生产代码。",
+      "context": "学生分别用键 2 追踪失败语句的部分写入、用键 1 的值追踪成功修改是否被连带撤销，并指定先查事务内再结束事务。对照两组独立目录。复测和非法向量迁移待补。 以已获12分的 a2bdfa9 为引擎复测。学生预测错误后仍可插入键3并解释它能检验后续可写性和迟发部分写入。实测支持，非法向量迁移待补。 用户预测迁移到非法向量，并提出回滚后不重启查询以排查内存状态。四组结果符合预测，学生对迁移结果的最终解释待补。默认缓存配置与实际磁盘索引路径分组；本次未新增生产代码。 学生指出默认配置不证明实际缓存启用，要求命中观测。复测证实三次实际缓存查询、两次复用，回滚清空后重新构建。大表、过滤缓存和回滚中强杀仍是边界。",
       "student_evidence": [
         {
           "pointer": "/conversations/28/content",
@@ -659,6 +671,10 @@
         {
           "pointer": "/conversations/30/content",
           "quote": "我自己还有点不确定：回滚以后如果没有重启就直接查，内存里那份缓存的向量会不会还是改过的那个？这一条我想再单独测一次。"
+        },
+        {
+          "pointer": "/conversations/31/content",
+          "quote": "所以要补一个“缓存确实被用过”的证据——先做几次热查询让缓存真正装进数据，看命中计数，再回滚查一次。"
         }
       ],
       "result_evidence": [
@@ -673,6 +689,10 @@
         {
           "pointer": "/experiments/25/output",
           "quote": "四组向量迁移通过。维度错误返回 TYPE，合法首行也未插入；后续插入键4成功。回滚后不重启立即返回 [(1,1.0)]，重开相同；提交前后均 [(1,0.0),(4,4.0)]。两组默认缓存配置、两组关闭 NumPy 且建磁盘索引。"
+        },
+        {
+          "pointer": "/experiments/26/output",
+          "quote": "测试专用包装器观测：事务内三次 TopK 都实际调用 VectorCache.topk，首次构建后命中两次。回滚后缓存条目为零，随后重建并实际走缓存 TopK，立即结果为 [(1,1.0)]。"
         }
       ]
     }
