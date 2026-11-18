@@ -201,6 +201,12 @@
       "role": "student",
       "source": "本实验执行前用户原话摘录",
       "content": "我猜如果缓存是按整行大小算的，窄行能进、宽行进不去——宽行光字符串就差不多 19.5 MiB，加上向量 4.88 一共 24 MiB 左右，超过 16 MiB 预算；窄行才 5 MiB 出头，放得下。\n要是宽行确实更慢，我拿两组对照把它拆开：宽行不动，只把预算提到 64 MiB，如果追上窄行的速度，就说明慢在每次都重读向量；没追上，剩下的就是解析那两千多个字的成本。\n结论我只写在这一个配置上：一万行、128 维、16 MiB、这一个过滤条件。数据量换了、预算换了、过滤列换了，都算没测。"
+    },
+    {
+      "id": "wide-cache-student-revision",
+      "role": "student",
+      "source": "初测后用户原话摘录",
+      "content": "我原来猜把 WHERE 去掉会变快，结果实测反了，237 毫秒变成 483 毫秒，慢了快一倍。我错在把过滤当成“费钱”的一步，其实过滤是“省钱”的一步：它把要算距离的行从一万行砍到只剩命中的那些，而解析那两千多个字两组都躲不掉。\n迁移过来看，16 MiB 那组在已建索引的宽表上还是走磁盘索引那条路，先按 tag 过滤再只对命中的行算距离，解析还是一万行；事务改向量、回滚之后，因为它没有内存缓存，每次查读的都是当前那份，所以不重启也马上是对的，TopK 要和普通查询、真值保持一致。"
     }
   ],
   "experiments": [
@@ -371,6 +377,12 @@
       "status": "executed",
       "source": "tools.verify_wide_cache；诊断观测，单次冷热查询，不是正式性能统计；设备I/O与内存峰值未测",
       "output": "窄行16字节缓存可用约7.69MB，宽行2048字节在16MiB预算下拒绝。宽行预算改64MiB后缓存约28.02MB，第二查解码从10000行变为0行。去掉tag整数过滤后，16MiB组第二查由约242ms变483ms；所有结果与独立真值一致。\n[{\"width\":16,\"rows\":10000,\"dimension\":128,\"cache_budget\":16777216,\"cache_observations\":[{\"available\":true,\"bytes\":7686804},{\"available\":true,\"bytes\":7695406}],\"first_rows_decoded\":10000,\"second_rows_decoded\":0,\"first_seconds\":0.41782549999999996,\"second_seconds\":0.0014412000000001424,\"verified\":true},{\"width\":2048,\"rows\":10000,\"dimension\":128,\"cache_budget\":16777216,\"cache_observations\":[{\"available\":false,\"bytes\":0},{\"available\":false,\"bytes\":0}],\"first_rows_decoded\":10000,\"second_rows_decoded\":10000,\"first_seconds\":0.2420845000000007,\"second_seconds\":0.2371888000000002,\"verified\":true},{\"width\":2048,\"rows\":10000,\"dimension\":128,\"cache_budget\":16777216,\"filtered\":true,\"cache_observations\":[{\"available\":false,\"bytes\":0},{\"available\":false,\"bytes\":0}],\"first_rows_decoded\":10000,\"second_rows_decoded\":10000,\"first_seconds\":0.2420116000000001,\"second_seconds\":0.24155440000000006,\"verified\":true},{\"width\":2048,\"rows\":10000,\"dimension\":128,\"cache_budget\":67108864,\"filtered\":true,\"cache_observations\":[{\"available\":true,\"bytes\":28006804},{\"available\":true,\"bytes\":28015406}],\"first_rows_decoded\":10000,\"second_rows_decoded\":0,\"first_seconds\":0.43014750000000035,\"second_seconds\":0.0013380999999998977,\"verified\":true},{\"width\":2048,\"rows\":10000,\"dimension\":128,\"cache_budget\":16777216,\"filtered\":false,\"cache_observations\":[{\"available\":false,\"bytes\":0},{\"available\":false,\"bytes\":0}],\"first_rows_decoded\":10000,\"second_rows_decoded\":10000,\"first_seconds\":0.49958049999999865,\"second_seconds\":0.4828967000000013,\"verified\":true},{\"width\":2048,\"rows\":10000,\"dimension\":128,\"cache_budget\":67108864,\"filtered\":false,\"cache_observations\":[{\"available\":true,\"bytes\":28006804},{\"available\":true,\"bytes\":28006804}],\"first_rows_decoded\":10000,\"second_rows_decoded\":0,\"first_seconds\":0.27820529999999977,\"second_seconds\":0.001565600000001055,\"verified\":true}]"
+    },
+    {
+      "id": "wide-cache-index-migration",
+      "status": "executed",
+      "source": "python -m tools.verify_wide_index；测试专用调用计数",
+      "output": "已建索引宽表：四阶段都拒绝缓存。每查解码10000行作过滤，计算1000个候选距离，最终取10行，共10010次Reader.at。更新键3为零向量排第一，立即回滚和重开均恢复原TopK，全数核对独立真值。\n[{\"stage\":\"indexed\",\"counts\":{\"filtered_rows_decoded\":10010,\"distance_candidates\":1000,\"result_rows_fetched\":10,\"cache_available\":false},\"topk\":[[9583,5.660924346244087],[8973,5.8644692124265365],[6983,5.869556339571982],[2703,5.874681979130793],[63,5.875709615785444],[6123,5.909716085568059],[1663,5.930375859264526],[973,5.933486749886294],[1613,5.938506647191259],[9153,5.94203161698832]],\"verified\":true},{\"stage\":\"updated\",\"counts\":{\"filtered_rows_decoded\":10010,\"distance_candidates\":1000,\"result_rows_fetched\":10,\"cache_available\":false},\"topk\":[[3,0.0],[9583,5.660924346244087],[8973,5.8644692124265365],[6983,5.869556339571982],[2703,5.874681979130793],[63,5.875709615785444],[6123,5.909716085568059],[1663,5.930375859264526],[973,5.933486749886294],[1613,5.938506647191259]],\"verified\":true},{\"stage\":\"immediate_rollback\",\"counts\":{\"filtered_rows_decoded\":10010,\"distance_candidates\":1000,\"result_rows_fetched\":10,\"cache_available\":false},\"topk\":[[9583,5.660924346244087],[8973,5.8644692124265365],[6983,5.869556339571982],[2703,5.874681979130793],[63,5.875709615785444],[6123,5.909716085568059],[1663,5.930375859264526],[973,5.933486749886294],[1613,5.938506647191259],[9153,5.94203161698832]],\"verified\":true},{\"stage\":\"reopened\",\"counts\":{\"filtered_rows_decoded\":10010,\"distance_candidates\":1000,\"result_rows_fetched\":10,\"cache_available\":false},\"topk\":[[9583,5.660924346244087],[8973,5.8644692124265365],[6983,5.869556339571982],[2703,5.874681979130793],[63,5.875709615785444],[6123,5.909716085568059],[1663,5.930375859264526],[973,5.933486749886294],[1613,5.938506647191259],[9153,5.94203161698832]],\"verified\":true}]"
     }
   ],
   "evidence_chains": [
@@ -711,17 +723,25 @@
     {
       "topic": "宽行缓存准入与磁盘回退",
       "dimension": "问题理解与自主拆解",
-      "context": "学生按标量与向量体积预测预算边界，并指定宽行64MiB及移除过滤的对照。实际首次构建和第二次复用分开记录。无过滤需计算更多行的距离，不能只归因于长字符串。学生实测后解释和带索引迁移待补。",
+      "context": "学生按标量与向量体积预测预算边界，并指定宽行64MiB及移除过滤的对照。实际首次构建和第二次复用分开记录。无过滤需计算更多行的距离，不能只归因于长字符串。学生实测后解释和带索引迁移待补。 学生看到无过滤变慢后修正成本判断，预测磁盘索引及回滚结果。迁移通过。调用次数为解码次数，不等同设备读取；最终取行另计。缓存核算含Python对象开销。迁移后学生取舍说明待补。",
       "student_evidence": [
         {
           "pointer": "/conversations/32/content",
           "quote": "结论我只写在这一个配置上：一万行、128 维、16 MiB、这一个过滤条件。数据量换了、预算换了、过滤列换了，都算没测。"
+        },
+        {
+          "pointer": "/conversations/33/content",
+          "quote": "我原来猜把 WHERE 去掉会变快，结果实测反了，237 毫秒变成 483 毫秒，慢了快一倍。我错在把过滤当成“费钱”的一步，其实过滤是“省钱”的一步：它把要算距离的行从一万行砍到只剩命中的那些，而解析那两千多个字两组都躲不掉。"
         }
       ],
       "result_evidence": [
         {
           "pointer": "/experiments/27/output",
           "quote": "窄行16字节缓存可用约7.69MB，宽行2048字节在16MiB预算下拒绝。宽行预算改64MiB后缓存约28.02MB，第二查解码从10000行变为0行。去掉tag整数过滤后，16MiB组第二查由约242ms变483ms；所有结果与独立真值一致。"
+        },
+        {
+          "pointer": "/experiments/28/output",
+          "quote": "已建索引宽表：四阶段都拒绝缓存。每查解码10000行作过滤，计算1000个候选距离，最终取10行，共10010次Reader.at。更新键3为零向量排第一，立即回滚和重开均恢复原TopK，全数核对独立真值。"
         }
       ]
     }
