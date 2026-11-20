@@ -97,11 +97,16 @@ def run(root, payload_length, reverse=False):
     return {'payload_ascii_length': payload_length, 'input_order': pairs, 'queries': outputs}
 
 
-def fan_in(db):
+def fan_in(db, singleton_failure=False):
     original_temp, original_open, original_merge = engine.tempfile.NamedTemporaryFile, Path.open, engine.heapq.merge
     files, by_name, reads, writes, merges = [], {}, set(), set(), []
     peaks = {'sort_readers': 0, 'sort_writers': 0, 'sort_readers_plus_writers': 0}
     input_count = [0]
+    faulted = [False]
+    failure = None
+    if singleton_failure and 'probe' not in db.visible:
+        execute(db, 'CREATE TABLE probe(id BIGINT PRIMARY KEY);')
+        execute(db, 'INSERT INTO probe VALUES (1);')
 
     def peak():
         peaks['sort_readers'] = max(peaks['sort_readers'], len(reads))
@@ -135,6 +140,10 @@ def fan_in(db):
             first = text.index(',')
             second = text.index(',', first + 1)
             pair = [int(text[1:first]), int(text[first + 1:second])]
+            if singleton_failure and self.record['id'] == 35 and not faulted[0]:
+                faulted[0] = True
+                self.record['partial_chars_written'] = self.handle.write(text[:len(text) // 2])
+                raise OSError('diagnostic partial write in singleton merge output')
             count = self.handle.write(text)
             self.record['written'].append(pair)
             return count
@@ -203,8 +212,25 @@ def fan_in(db):
                 output.append(row[:2])
                 if len(output) == 5:
                     break
+        except OSError as error:
+            failure = {'type': type(error).__name__, 'message': str(error)}
         finally:
             stream.close()
+    if singleton_failure:
+        assert faulted[0] and failure is not None
+        survivors = [{'id': item['id'], 'bytes': Path(item['name']).stat().st_size}
+                     for item in files if Path(item['name']).exists()]
+        response = list(execute(db, 'SELECT id FROM probe;')[1])
+        return {'scope': 'test wrapper writes half of file35 first row, then raises; not real disk failure',
+                'failure': failure, 'output_before_failure': output, 'input_rows': input_count[0],
+                'created_files': len(files), 'merge_inputs': [item['inputs'] for item in merges],
+                'live_sort_readers': len(reads), 'live_sort_writers': len(writes),
+                'remaining_sort_files_before_harness_cleanup': survivors,
+                'all_sort_files_after_failure': [{'name': path.name, 'bytes': path.stat().st_size}
+                                                for path in sorted(db.path.glob('sort-*.jsonl'))],
+                'partial_chars_written': files[-1].get('partial_chars_written'),
+                'next_read_only_query': response, 'journal_poisoned': db.journal.poisoned}
+    assert failure is None, failure
     assert [row[0] for row in output] == [1, 3, 5, 7, 9]
     assert [item['inputs'] for item in merges] == [32, 1, 2]
     assert first_result_input_count == 33 and len(files) == 35
@@ -219,9 +245,26 @@ def fan_in(db):
             'all_created_files_removed': True}
 
 
+def repeated_failure(root):
+    attempts = []
+    with closing(Database(root)) as db:
+        for number in range(1, 4):
+            result = fan_in(db, singleton_failure=True)
+            result['attempt'] = number
+            attempts.append(result)
+    after_close = [{'name': path.name, 'bytes': path.stat().st_size}
+                   for path in sorted(root.glob('sort-*.jsonl'))]
+    with closing(Database(root)) as db:
+        reopened = {'rows': list(execute(db, 'SELECT id FROM probe;')[1]),
+                    'sort_files': [path.name for path in sorted(root.glob('sort-*.jsonl'))]}
+    return {'attempts': attempts, 'after_close_before_reopen': after_close,
+            'reopened': reopened,
+            'scope': 'all failure observations precede harness directory cleanup; reopening invokes normal startup collection'}
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('stage', choices=('prepare', 'run', 'reverse', 'fan-in'), default='prepare', nargs='?')
+    parser.add_argument('stage', choices=('prepare', 'run', 'reverse', 'fan-in', 'singleton-failure', 'failure-repeat'), default='prepare', nargs='?')
     args = parser.parse_args()
     print(json.dumps({'input_order': PAIRS, 'payload_lengths': [16, 600000],
                       'declared_varchar_width': 700000, 'sort_spill_bytes': 2097152,
@@ -231,7 +274,10 @@ if __name__ == '__main__':
         with tempfile.TemporaryDirectory() as temporary:
             for length in (16, 600000):
                 print(json.dumps(run(Path(temporary) / str(length), length, reverse=args.stage == 'reverse')))
-    elif args.stage == 'fan-in':
+    elif args.stage in ('fan-in', 'singleton-failure'):
         with tempfile.TemporaryDirectory() as temporary:
             with closing(Database(Path(temporary) / 'data')) as db:
-                print(json.dumps(fan_in(db)))
+                print(json.dumps(fan_in(db, singleton_failure=args.stage == 'singleton-failure')))
+    elif args.stage == 'failure-repeat':
+        with tempfile.TemporaryDirectory() as temporary:
+            print(json.dumps(repeated_failure(Path(temporary) / 'data')))
